@@ -1,0 +1,57 @@
+Media Playground - Project Structure
+====================================
+
+Root Files:
+-----------
+├── package.json          - Dependencies and scripts
+├── tsconfig.json         - TypeScript configuration
+├── tsconfig.node.json    - TypeScript config for build tools
+├── vite.config.ts        - Vite build configuration
+├── tailwind.config.js    - Tailwind CSS configuration
+├── postcss.config.js     - PostCSS configuration
+├── index.html            - HTML entry point
+├── README.md             - Project documentation
+├── DEPLOYMENT.md         - Deployment instructions
+├── LICENSE               - MIT License
+└── .gitignore            - Git ignore rules
+
+Source Code (src/):
+------------------
+├── main.tsx              - Application entry point
+├── App.tsx               - Root component with routing
+├── index.css             - Global styles with Tailwind
+├── types.ts              - TypeScript type definitions
+
+├── pages/
+│   ├── Home.tsx          - Landing page with hero section
+│   └── Studio.tsx        - Main app workspace
+
+├── components/
+│   ├── Button.tsx        - Reusable button component
+│   ├── ThemeToggle.tsx   - Dark/light mode toggle
+│   ├── DropZone.tsx      - Drag-and-drop file upload
+│   ├── MediaGrid.tsx     - Grid display for media items
+│   ├── MediaDetail.tsx   - Modal for editing media metadata
+│   └── CollageCreator.tsx - Collage generation interface
+
+├── hooks/
+│   ├── useTheme.ts       - Theme management hook
+│   └── useProject.ts     - Project state management hook
+
+└── utils/
+    ├── storage.ts        - LocalStorage persistence
+    └── collage.ts        - Canvas-based collage generation
+
+Public Assets (public/):
+-----------------------
+├── vite.svg              - App favicon
+└── _redirects            - Cloudflare Pages routing config
+
+Build Output (dist/):
+--------------------
+├── index.html
+├── vite.svg
+├── _redirects
+└── assets/
+    ├── index-GCnrU5uz.css  (~24KB)
+    └── index-S4F0UQSW.js   (~182KB, ~58KB gzipped)
