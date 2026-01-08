@@ -8,7 +8,7 @@
 // In production: deployed Cloudflare Worker
 const API_BASE = import.meta.env.DEV
     ? 'http://localhost:8787'
-    : 'https://media-playground-api.eirikviking.workers.dev';
+    : 'https://media-playground-api.cromkake.workers.dev';
 
 console.log('[API] Mode:', import.meta.env.DEV ? 'development' : 'production');
 console.log('[API] Base URL:', API_BASE);
