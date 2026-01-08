@@ -110,8 +110,8 @@ export const UploadProgressPanel = ({
                         </div>
                         <div className="max-h-24 overflow-y-auto space-y-1">
                             {errors.map((err, i) => (
-                                <div key={i} className="text-xs text-red-400 truncate">
-                                    {err.fileName}: {err.error}
+                                <div key={i} className="text-xs text-red-400 break-words border-b border-red-900/10 pb-1 mb-1 last:border-0">
+                                    <span className="font-semibold">{err.fileName}:</span> {err.error}
                                 </div>
                             ))}
                         </div>

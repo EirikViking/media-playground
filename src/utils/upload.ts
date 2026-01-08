@@ -105,6 +105,8 @@ export async function uploadImage(
 ): Promise<{ success: true; asset: CloudAsset } | { success: false; error: string }> {
     const assetId = crypto.randomUUID();
 
+    console.log(`[Upload] Starting upload for ${file.name}`, { projectId, assetId, size: file.size });
+
     const updateProgress = (stage: UploadProgress['stage'], progress: number, error?: string) => {
         onProgress?.({
             assetId,

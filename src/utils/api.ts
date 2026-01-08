@@ -8,12 +8,14 @@ import { CloudAsset } from '../types';
 // API base URL configuration
 // In dev: localhost worker
 // In production: deployed Cloudflare Worker
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV
+const VITE_API_BASE = import.meta.env.VITE_API_BASE;
+const API_BASE = VITE_API_BASE || (import.meta.env.DEV
     ? 'http://localhost:8787'
     : 'https://media-playground-api.cromkake.workers.dev');
 
-console.log('[API] Mode:', import.meta.env.DEV ? 'development' : 'production');
-console.log('[API] Base URL:', API_BASE);
+console.log('[API] Environment:', import.meta.env.DEV ? 'development' : 'production');
+console.log('[API] VITE_API_BASE:', VITE_API_BASE);
+console.log('[API] Final Base URL:', API_BASE);
 
 export { API_BASE };
 
@@ -45,8 +47,12 @@ class ApiClient {
         path: string,
         options: RequestInit = {}
     ): Promise<{ data?: T; error?: string }> {
+        const url = `${this.baseUrl}${path}`;
+        const method = options.method || 'GET';
+
         try {
-            const response = await fetch(`${this.baseUrl}${path}`, {
+            console.log(`[API] ${method} ${path}`);
+            const response = await fetch(url, {
                 ...options,
                 headers: {
                     'Content-Type': 'application/json',
@@ -54,16 +60,34 @@ class ApiClient {
                 },
             });
 
-            const data = await response.json();
+            // Try to parse JSON, but handle non-JSON responses (like 404 pages)
+            let data: any;
+            let textBody: string | undefined;
+
+            try {
+                // Clone response to read text if JSON fails
+                const clone = response.clone();
+                textBody = await clone.text();
+                data = JSON.parse(textBody);
+            } catch (e) {
+                // Not JSON
+                data = null;
+            }
 
             if (!response.ok) {
-                return { error: (data as ApiError).error || 'Request failed' };
+                const errorMessage = (data as ApiError)?.error || textBody?.substring(0, 100) || response.statusText;
+                console.error(`[API Error] ${method} ${path} -> ${response.status}`, errorMessage);
+
+                // Return descriptive error with endpoint
+                return {
+                    error: `${response.status} ${response.statusText}: ${errorMessage} (${path})`
+                };
             }
 
             return { data: data as T };
         } catch (error) {
-            console.error('API request failed:', error);
-            return { error: 'Network error - backend may be unavailable' };
+            console.error(`[API Network Error] ${method} ${path}:`, error);
+            return { error: `Network error accessing ${path}: ${error instanceof Error ? error.message : String(error)}` };
         }
     }
 
@@ -113,29 +137,47 @@ class ApiClient {
         kind: 'original' | 'thumb',
         file: File
     ): Promise<{ data?: { ok: boolean; key: string; byteSize: number }; error?: string }> {
-        try {
-            const response = await fetch(
-                `${this.baseUrl}/api/upload/${projectId}/${assetId}/${kind}`,
-                {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': file.type,
-                        'Content-Length': file.size.toString(),
-                    },
-                    body: file,
-                }
-            );
+        const path = `/api/upload/${projectId}/${assetId}/${kind}`;
+        const url = `${this.baseUrl}${path}`;
 
-            const data = await response.json();
+        console.log(`[API] Uploading ${kind} to ${path} (Size: ${file.size})`);
+
+        try {
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': file.type,
+                    'Content-Length': file.size.toString(),
+                },
+                body: file,
+            });
+
+            // Handle response parsing carefully
+            let data: any;
+            let textBody: string | undefined;
+
+            try {
+                const clone = response.clone();
+                textBody = await clone.text();
+                data = JSON.parse(textBody);
+            } catch (e) {
+                data = null;
+            }
 
             if (!response.ok) {
-                return { error: (data as ApiError).error || 'Upload failed' };
+                const errorMessage = (data as ApiError)?.error || textBody?.substring(0, 100) || response.statusText;
+                console.error(`[API Error] PUT ${path} -> ${response.status}`, errorMessage);
+                return {
+                    error: `Upload failed ${response.status}: ${errorMessage} (${path})`
+                };
             }
 
             return { data: data as { ok: boolean; key: string; byteSize: number } };
         } catch (error) {
-            console.error('Upload failed:', error);
-            return { error: 'Network error during upload' };
+            console.error(`[API Network Error] PUT ${path}:`, error);
+            return {
+                error: `Network error uploading to ${path}`
+            };
         }
     }
 
