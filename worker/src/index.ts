@@ -523,7 +523,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             while (truncated) {
                 const list = await env.BUCKET.list({ cursor });
                 truncated = list.truncated;
-                cursor = list.cursor;
+                cursor = (list as any).cursor;
 
                 if (list.objects.length > 0) {
                     await env.BUCKET.delete(list.objects.map(o => o.key));
