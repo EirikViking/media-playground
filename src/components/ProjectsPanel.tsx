@@ -154,6 +154,7 @@ export const ProjectsPanel = ({
                                     <button
                                         onClick={() => setIsOpen(false)}
                                         className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+                                        aria-label="Close projects panel"
                                     >
                                         <X className="w-5 h-5" />
                                     </button>

@@ -63,10 +63,12 @@ test.describe('Phase 3A: Image Upload and Sharing', () => {
         // Wait for save to complete
         await expect(page.getByText(/saved to cloud/i)).toBeVisible({ timeout: 10000 });
 
-        // Close panel
-        await page.keyboard.press('Escape');
+        // Close panel by clicking the X button
+        await page.getByRole('button', { name: /close projects panel/i }).click();
 
-        // Step 5: Click Upload button
+        // Wait for projects panel to close (the panel header should not be visible)
+        await expect(page.getByRole('heading', { name: /^Projects$/i })).not.toBeVisible({ timeout: 5000 });
+
         // Step 5: Click Upload button
         const uploadButton = page.getByRole('button', { name: /upload/i });
 
@@ -75,19 +77,24 @@ test.describe('Phase 3A: Image Upload and Sharing', () => {
             await expect(uploadButton).toBeEnabled({ timeout: 10000 });
             await uploadButton.click();
 
-            // Wait for upload to complete (cloud badge appears) OR error
-            const successBadge = page.locator('[class*="bg-green-500"]').first();
-            const errorBadge = page.locator('[class*="bg-red-500"]').first();
+            // Wait for upload to complete (cloud badge appears) OR error using poll for compatibility
+            const successBadge = page.getByTestId('upload-success');
+            const errorBadge = page.getByTestId('upload-error');
 
-            await expect(successBadge.or(errorBadge)).toBeVisible({ timeout: 60000 });
+            // Poll for either success or error state
+            await expect.poll(async () => {
+                const hasSuccess = await successBadge.count() > 0;
+                const hasError = await errorBadge.count() > 0;
+                return hasSuccess || hasError;
+            }, { timeout: 60000, message: 'Waiting for upload to complete' }).toBeTruthy();
 
-            // If we see red, fail with clear message
-            if (await errorBadge.isVisible()) {
-                const errorTitle = await errorBadge.getAttribute('title');
+            // If we see error, fail with clear message
+            if (await errorBadge.count() > 0) {
+                const errorTitle = await errorBadge.first().getAttribute('title');
                 throw new Error(`Upload failed: ${errorTitle}`);
             }
 
-            await expect(successBadge).toBeVisible();
+            await expect(successBadge.first()).toBeVisible();
         }
 
         // Step 6: Open Share dialog
@@ -113,7 +120,7 @@ test.describe('Phase 3A: Image Upload and Sharing', () => {
         await expect(newPage.locator('[class*="aspect-square"]').first()).toBeVisible({ timeout: 15000 });
 
         // Verify cloud badge is present (indicating R2 image)
-        await expect(newPage.locator('[class*="bg-green-500"]').first()).toBeVisible({ timeout: 10000 });
+        await expect(newPage.getByTestId('upload-success').first()).toBeVisible({ timeout: 10000 });
 
         // Step 10: Click on image to view full resolution
         await newPage.locator('[class*="aspect-square"]').first().click();

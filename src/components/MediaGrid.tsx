@@ -96,6 +96,7 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
             {/* Upload Status Indicator */}
             <div className="absolute top-3 left-3 z-10">
               <div
+                data-testid={item.cloudAsset ? 'upload-success' : item.uploadStatus === 'error' ? 'upload-error' : item.uploadStatus === 'uploading' ? 'upload-progress' : 'upload-pending'}
                 className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs backdrop-blur-md shadow-sm ${item.cloudAsset
                   ? 'bg-green-500/80 text-white border border-green-400'
                   : item.uploadStatus === 'error'
