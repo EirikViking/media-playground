@@ -27,7 +27,10 @@ export const ShareButton = ({ projectId, projectTitle }: ShareButtonProps) => {
         try {
             await navigator.clipboard.writeText(shareUrl);
             setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            setTimeout(() => {
+                setCopied(false);
+                setIsOpen(false);
+            }, 2000);
         } catch (err) {
             console.error('Failed to copy:', err);
         }

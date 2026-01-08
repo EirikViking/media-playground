@@ -21,9 +21,13 @@ export interface Env {
 }
 
 // Constants
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-const MAX_ASSETS_PER_PROJECT = 30;
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+const MAX_ASSETS_PER_PROJECT = 50;
+const ALLOWED_TYPES = [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'video/mp4', 'video/webm',
+    'audio/mpeg', 'audio/wav'
+];
 
 interface ProjectData {
     title: string;

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MediaItem } from '../types';
 import { generateCollage, downloadImage } from '../utils/collage';
+import { getRandomStory } from '../utils/chaos-story';
 import { Button } from './Button';
 import { Wand2, Download, RefreshCw, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -12,14 +13,17 @@ interface CollageCreatorProps {
 export const CollageCreator = ({ items }: CollageCreatorProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [story, setStory] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (items.length === 0) return;
 
     setIsGenerating(true);
+    setStory(null);
     try {
       const collageUrl = await generateCollage(items);
       setPreviewUrl(collageUrl);
+      setStory(getRandomStory());
     } catch (error) {
       console.error('Failed to generate collage:', error);
     } finally {
@@ -91,14 +95,28 @@ export const CollageCreator = ({ items }: CollageCreatorProps) => {
               animate={{ scale: 1, opacity: 1 }}
               className="space-y-6"
             >
-              <div className="rounded-2xl overflow-hidden border-8 border-white dark:border-slate-800 shadow-2xl rotate-1 hover:rotate-0 transition-transform duration-500">
-                <img
-                  src={previewUrl}
-                  alt="Generated collage"
-                  className="w-full h-auto"
-                />
+              <div className="relative">
+                <div className="rounded-2xl overflow-hidden border-8 border-white dark:border-slate-800 shadow-2xl rotate-1 hover:rotate-0 transition-transform duration-500">
+                  <img
+                    src={previewUrl}
+                    alt="Generated collage"
+                    className="w-full h-auto"
+                  />
+                </div>
+                {story && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute -bottom-6 left-6 right-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-6 rounded-xl shadow-lg border border-purple-100 dark:border-purple-900"
+                  >
+                    <p className="text-lg font-display text-center italic text-slate-800 dark:text-slate-200">
+                      "{story}"
+                    </p>
+                  </motion.div>
+                )}
               </div>
-              <div className="flex flex-col sm:flex-row gap-4">
+
+              <div className="flex flex-col sm:flex-row gap-4 pt-8">
                 <Button onClick={handleDownload} className="flex-1 text-lg py-4" size="lg">
                   <Download className="w-5 h-5 mr-2" />
                   Download Masterpiece

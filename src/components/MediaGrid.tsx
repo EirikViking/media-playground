@@ -1,6 +1,6 @@
 import { MediaItem } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Play, Image as ImageIcon, Cloud, Clock, AlertCircle, Loader2 } from 'lucide-react';
+import { Trash2, Image as ImageIcon, Cloud, Clock, AlertCircle, Loader2 } from 'lucide-react';
 
 interface MediaGridProps {
   items: MediaItem[];
@@ -21,7 +21,7 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
         </div>
         <h3 className="text-2xl font-bold mb-2 font-display text-slate-900 dark:text-white">It's a bit empty here</h3>
         <p className="text-slate-600 dark:text-slate-400 max-w-sm mx-auto mb-8">
-          Upload some photos to start your creative journey. Kurt Edgar is waiting.
+          Upload some photos or videos to start your creative journey. Kurt Edgar is waiting.
         </p>
       </motion.div>
     );
@@ -43,12 +43,12 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
   };
 
   const getStatusLabel = (item: MediaItem) => {
-    if (item.cloudAsset) return 'Uploaded';
+    if (item.cloudAsset) return 'Safe in Cloud';
     switch (item.uploadStatus) {
       case 'uploading': return 'Uploading...';
       case 'error': return item.uploadError || 'Error';
       case 'pending':
-      default: return 'Pending upload';
+      default: return 'Local only';
     }
   };
 
@@ -66,7 +66,13 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
             className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-shadow bg-slate-200 dark:bg-slate-800"
             onClick={() => onItemClick(item)}
           >
-            {item.type === 'image' ? (
+            {item.type === 'video' ? (
+              <video
+                src={item.url}
+                className="w-full h-full object-cover"
+                controls
+              />
+            ) : item.type === 'image' ? (
               <img
                 src={item.thumbUrl || item.url}
                 alt={item.title}
@@ -74,38 +80,30 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
                 loading="lazy"
               />
             ) : (
-              <div className="w-full h-full relative">
-                <video
-                  src={item.url}
-                  className="w-full h-full object-cover"
-                  muted
-                />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/40">
-                    <Play className="w-6 h-6 text-white fill-current" />
-                  </div>
-                </div>
+              <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white">
+                <span className="text-4xl">🎵</span>
               </div>
             )}
 
             {/* Upload Status Indicator */}
-            <div className="absolute top-3 left-3">
+            <div className="absolute top-3 left-3 z-10">
               <div
-                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs backdrop-blur-md ${item.cloudAsset
-                    ? 'bg-green-500/20 border border-green-500/30'
-                    : item.uploadStatus === 'error'
-                      ? 'bg-red-500/20 border border-red-500/30'
-                      : item.uploadStatus === 'uploading'
-                        ? 'bg-blue-500/20 border border-blue-500/30'
-                        : 'bg-orange-500/20 border border-orange-500/30'
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs backdrop-blur-md shadow-sm ${item.cloudAsset
+                  ? 'bg-green-500/80 text-white border border-green-400'
+                  : item.uploadStatus === 'error'
+                    ? 'bg-red-500/80 text-white border border-red-400'
+                    : item.uploadStatus === 'uploading'
+                      ? 'bg-blue-500/80 text-white border border-blue-400'
+                      : 'bg-orange-500/80 text-white border border-orange-400'
                   }`}
                 title={getStatusLabel(item)}
               >
                 {getStatusIcon(item)}
+                {item.cloudAsset && <span className="hidden group-hover:inline ml-1 font-medium">Synced</span>}
               </div>
             </div>
 
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 pointer-events-none">
               <p className="text-white font-medium truncate mb-1">{item.title}</p>
               <div className="flex items-center justify-between">
                 <div className="flex gap-1">
@@ -115,10 +113,6 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
                     </span>
                   ))}
                 </div>
-                <span className="text-xs text-white/70 flex items-center gap-1">
-                  {getStatusIcon(item)}
-                  {item.cloudAsset ? 'Cloud' : 'Local'}
-                </span>
               </div>
             </div>
 
@@ -127,7 +121,7 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
                 e.stopPropagation();
                 onItemRemove(item.id);
               }}
-              className="absolute top-3 right-3 p-2 bg-red-500/80 hover:bg-red-600 backdrop-blur-md text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110 shadow-lg"
+              className="absolute top-3 right-3 p-2 bg-red-500/80 hover:bg-red-600 backdrop-blur-md text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110 shadow-lg z-20"
               aria-label="Remove item"
             >
               <Trash2 className="w-4 h-4" />
