@@ -123,9 +123,9 @@ const handleNewProject = () => {
   }
 };
 
-// Get pending upload items (images with files but not uploaded)
+// Get pending upload items (files that are not yet uploaded)
 const pendingUploads = project.items.filter(
-  item => item.type === 'image' && item.file && item.uploadStatus !== 'uploaded'
+  item => item.file && item.uploadStatus !== 'uploaded'
 );
 
 // Handle upload of pending images

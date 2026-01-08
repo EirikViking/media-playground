@@ -144,14 +144,22 @@ export async function uploadImage(
         updateProgress('generating-thumb', 50);
 
         let thumbBlob: Blob;
-        let width: number;
-        let height: number;
+        let width = 0;
+        let height = 0;
 
         try {
-            const thumbResult = await generateThumbnail(file);
-            thumbBlob = thumbResult.blob;
-            width = thumbResult.width;
-            height = thumbResult.height;
+            if (file.type.startsWith('image/')) {
+                const thumbResult = await generateThumbnail(file);
+                thumbBlob = thumbResult.blob;
+                width = thumbResult.width;
+                height = thumbResult.height;
+            } else {
+                // For videos/audio, create a dummy placeholder thumbnail for now
+                // In a real app, we'd generate a frame poster
+                thumbBlob = new Blob([''], { type: 'text/plain' });
+                width = 0;
+                height = 0;
+            }
         } catch (e) {
             const error = e instanceof Error ? e.message : 'Thumbnail generation failed';
             updateProgress('error', 50, error);
@@ -163,6 +171,8 @@ export async function uploadImage(
 
         const thumbKey = `${projectId}/${assetId}/thumb`;
         const thumbFile = new File([thumbBlob], `${assetId}-thumb.webp`, { type: 'image/webp' });
+        // Only upload thumb if it's an image, otherwise we might skip or upload dummy
+        // For simplicity, we upload the dummy so the key exists
         const thumbResult = await api.uploadFile(projectId, assetId, 'thumb', thumbFile);
 
         if (thumbResult.error) {

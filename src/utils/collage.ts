@@ -17,7 +17,7 @@ export const generateCollage = async (
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, width, height);
 
-  const imageItems = items.filter(item => item.type === 'image');
+  const imageItems = items.filter(item => item.type === 'image' && item.url);
   if (imageItems.length === 0) {
     ctx.fillStyle = '#9ca3af';
     ctx.font = '24px sans-serif';
