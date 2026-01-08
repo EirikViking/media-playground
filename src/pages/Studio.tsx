@@ -19,15 +19,27 @@ export const Studio = () => {
   const handleFilesAdded = async (files: File[]) => {
     for (const file of files) {
       try {
-        // Convert file to base64 for persistent storage
-        const dataUrl = await fileToDataUrl(file);
+        const isImage = file.type.startsWith('image/');
+
+        // Only convert images to base64 (videos are too large)
+        // Videos will use blob URLs and won't persist across refreshes
+        let dataUrl: string | undefined;
+        let url: string;
+
+        if (isImage) {
+          dataUrl = await fileToDataUrl(file);
+          url = dataUrl;
+        } else {
+          // Use blob URL for videos (not persisted)
+          url = URL.createObjectURL(file);
+        }
 
         const item: MediaItem = {
           id: crypto.randomUUID(),
-          type: file.type.startsWith('image/') ? 'image' : 'video',
+          type: isImage ? 'image' : 'video',
           file,
-          url: dataUrl, // Use dataUrl as url for display
-          dataUrl, // Store for persistence
+          url,
+          dataUrl, // Only set for images
           title: file.name,
           tags: [],
           notes: '',
