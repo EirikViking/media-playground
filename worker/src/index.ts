@@ -79,7 +79,7 @@ function corsHeaders(origin: string | null): HeadersInit {
     return {
         'Access-Control-Allow-Origin': allowOrigin,
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, x-admin-password',
         'Access-Control-Max-Age': '86400',
     };
 }
