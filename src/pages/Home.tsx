@@ -19,9 +19,14 @@ export const Home = () => {
       </div>
 
       <header className="p-6 flex justify-between items-center relative z-10 max-w-7xl mx-auto w-full">
-        <span className="font-display text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          Kurt Edgar & Eirik
-        </span>
+        <div className="flex items-center gap-6">
+          <span className="font-display text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Kurt Edgar & Eirik
+          </span>
+          <Link to="/admin" className="text-sm font-medium text-slate-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+            Admin
+          </Link>
+        </div>
         <ThemeToggle />
       </header>
 
