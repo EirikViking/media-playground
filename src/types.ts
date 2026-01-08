@@ -47,7 +47,7 @@ export interface ProjectJsonData {
 
 // Upload limits
 export const UPLOAD_LIMITS = {
-  maxFileSize: 50 * 1024 * 1024, // 50 MB (Increased for video)
+  maxFileSize: 120 * 1024 * 1024, // 120 MB (Increased for video)
   maxAssetsPerProject: 50,
   allowedTypes: [
     'image/jpeg', 'image/png', 'image/webp', 'image/gif',
