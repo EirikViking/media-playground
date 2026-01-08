@@ -109,16 +109,18 @@ export const Studio = () => {
 
   // Handle upload of pending images
   const handleUploadImages = async () => {
-    if (!currentProjectId) {
+    let projectId = currentProjectId;
+
+    if (!projectId) {
       // Need to save project first
       const saveResult = await handleSaveProject(null);
       if (!saveResult) {
         alert('Please save the project first before uploading images.');
         return;
       }
+      projectId = saveResult.id;
     }
 
-    const projectId = currentProjectId!;
     const filesToUpload = pendingUploads
       .filter(item => item.file)
       .map(item => ({ id: item.id, file: item.file! }));

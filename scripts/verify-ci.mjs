@@ -198,7 +198,10 @@ async function main() {
 
         // Step 3: Build frontend (critical for reliable CI)
         log('🔨', 'Building frontend...');
-        execSync('npm run build', { stdio: 'inherit' });
+        execSync('npm run build', {
+            stdio: 'inherit',
+            env: { ...process.env, VITE_API_BASE: WORKER_URL }
+        });
 
         // Step 4: Start worker dev server
         startProcess('npm', ['run', 'dev', '--', '--port', WORKER_PORT.toString()], 'worker', 'Worker');
