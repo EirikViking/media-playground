@@ -3,11 +3,27 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --font-sans: 'Outfit', sans-serif;
+    --font-display: 'Calistoga', cursive;
+  }
+
   html {
-    @apply antialiased;
+    @apply antialiased scroll-smooth;
+    font-family: var(--font-sans);
   }
 
   body {
-    @apply bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200;
+    @apply bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 selection:bg-purple-500/30;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/70 dark:bg-black/70 backdrop-blur-xl border border-white/20 dark:border-white/10;
+  }
+  
+  .glass-card {
+    @apply bg-white/50 dark:bg-slate-900/50 backdrop-blur-lg border border-white/20 dark:border-white/10 shadow-xl;
   }
 }

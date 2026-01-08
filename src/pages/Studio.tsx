@@ -8,6 +8,8 @@ import { DropZone } from '../components/DropZone';
 import { MediaGrid } from '../components/MediaGrid';
 import { MediaDetail } from '../components/MediaDetail';
 import { CollageCreator } from '../components/CollageCreator';
+import { ArrowLeft, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export const Studio = () => {
   const { project, addItem, updateItem, removeItem, createNewProject } = useProject();
@@ -38,7 +40,7 @@ export const Studio = () => {
 
   const handleNewProject = () => {
     if (project.items.length > 0) {
-      if (window.confirm('Create a new project? Current project will be cleared.')) {
+      if (window.confirm('Start fresh? This will clear your current masterpiece.')) {
         createNewProject();
       }
     } else {
@@ -47,21 +49,23 @@ export const Studio = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40 shadow-sm">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
-              <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
-                Media Playground
+              <Link to="/" className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                <ArrowLeft className="w-5 h-5" />
+                <span className="font-medium">Back to Gallery</span>
               </Link>
-              <div className="hidden sm:block text-sm text-gray-500 dark:text-gray-400">
-                {project.items.length} item{project.items.length !== 1 ? 's' : ''}
-              </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button onClick={handleNewProject} variant="secondary" size="sm">
-                New Project
+              <span className="hidden sm:block text-sm text-slate-500 font-medium px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                {project.items.length} item{project.items.length !== 1 ? 's' : ''} in staging
+              </span>
+              <Button onClick={handleNewProject} variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear
               </Button>
               <ThemeToggle />
             </div>
@@ -69,27 +73,44 @@ export const Studio = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        <div className="animate-fade-in">
-          <DropZone onFilesAdded={handleFilesAdded} />
+      <main className="max-w-7xl mx-auto px-6 py-12 space-y-12">
+        <div className="space-y-2">
+          <h1 className="text-4xl md:text-5xl font-bold font-display text-slate-900 dark:text-white">
+            The Studio
+          </h1>
+          <p className="text-lg text-slate-600 dark:text-slate-400">
+            Where the magic (and errors) happen.
+          </p>
         </div>
+
+        <section>
+          <DropZone onFilesAdded={handleFilesAdded} />
+        </section>
 
         {project.items.length > 0 && (
           <>
-            <div className="animate-slide-up">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Your Media</h2>
+            <section>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
+                  <span className="w-2 h-8 bg-purple-600 rounded-full inline-block"></span>
+                  Your Assets
+                </h2>
               </div>
               <MediaGrid
                 items={project.items}
                 onItemClick={setSelectedItem}
                 onItemRemove={removeItem}
               />
-            </div>
+            </section>
 
-            <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            <motion.section
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="pt-8"
+            >
               <CollageCreator items={project.items} />
-            </div>
+            </motion.section>
           </>
         )}
       </main>

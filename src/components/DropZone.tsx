@@ -1,4 +1,6 @@
 import { useCallback, useState, DragEvent } from 'react';
+import { motion } from 'framer-motion';
+import { Upload, FileUp } from 'lucide-react';
 
 interface DropZoneProps {
   onFilesAdded: (files: File[]) => void;
@@ -49,16 +51,19 @@ export const DropZone = ({ onFilesAdded }: DropZoneProps) => {
   };
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
       onDragEnter={handleDragIn}
       onDragLeave={handleDragOut}
       onDragOver={handleDrag}
       onDrop={handleDrop}
       className={`
-        relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-200
+        relative overflow-hidden rounded-3xl p-12 text-center transition-all duration-300 border-2 border-dashed
         ${isDragging
-          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-105'
-          : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
+          ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-900/20 scale-[1.02] shadow-xl'
+          : 'border-slate-300 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 hover:border-purple-400 dark:hover:border-purple-600'
         }
       `}
     >
@@ -70,22 +75,34 @@ export const DropZone = ({ onFilesAdded }: DropZoneProps) => {
         className="hidden"
         id="file-input"
       />
-      <label htmlFor="file-input" className="cursor-pointer">
-        <div className="space-y-4">
-          <div className="text-6xl">📁</div>
+      <label htmlFor="file-input" className="cursor-pointer relative z-10 w-full h-full block">
+        <div className="space-y-6">
+          <motion.div
+            animate={isDragging ? { y: -10 } : {}}
+            transition={{ type: "spring", bounce: 0.5 }}
+            className="w-20 h-20 mx-auto bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center"
+          >
+            {isDragging ? (
+              <FileUp className="w-10 h-10 text-purple-600 dark:text-purple-400" />
+            ) : (
+              <Upload className="w-10 h-10 text-slate-500 dark:text-slate-400" />
+            )}
+          </motion.div>
+
           <div className="space-y-2">
-            <p className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-              Drop your media here
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              or click to browse files
+            <h3 className="text-2xl font-bold font-display text-slate-900 dark:text-slate-100">
+              {isDragging ? 'Feed the machine!' : 'Drop media here'}
+            </h3>
+            <p className="text-lg text-slate-500 dark:text-slate-400">
+              or click to browse from the boring file system
             </p>
           </div>
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            Supports images (JPG, PNG, WebP) and videos (MP4, WebM)
-          </p>
+
+          <div className="inline-block px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs text-slate-500 dark:text-slate-400 font-medium">
+            Images (JPG, PNG, WebP) & Videos (MP4, WebM)
+          </div>
         </div>
       </label>
-    </div>
+    </motion.div>
   );
 };

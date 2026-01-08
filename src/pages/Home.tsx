@@ -1,70 +1,115 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Sparkles, ArrowRight, Video, Image as ImageIcon, Zap } from 'lucide-react';
 import { Button } from '../components/Button';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { AboutModal } from '../components/AboutModal';
 
 export const Home = () => {
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="p-6 flex justify-end">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden relative selection:bg-purple-500/30">
+      {/* Decorative blobs */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute -top-[20%] -right-[10%] w-[800px] h-[800px] bg-purple-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }} />
+        <div className="absolute top-[40%] -left-[10%] w-[600px] h-[600px] bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '10s' }} />
+        <div className="absolute -bottom-[20%] right-[20%] w-[600px] h-[600px] bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '12s' }} />
+      </div>
+
+      <header className="p-6 flex justify-between items-center relative z-10 max-w-7xl mx-auto w-full">
+        <span className="font-display text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          KEG
+        </span>
         <ThemeToggle />
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-6">
-        <div className="max-w-4xl w-full text-center space-y-8 animate-fade-in">
-          <div className="space-y-4 animate-slide-up">
-            <h1 className="text-6xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-              Media Playground
+      <main className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-6">
+        <div className="max-w-5xl w-full text-center space-y-8">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="space-y-6"
+          >
+            <h1 className="text-7xl md:text-9xl font-bold font-display tracking-tight leading-[0.9] text-slate-900 dark:text-white">
+              <span className="block hover:scale-105 transition-transform duration-500 cursor-default">KURT</span>
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent block hover:scale-105 transition-transform duration-500 cursor-default">
+                EDGAR'S
+              </span>
+              <span className="block hover:scale-105 transition-transform duration-500 cursor-default">GALLERY</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Create beautiful collages from your photos and videos.
-              Everything stays local in your browser.
-            </p>
-          </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-light leading-relaxed">
+              Where pixels go to party. Create chaotic collages, organize your visual mess, and pretend it's art.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8"
+          >
             <Link to="/studio">
-              <Button size="lg" className="min-w-48">
+              <Button size="lg" className="min-w-48 text-lg shadow-purple-500/25 shadow-2xl group">
+                <Sparkles className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
                 Start Creating
+                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            <Button variant="secondary" size="lg" className="min-w-48" onClick={() => {
-              window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-            }}>
+            <Button variant="secondary" size="lg" className="min-w-48 text-lg" onClick={() => setIsAboutOpen(true)}>
               Learn More
             </Button>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800">
-              <div className="text-4xl mb-4">🎨</div>
-              <h3 className="text-xl font-semibold mb-2">Creative Freedom</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Drag, drop, and arrange your media into stunning collages with ease.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-800">
-              <div className="text-4xl mb-4">🔒</div>
-              <h3 className="text-xl font-semibold mb-2">Privacy First</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Your files never leave your device. Everything runs in your browser.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20 border border-pink-200 dark:border-pink-800">
-              <div className="text-4xl mb-4">⚡</div>
-              <h3 className="text-xl font-semibold mb-2">Lightning Fast</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                No uploads, no waiting. Create and export instantly.
-              </p>
-            </div>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.8 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20"
+          >
+            <FeatureCard
+              icon={<ImageIcon className="w-8 h-8 text-blue-500" />}
+              title="Visual Chaos"
+              desc="Drag, drop, and destroy expectations."
+            />
+            <FeatureCard
+              icon={<Video className="w-8 h-8 text-purple-500" />}
+              title="Motion Magic"
+              desc="Video support because static is boring."
+            />
+            <FeatureCard
+              icon={<Zap className="w-8 h-8 text-pink-500" />}
+              title="Instant Zen"
+              desc="No uploads. It's all local, baby."
+            />
+          </motion.div>
         </div>
       </main>
 
-      <footer className="p-6 text-center text-gray-500 dark:text-gray-500 text-sm">
-        <p>Built with React, TypeScript, and Tailwind CSS</p>
+      <footer className="relative z-10 p-8 text-center text-slate-500 dark:text-slate-500 text-sm">
+        <p>© {new Date().getFullYear()} Kurt Edgar's Gallery. Warning: May contain traces of genius.</p>
       </footer>
+
+      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </div>
   );
 };
+
+const FeatureCard = ({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) => (
+  <motion.div
+    whileHover={{ y: -5 }}
+    className="p-8 rounded-3xl bg-white/50 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200 dark:border-slate-800 hover:border-purple-500/50 transition-colors shadow-lg hover:shadow-xl"
+  >
+    <div className="mb-4 inline-flex p-3 rounded-2xl bg-white dark:bg-slate-800 shadow-sm">
+      {icon}
+    </div>
+    <h3 className="text-xl font-bold mb-2 font-display">{title}</h3>
+    <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+      {desc}
+    </p>
+  </motion.div>
+);
+
