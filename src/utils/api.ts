@@ -3,6 +3,8 @@
  * Falls back gracefully if backend is unavailable
  */
 
+import { CloudAsset } from '../types';
+
 // API base URL configuration
 // In dev: localhost worker
 // In production: deployed Cloudflare Worker
@@ -12,6 +14,8 @@ const API_BASE = import.meta.env.DEV
 
 console.log('[API] Mode:', import.meta.env.DEV ? 'development' : 'production');
 console.log('[API] Base URL:', API_BASE);
+
+export { API_BASE };
 
 export interface ProjectSummary {
     id: string;
@@ -63,6 +67,8 @@ class ApiClient {
         }
     }
 
+    // ==================== PROJECT METHODS ====================
+
     async createProject(title: string, data: string): Promise<{ data?: { id: string }; error?: string }> {
         return this.request<{ id: string }>('/api/projects', {
             method: 'POST',
@@ -94,6 +100,79 @@ class ApiClient {
     async healthCheck(): Promise<boolean> {
         const result = await this.request<{ status: string }>('/api/health');
         return result.data?.status === 'ok';
+    }
+
+    // ==================== ASSET METHODS ====================
+
+    /**
+     * Upload a file to R2 via Worker
+     */
+    async uploadFile(
+        projectId: string,
+        assetId: string,
+        kind: 'original' | 'thumb',
+        file: File
+    ): Promise<{ data?: { ok: boolean; key: string; byteSize: number }; error?: string }> {
+        try {
+            const response = await fetch(
+                `${this.baseUrl}/api/upload/${projectId}/${assetId}/${kind}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': file.type,
+                        'Content-Length': file.size.toString(),
+                    },
+                    body: file,
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return { error: (data as ApiError).error || 'Upload failed' };
+            }
+
+            return { data: data as { ok: boolean; key: string; byteSize: number } };
+        } catch (error) {
+            console.error('Upload failed:', error);
+            return { error: 'Network error during upload' };
+        }
+    }
+
+    /**
+     * Commit asset metadata after upload
+     */
+    async commitAsset(
+        projectId: string,
+        asset: CloudAsset
+    ): Promise<{ data?: { ok: boolean; asset: CloudAsset }; error?: string }> {
+        return this.request<{ ok: boolean; asset: CloudAsset }>(
+            `/api/projects/${projectId}/assets/commit`,
+            {
+                method: 'POST',
+                body: JSON.stringify(asset),
+            }
+        );
+    }
+
+    /**
+     * Delete an asset from project and R2
+     */
+    async deleteAsset(
+        projectId: string,
+        assetId: string
+    ): Promise<{ data?: { ok: boolean }; error?: string }> {
+        return this.request<{ ok: boolean }>(
+            `/api/projects/${projectId}/assets/${assetId}`,
+            { method: 'DELETE' }
+        );
+    }
+
+    /**
+     * Get URL for asset (thumb or original)
+     */
+    getAssetUrl(projectId: string, assetId: string, kind: 'original' | 'thumb'): string {
+        return `${this.baseUrl}/api/assets/${kind}/${projectId}/${assetId}`;
     }
 }
 

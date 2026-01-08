@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { MediaItem } from '../types';
+import { useState, useCallback, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { MediaItem, CloudAsset, ProjectJsonData, UPLOAD_LIMITS } from '../types';
 import { useProject } from '../hooks/useProject';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { Button } from '../components/Button';
@@ -9,45 +9,68 @@ import { MediaGrid } from '../components/MediaGrid';
 import { MediaDetail } from '../components/MediaDetail';
 import { CollageCreator } from '../components/CollageCreator';
 import { ProjectsPanel } from '../components/ProjectsPanel';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ShareButton } from '../components/ShareButton';
+import { UploadProgressPanel } from '../components/UploadProgressPanel';
+import { ArrowLeft, Trash2, Upload, Cloud } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fileToDataUrl } from '../utils/storage';
 import { api } from '../utils/api';
+import { uploadImages, UploadProgress, validateFile, getAssetUrl } from '../utils/upload';
 
 export const Studio = () => {
   const { project, addItem, updateItem, removeItem, createNewProject, setProject } = useProject();
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [projectTitle, setProjectTitle] = useState(project.name);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Upload state
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadCompleted, setUploadCompleted] = useState(0);
+  const [uploadTotal, setUploadTotal] = useState(0);
+  const [uploadCurrent, setUploadCurrent] = useState<UploadProgress | undefined>();
+  const [uploadErrors, setUploadErrors] = useState<Array<{ fileName: string; error: string }>>([]);
+
+  // Load shared project from URL on mount
+  useEffect(() => {
+    const projectIdFromUrl = searchParams.get('project');
+    if (projectIdFromUrl && projectIdFromUrl !== currentProjectId) {
+      console.log('[Studio] Loading shared project:', projectIdFromUrl);
+      handleLoadProject(projectIdFromUrl);
+    }
+  }, [searchParams]);
 
   const handleFilesAdded = async (files: File[]) => {
-    for (const file of files) {
+    // Filter to images only (Phase 3A - no videos)
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    const videoFiles = files.filter(f => f.type.startsWith('video/'));
+
+    if (videoFiles.length > 0) {
+      alert(`${videoFiles.length} video(s) skipped. Only images are supported for cloud upload in this version.`);
+    }
+
+    for (const file of imageFiles) {
       try {
-        const isImage = file.type.startsWith('image/');
-
-        // Only convert images to base64 (videos are too large)
-        // Videos will use blob URLs and won't persist across refreshes
-        let dataUrl: string | undefined;
-        let url: string;
-
-        if (isImage) {
-          dataUrl = await fileToDataUrl(file);
-          url = dataUrl;
-        } else {
-          // Use blob URL for videos (not persisted)
-          url = URL.createObjectURL(file);
+        // Validate file
+        const validation = validateFile(file);
+        if (!validation.valid) {
+          console.warn(`Skipping ${file.name}: ${validation.error}`);
+          continue;
         }
+
+        const dataUrl = await fileToDataUrl(file);
 
         const item: MediaItem = {
           id: crypto.randomUUID(),
-          type: isImage ? 'image' : 'video',
+          type: 'image',
           file,
-          url,
-          dataUrl, // Only set for images
+          url: dataUrl,
+          dataUrl,
           title: file.name,
           tags: [],
           notes: '',
           createdAt: Date.now(),
+          uploadStatus: 'pending',
         };
         addItem(item);
       } catch (error) {
@@ -69,30 +92,109 @@ export const Studio = () => {
         createNewProject();
         setCurrentProjectId(null);
         setProjectTitle('Untitled Project');
+        setSearchParams({});
       }
     } else {
       createNewProject();
       setCurrentProjectId(null);
       setProjectTitle('Untitled Project');
+      setSearchParams({});
     }
   };
 
-  // Prepare project metadata for saving (no file contents)
-  const prepareProjectData = useCallback(() => {
-    const mediaDescriptors = project.items.map(item => ({
-      id: item.id,
-      name: item.title,
-      type: item.type,
-      tags: item.tags,
-      notes: item.notes,
-      createdAt: item.createdAt,
-    }));
+  // Get pending upload items (images with files but not uploaded)
+  const pendingUploads = project.items.filter(
+    item => item.type === 'image' && item.file && item.uploadStatus !== 'uploaded'
+  );
 
-    return JSON.stringify({
-      version: 1,
-      mediaItems: mediaDescriptors,
-      layout: {}, // Placeholder for future layout settings
+  // Handle upload of pending images
+  const handleUploadImages = async () => {
+    if (!currentProjectId) {
+      // Need to save project first
+      const saveResult = await handleSaveProject(null);
+      if (!saveResult) {
+        alert('Please save the project first before uploading images.');
+        return;
+      }
+    }
+
+    const projectId = currentProjectId!;
+    const filesToUpload = pendingUploads
+      .filter(item => item.file)
+      .map(item => ({ id: item.id, file: item.file! }));
+
+    if (filesToUpload.length === 0) return;
+
+    // Check limit
+    const existingAssets = project.items.filter(i => i.cloudAsset).length;
+    if (existingAssets + filesToUpload.length > UPLOAD_LIMITS.maxAssetsPerProject) {
+      alert(`Maximum ${UPLOAD_LIMITS.maxAssetsPerProject} images per project. You have ${existingAssets} uploaded.`);
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadCompleted(0);
+    setUploadTotal(filesToUpload.length);
+    setUploadErrors([]);
+
+    // Mark items as uploading
+    filesToUpload.forEach(({ id }) => {
+      updateItem(id, { uploadStatus: 'uploading' });
     });
+
+    const result = await uploadImages(
+      projectId,
+      filesToUpload.map(f => f.file),
+      (completed, total, current) => {
+        setUploadCompleted(completed);
+        setUploadTotal(total);
+        setUploadCurrent(current);
+      }
+    );
+
+    // Update items with results
+    result.successful.forEach(asset => {
+      // Find matching item by fileName
+      const item = project.items.find(i => i.file?.name === asset.fileName);
+      if (item) {
+        updateItem(item.id, {
+          cloudAsset: asset,
+          uploadStatus: 'uploaded',
+          // Update URLs to use R2
+          url: getAssetUrl(projectId, asset.assetId, 'original'),
+          thumbUrl: getAssetUrl(projectId, asset.assetId, 'thumb'),
+        });
+      }
+    });
+
+    result.failed.forEach(failure => {
+      const item = project.items.find(i => i.file?.name === failure.fileName);
+      if (item) {
+        updateItem(item.id, {
+          uploadStatus: 'error',
+          uploadError: failure.error,
+        });
+      }
+    });
+
+    setUploadErrors(result.failed);
+    setIsUploading(false);
+  };
+
+  // Prepare project data for saving
+  const prepareProjectData = useCallback((): string => {
+    // Only include cloud assets in saved data
+    const assets = project.items
+      .filter(item => item.cloudAsset)
+      .map(item => item.cloudAsset!);
+
+    const data: ProjectJsonData = {
+      version: 2,
+      assets,
+      layout: {},
+    };
+
+    return JSON.stringify(data);
   }, [project.items]);
 
   // Save project to backend
@@ -115,45 +217,75 @@ export const Studio = () => {
       }
       if (result.data) {
         setCurrentProjectId(result.data.id);
+        // Update URL with project ID for sharing
+        setSearchParams({ project: result.data.id });
         return result.data;
       }
       return null;
     }
   };
 
-  // Load project from backend
+  // Load project from backend (including shared projects)
   const handleLoadProject = async (projectId: string) => {
     const result = await api.getProject(projectId);
 
     if (result.error) {
       console.error('Failed to load project:', result.error);
+      alert('Failed to load project. It may not exist or the backend is unavailable.');
       return;
     }
 
     if (result.data) {
       setCurrentProjectId(result.data.id);
       setProjectTitle(result.data.title);
+      setSearchParams({ project: result.data.id });
 
-      // Parse stored data and restore what we can
+      // Parse stored data
       try {
-        const parsed = JSON.parse(result.data.data);
+        const parsed = JSON.parse(result.data.data) as ProjectJsonData;
 
-        // For now, we just restore the project name
-        // Media items need to be re-uploaded since we don't store file contents
-        setProject(prev => ({
-          ...prev,
-          name: result.data!.title,
-          updatedAt: Date.now(),
+        // Convert cloud assets to MediaItems
+        const items: MediaItem[] = (parsed.assets || []).map((asset: CloudAsset) => ({
+          id: asset.assetId,
+          type: 'image' as const,
+          url: getAssetUrl(projectId, asset.assetId, 'original'),
+          thumbUrl: getAssetUrl(projectId, asset.assetId, 'thumb'),
+          title: asset.fileName,
+          tags: [],
+          notes: '',
+          createdAt: new Date(asset.createdAt).getTime(),
+          cloudAsset: asset,
+          uploadStatus: 'uploaded' as const,
         }));
 
-        // Note: Media files need to be re-added since we don't store file contents
-        if (parsed.mediaItems?.length > 0) {
-          alert(`Project "${result.data.title}" loaded. Note: ${parsed.mediaItems.length} media items were referenced but need to be re-uploaded (file contents are not stored remotely).`);
-        }
+        setProject({
+          id: project.id,
+          name: result.data.title,
+          items,
+          createdAt: project.createdAt,
+          updatedAt: Date.now(),
+        });
+
       } catch (e) {
         console.error('Failed to parse project data:', e);
       }
     }
+  };
+
+  // Delete asset handler
+  const handleRemoveItem = async (itemId: string) => {
+    const item = project.items.find(i => i.id === itemId);
+
+    if (item?.cloudAsset && currentProjectId) {
+      // Delete from R2
+      const result = await api.deleteAsset(currentProjectId, item.cloudAsset.assetId);
+      if (result.error) {
+        console.error('Failed to delete asset from cloud:', result.error);
+        // Continue with local removal anyway
+      }
+    }
+
+    removeItem(itemId);
   };
 
   return (
@@ -169,8 +301,27 @@ export const Studio = () => {
             </div>
             <div className="flex items-center gap-3">
               <span className="hidden sm:block text-sm text-slate-500 font-medium px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
-                {project.items.length} item{project.items.length !== 1 ? 's' : ''} in staging
+                {project.items.length} item{project.items.length !== 1 ? 's' : ''}
+                {pendingUploads.length > 0 && (
+                  <span className="text-orange-500 ml-1">({pendingUploads.length} pending)</span>
+                )}
               </span>
+
+              {/* Upload Button */}
+              {pendingUploads.length > 0 && (
+                <Button
+                  onClick={handleUploadImages}
+                  disabled={isUploading}
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload ({pendingUploads.length})
+                </Button>
+              )}
+
+              <ShareButton projectId={currentProjectId} projectTitle={projectTitle} />
+
               <ProjectsPanel
                 currentProjectId={currentProjectId}
                 currentProjectTitle={projectTitle}
@@ -178,6 +329,7 @@ export const Studio = () => {
                 onLoad={handleLoadProject}
                 onTitleChange={setProjectTitle}
               />
+
               <Button onClick={handleNewProject} variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Clear
@@ -210,11 +362,17 @@ export const Studio = () => {
                   <span className="w-2 h-8 bg-purple-600 rounded-full inline-block"></span>
                   Your Assets
                 </h2>
+                {project.items.some(i => i.cloudAsset) && (
+                  <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                    <Cloud className="w-4 h-4" />
+                    {project.items.filter(i => i.cloudAsset).length} in cloud
+                  </div>
+                )}
               </div>
               <MediaGrid
                 items={project.items}
                 onItemClick={setSelectedItem}
-                onItemRemove={removeItem}
+                onItemRemove={handleRemoveItem}
               />
             </section>
 
@@ -237,7 +395,20 @@ export const Studio = () => {
           onUpdate={handleItemUpdate}
         />
       )}
+
+      {/* Upload Progress */}
+      <UploadProgressPanel
+        isUploading={isUploading}
+        completed={uploadCompleted}
+        total={uploadTotal}
+        current={uploadCurrent}
+        errors={uploadErrors}
+        onClose={() => {
+          setUploadCompleted(0);
+          setUploadTotal(0);
+          setUploadErrors([]);
+        }}
+      />
     </div>
   );
 };
-

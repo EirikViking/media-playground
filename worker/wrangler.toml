@@ -7,3 +7,6 @@ binding = "DB"
 database_name = "media-playground-db"
 database_id = "b7d133ea-e49b-4ef6-bf92-1fa73f83fb71"
 
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "media-playground-assets"

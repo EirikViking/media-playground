@@ -1,17 +1,29 @@
 /**
- * Media Playground API - Cloudflare Worker with D1
+ * Media Playground API - Cloudflare Worker with D1 + R2
  * 
- * Endpoints:
- * POST   /api/projects      - Create project
- * GET    /api/projects      - List projects
- * GET    /api/projects/:id  - Get project
- * PUT    /api/projects/:id  - Update project
- * DELETE /api/projects/:id  - Delete project
+ * Project Endpoints:
+ * POST   /api/projects           - Create project
+ * GET    /api/projects           - List projects
+ * GET    /api/projects/:id       - Get project
+ * PUT    /api/projects/:id       - Update project
+ * DELETE /api/projects/:id       - Delete project (includes R2 cleanup)
+ * 
+ * Asset Endpoints (Phase 3A):
+ * PUT    /api/upload/:projectId/:assetId/:kind - Upload original or thumb to R2
+ * POST   /api/projects/:id/assets/commit       - Commit asset metadata to project
+ * GET    /api/assets/:kind/:projectId/:assetId - Stream asset from R2
+ * DELETE /api/projects/:id/assets/:assetId     - Delete asset from R2 and project
  */
 
 export interface Env {
     DB: D1Database;
+    BUCKET: R2Bucket;
 }
+
+// Constants
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_ASSETS_PER_PROJECT = 30;
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 interface ProjectData {
     title: string;
@@ -26,6 +38,25 @@ interface Project {
     updated_at: string;
 }
 
+interface AssetMetadata {
+    assetId: string;
+    originalKey: string;
+    thumbKey: string;
+    contentType: string;
+    byteSize: number;
+    width: number;
+    height: number;
+    fileName: string;
+    createdAt: string;
+}
+
+interface ProjectJsonData {
+    version: number;
+    assets?: AssetMetadata[];
+    mediaItems?: unknown[]; // Legacy field
+    layout?: unknown;
+}
+
 // CORS headers - permissive for learning project
 function corsHeaders(origin: string | null): HeadersInit {
     const allowedOrigins = [
@@ -34,7 +65,6 @@ function corsHeaders(origin: string | null): HeadersInit {
         'http://127.0.0.1:5173',
     ];
 
-    // Allow same-origin or listed dev origins
     const allowOrigin = origin && (
         allowedOrigins.includes(origin) ||
         origin.endsWith('.pages.dev') ||
@@ -63,6 +93,31 @@ function errorResponse(message: string, status = 400, origin: string | null = nu
     return jsonResponse({ error: message }, status, origin);
 }
 
+// Helper to get project data JSON
+async function getProjectData(env: Env, projectId: string): Promise<ProjectJsonData | null> {
+    const project = await env.DB.prepare(
+        'SELECT data FROM projects WHERE id = ?'
+    ).bind(projectId).first<{ data: string }>();
+
+    if (!project) return null;
+
+    try {
+        return JSON.parse(project.data) as ProjectJsonData;
+    } catch {
+        return { version: 1, assets: [] };
+    }
+}
+
+// Helper to update project data JSON
+async function updateProjectData(env: Env, projectId: string, data: ProjectJsonData): Promise<boolean> {
+    const now = new Date().toISOString();
+    const result = await env.DB.prepare(
+        'UPDATE projects SET data = ?, updated_at = ? WHERE id = ?'
+    ).bind(JSON.stringify(data), now, projectId).run();
+
+    return result.meta.changes > 0;
+}
+
 // Simple router
 async function handleRequest(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -78,7 +133,183 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         });
     }
 
-    // Route: POST /api/projects - Create project
+    // ==================== ASSET ENDPOINTS ====================
+
+    // PUT /api/upload/:projectId/:assetId/:kind - Upload to R2
+    const uploadMatch = path.match(/^\/api\/upload\/([^/]+)\/([^/]+)\/(original|thumb)$/);
+    if (method === 'PUT' && uploadMatch) {
+        try {
+            const [, projectId, assetId, kind] = uploadMatch;
+            const contentType = request.headers.get('Content-Type') || 'application/octet-stream';
+            const contentLength = parseInt(request.headers.get('Content-Length') || '0', 10);
+
+            // Validate content type for originals
+            if (kind === 'original' && !ALLOWED_TYPES.includes(contentType)) {
+                return errorResponse(`Invalid content type. Allowed: ${ALLOWED_TYPES.join(', ')}`, 400, origin);
+            }
+
+            // Validate size
+            if (contentLength > MAX_FILE_SIZE) {
+                return errorResponse(`File too large. Maximum: ${MAX_FILE_SIZE / 1024 / 1024}MB`, 400, origin);
+            }
+
+            // Check project exists
+            const projectData = await getProjectData(env, projectId);
+            if (!projectData) {
+                return errorResponse('Project not found', 404, origin);
+            }
+
+            // Check asset limit for new assets
+            const existingAsset = projectData.assets?.find(a => a.assetId === assetId);
+            if (!existingAsset && kind === 'original') {
+                const assetCount = projectData.assets?.length || 0;
+                if (assetCount >= MAX_ASSETS_PER_PROJECT) {
+                    return errorResponse(`Maximum ${MAX_ASSETS_PER_PROJECT} assets per project`, 400, origin);
+                }
+            }
+
+            // Generate R2 key
+            const key = `${projectId}/${assetId}/${kind}`;
+
+            // Upload to R2
+            const body = await request.arrayBuffer();
+            await env.BUCKET.put(key, body, {
+                httpMetadata: {
+                    contentType: contentType,
+                    cacheControl: 'public, max-age=31536000, immutable',
+                },
+            });
+
+            return jsonResponse({
+                ok: true,
+                key,
+                byteSize: body.byteLength,
+            }, 200, origin);
+        } catch (error) {
+            console.error('Upload error:', error);
+            return errorResponse('Failed to upload file', 500, origin);
+        }
+    }
+
+    // POST /api/projects/:id/assets/commit - Commit asset metadata
+    const commitMatch = path.match(/^\/api\/projects\/([^/]+)\/assets\/commit$/);
+    if (method === 'POST' && commitMatch) {
+        try {
+            const projectId = commitMatch[1];
+            const body = await request.json() as AssetMetadata;
+
+            if (!body.assetId || !body.originalKey || !body.thumbKey) {
+                return errorResponse('Missing required fields: assetId, originalKey, thumbKey', 400, origin);
+            }
+
+            const projectData = await getProjectData(env, projectId);
+            if (!projectData) {
+                return errorResponse('Project not found', 404, origin);
+            }
+
+            // Initialize assets array if needed
+            if (!projectData.assets) {
+                projectData.assets = [];
+            }
+
+            // Check if asset already exists (update) or new
+            const existingIndex = projectData.assets.findIndex(a => a.assetId === body.assetId);
+
+            const assetMeta: AssetMetadata = {
+                assetId: body.assetId,
+                originalKey: body.originalKey,
+                thumbKey: body.thumbKey,
+                contentType: body.contentType,
+                byteSize: body.byteSize,
+                width: body.width,
+                height: body.height,
+                fileName: body.fileName,
+                createdAt: body.createdAt || new Date().toISOString(),
+            };
+
+            if (existingIndex >= 0) {
+                projectData.assets[existingIndex] = assetMeta;
+            } else {
+                // Check limit
+                if (projectData.assets.length >= MAX_ASSETS_PER_PROJECT) {
+                    return errorResponse(`Maximum ${MAX_ASSETS_PER_PROJECT} assets per project`, 400, origin);
+                }
+                projectData.assets.push(assetMeta);
+            }
+
+            await updateProjectData(env, projectId, projectData);
+
+            return jsonResponse({ ok: true, asset: assetMeta }, 200, origin);
+        } catch (error) {
+            console.error('Commit asset error:', error);
+            return errorResponse('Failed to commit asset', 500, origin);
+        }
+    }
+
+    // GET /api/assets/:kind/:projectId/:assetId - Stream from R2
+    const assetMatch = path.match(/^\/api\/assets\/(original|thumb)\/([^/]+)\/([^/]+)$/);
+    if (method === 'GET' && assetMatch) {
+        try {
+            const [, kind, projectId, assetId] = assetMatch;
+            const key = `${projectId}/${assetId}/${kind}`;
+
+            const object = await env.BUCKET.get(key);
+            if (!object) {
+                return errorResponse('Asset not found', 404, origin);
+            }
+
+            return new Response(object.body, {
+                headers: {
+                    'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+                    'Cache-Control': 'public, max-age=31536000, immutable',
+                    'ETag': object.etag,
+                    ...corsHeaders(origin),
+                },
+            });
+        } catch (error) {
+            console.error('Get asset error:', error);
+            return errorResponse('Failed to get asset', 500, origin);
+        }
+    }
+
+    // DELETE /api/projects/:id/assets/:assetId - Delete asset
+    const deleteAssetMatch = path.match(/^\/api\/projects\/([^/]+)\/assets\/([^/]+)$/);
+    if (method === 'DELETE' && deleteAssetMatch) {
+        try {
+            const [, projectId, assetId] = deleteAssetMatch;
+
+            const projectData = await getProjectData(env, projectId);
+            if (!projectData) {
+                return errorResponse('Project not found', 404, origin);
+            }
+
+            const assetIndex = projectData.assets?.findIndex(a => a.assetId === assetId) ?? -1;
+            if (assetIndex < 0) {
+                return errorResponse('Asset not found', 404, origin);
+            }
+
+            const asset = projectData.assets![assetIndex];
+
+            // Delete from R2
+            await Promise.all([
+                env.BUCKET.delete(asset.originalKey),
+                env.BUCKET.delete(asset.thumbKey),
+            ]);
+
+            // Remove from project data
+            projectData.assets!.splice(assetIndex, 1);
+            await updateProjectData(env, projectId, projectData);
+
+            return jsonResponse({ ok: true }, 200, origin);
+        } catch (error) {
+            console.error('Delete asset error:', error);
+            return errorResponse('Failed to delete asset', 500, origin);
+        }
+    }
+
+    // ==================== PROJECT ENDPOINTS ====================
+
+    // POST /api/projects - Create project
     if (method === 'POST' && path === '/api/projects') {
         try {
             const body = await request.json() as ProjectData;
@@ -101,7 +332,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         }
     }
 
-    // Route: GET /api/projects - List projects
+    // GET /api/projects - List projects
     if (method === 'GET' && path === '/api/projects') {
         try {
             const result = await env.DB.prepare(
@@ -115,7 +346,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         }
     }
 
-    // Route: GET /api/projects/:id - Get project
+    // GET /api/projects/:id - Get project
     const getMatch = path.match(/^\/api\/projects\/([^/]+)$/);
     if (method === 'GET' && getMatch) {
         try {
@@ -135,7 +366,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         }
     }
 
-    // Route: PUT /api/projects/:id - Update project
+    // PUT /api/projects/:id - Update project
     const putMatch = path.match(/^\/api\/projects\/([^/]+)$/);
     if (method === 'PUT' && putMatch) {
         try {
@@ -162,11 +393,24 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         }
     }
 
-    // Route: DELETE /api/projects/:id - Delete project
+    // DELETE /api/projects/:id - Delete project (with R2 cleanup)
     const deleteMatch = path.match(/^\/api\/projects\/([^/]+)$/);
     if (method === 'DELETE' && deleteMatch) {
         try {
             const id = deleteMatch[1];
+
+            // Get project data to find assets
+            const projectData = await getProjectData(env, id);
+            if (projectData?.assets?.length) {
+                // Delete all assets from R2
+                const deletePromises = projectData.assets.flatMap(asset => [
+                    env.BUCKET.delete(asset.originalKey),
+                    env.BUCKET.delete(asset.thumbKey),
+                ]);
+                await Promise.all(deletePromises);
+            }
+
+            // Delete from D1
             const result = await env.DB.prepare(
                 'DELETE FROM projects WHERE id = ?'
             ).bind(id).run();
@@ -184,7 +428,14 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // Health check
     if (method === 'GET' && path === '/api/health') {
-        return jsonResponse({ status: 'ok', timestamp: new Date().toISOString() }, 200, origin);
+        return jsonResponse({
+            status: 'ok',
+            timestamp: new Date().toISOString(),
+            features: {
+                d1: true,
+                r2: typeof env.BUCKET !== 'undefined',
+            }
+        }, 200, origin);
     }
 
     return errorResponse('Not found', 404, origin);

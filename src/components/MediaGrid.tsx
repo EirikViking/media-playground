@@ -1,6 +1,6 @@
 import { MediaItem } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Play, Image as ImageIcon } from 'lucide-react';
+import { Trash2, Play, Image as ImageIcon, Cloud, Clock, AlertCircle, Loader2 } from 'lucide-react';
 
 interface MediaGridProps {
   items: MediaItem[];
@@ -21,11 +21,36 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
         </div>
         <h3 className="text-2xl font-bold mb-2 font-display text-slate-900 dark:text-white">It's a bit empty here</h3>
         <p className="text-slate-600 dark:text-slate-400 max-w-sm mx-auto mb-8">
-          Upload some photos or videos to start your creative journey. Kurt Edgar is waiting.
+          Upload some photos to start your creative journey. Kurt Edgar is waiting.
         </p>
       </motion.div>
     );
   }
+
+  const getStatusIcon = (item: MediaItem) => {
+    if (item.cloudAsset) {
+      return <Cloud className="w-3 h-3 text-green-400" />;
+    }
+    switch (item.uploadStatus) {
+      case 'uploading':
+        return <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />;
+      case 'error':
+        return <AlertCircle className="w-3 h-3 text-red-400" />;
+      case 'pending':
+      default:
+        return <Clock className="w-3 h-3 text-orange-400" />;
+    }
+  };
+
+  const getStatusLabel = (item: MediaItem) => {
+    if (item.cloudAsset) return 'Uploaded';
+    switch (item.uploadStatus) {
+      case 'uploading': return 'Uploading...';
+      case 'error': return item.uploadError || 'Error';
+      case 'pending':
+      default: return 'Pending upload';
+    }
+  };
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -43,9 +68,10 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
           >
             {item.type === 'image' ? (
               <img
-                src={item.url}
+                src={item.thumbUrl || item.url}
                 alt={item.title}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                loading="lazy"
               />
             ) : (
               <div className="w-full h-full relative">
@@ -62,6 +88,23 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
               </div>
             )}
 
+            {/* Upload Status Indicator */}
+            <div className="absolute top-3 left-3">
+              <div
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs backdrop-blur-md ${item.cloudAsset
+                    ? 'bg-green-500/20 border border-green-500/30'
+                    : item.uploadStatus === 'error'
+                      ? 'bg-red-500/20 border border-red-500/30'
+                      : item.uploadStatus === 'uploading'
+                        ? 'bg-blue-500/20 border border-blue-500/30'
+                        : 'bg-orange-500/20 border border-orange-500/30'
+                  }`}
+                title={getStatusLabel(item)}
+              >
+                {getStatusIcon(item)}
+              </div>
+            </div>
+
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
               <p className="text-white font-medium truncate mb-1">{item.title}</p>
               <div className="flex items-center justify-between">
@@ -72,6 +115,10 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
                     </span>
                   ))}
                 </div>
+                <span className="text-xs text-white/70 flex items-center gap-1">
+                  {getStatusIcon(item)}
+                  {item.cloudAsset ? 'Cloud' : 'Local'}
+                </span>
               </div>
             </div>
 

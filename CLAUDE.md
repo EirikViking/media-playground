@@ -11,6 +11,7 @@
 ### Backend  
 - **Platform**: Cloudflare Worker (`media-playground-api`)
 - **Database**: Cloudflare D1 (`media-playground-db`)
+- **Storage**: Cloudflare R2 (`media-playground-assets`)
 - **Deployment**: MANUAL ONLY - Never auto-deploys
 - **Command**: `cd worker && npm run deploy`
 
@@ -21,16 +22,21 @@
 
 1. You MUST explicitly tell the user to deploy
 2. Provide the exact command: `cd worker && npm run deploy`
-3. Explain how to verify: `curl https://media-playground-api.<subdomain>.workers.dev/api/health`
+3. Explain how to verify: `curl https://media-playground-api.cromkake.workers.dev/api/health`
 
 ### Database Changes
 After schema changes:
 1. Local: `cd worker && npm run db:migrate:local`
 2. Remote: `cd worker && npm run db:migrate:remote`
 
+### R2 Bucket
+The R2 bucket must be created manually before the Worker can use it:
+1. Create bucket: `npx wrangler r2 bucket create media-playground-assets`
+2. Binding is configured in `wrangler.toml` as `BUCKET`
+
 ### API Base URL
 - Development: `http://localhost:8787`
-- Production: Configure via environment or use Worker URL directly
+- Production: `https://media-playground-api.cromkake.workers.dev`
 
 ## File Structure
 
@@ -38,16 +44,19 @@ After schema changes:
 media-playground/
 ├── src/                    # Frontend React app
 │   ├── components/
-│   │   └── ProjectsPanel.tsx   # Projects save/load UI
+│   │   ├── ProjectsPanel.tsx   # Projects save/load UI
+│   │   ├── ShareButton.tsx     # Share project link
+│   │   └── UploadProgressPanel.tsx  # Upload progress
 │   ├── utils/
-│   │   └── api.ts              # API client
+│   │   ├── api.ts              # API client
+│   │   └── upload.ts           # R2 upload utilities
 │   └── pages/
 │       └── Studio.tsx          # Main workspace
 ├── worker/                 # Cloudflare Worker (MANUAL DEPLOY)
 │   ├── src/
 │   │   └── index.ts            # API implementation
 │   ├── schema.sql              # D1 schema
-│   └── wrangler.toml           # Worker config
+│   └── wrangler.toml           # Worker config (D1 + R2)
 └── public/
     └── _routes.json            # Pages routing config
 ```
@@ -55,13 +64,13 @@ media-playground/
 ## Local Development
 
 ### Frontend
-```bash
+```powershell
 npm run dev
 ```
 Runs at http://localhost:5173
 
-### Worker
-```bash
+### Worker (with local D1 and R2)
+```powershell
 cd worker
 npm install
 npm run db:migrate:local
@@ -69,8 +78,11 @@ npm run dev
 ```
 Runs at http://localhost:8787
 
+Note: Local R2 is simulated by Wrangler using `.wrangler/state/r2/`
+
 ## API Endpoints
 
+### Project Endpoints
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | /api/health | Health check |
@@ -78,12 +90,29 @@ Runs at http://localhost:8787
 | GET | /api/projects | List projects |
 | GET | /api/projects/:id | Get project |
 | PUT | /api/projects/:id | Update project |
-| DELETE | /api/projects/:id | Delete project |
+| DELETE | /api/projects/:id | Delete project + R2 cleanup |
+
+### Asset Endpoints (Phase 3A)
+| Method | Path | Description |
+|--------|------|-------------|
+| PUT | /api/upload/:projectId/:assetId/:kind | Upload original or thumb |
+| POST | /api/projects/:id/assets/commit | Commit asset metadata |
+| GET | /api/assets/:kind/:projectId/:assetId | Stream from R2 |
+| DELETE | /api/projects/:id/assets/:assetId | Delete asset |
+
+## Upload Limits
+- Max file size: 10 MB
+- Max assets per project: 30
+- Allowed types: jpg, jpeg, png, webp, gif
+
+## Sharing
+Projects can be shared via URL: `/studio?project={projectId}`
+The project ID in the URL auto-loads the project with all cloud assets.
 
 ## Environment Variables
 
 ### Worker (production)
-None required for basic operation. D1 binding is configured in wrangler.toml.
+None required. D1 and R2 bindings are configured in wrangler.toml.
 
 ### Frontend
 - `VITE_API_BASE`: Override API base URL (optional)
