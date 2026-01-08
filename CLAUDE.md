@@ -116,3 +116,55 @@ None required. D1 and R2 bindings are configured in wrangler.toml.
 
 ### Frontend
 - `VITE_API_BASE`: Override API base URL (optional)
+
+## Automated Verification
+
+### Local Verification
+Run the full E2E test suite locally:
+```powershell
+npm run verify:e2e
+```
+
+This will:
+1. Install worker dependencies
+2. Run D1 migrations
+3. Start worker dev server (port 8787)
+4. Start frontend dev server (port 5173)
+5. Run worker API tests
+6. Run Playwright UI tests
+7. Clean up all processes
+
+### Individual Test Suites
+
+**Worker API only:**
+```powershell
+# With local worker running
+npm run verify:worker
+```
+
+**Playwright UI only:**
+```powershell
+# With both servers running
+npm run verify:ui
+```
+
+### Production Verification (Optional)
+To verify against production:
+```powershell
+$env:VERIFY_API_BASE="https://media-playground-api.cromkake.workers.dev"
+$env:VERIFY_WEB_BASE="https://media-playground.pages.dev"
+npm run verify:worker
+```
+
+### CI Behavior
+On every push and PR to `main`:
+- GitHub Actions runs `node scripts/verify-ci.mjs`
+- Uses local Wrangler dev for Worker (no Cloudflare secrets needed)
+- Uses local Vite dev for frontend
+- Uploads Playwright report on failure
+
+### Test Files
+- `scripts/verify-worker.mjs` - Worker API verification
+- `scripts/verify-ci.mjs` - CI orchestration
+- `tests/playwright/share.spec.ts` - UI tests
+- `playwright.config.ts` - Playwright configuration

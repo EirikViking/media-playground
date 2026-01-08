@@ -26,3 +26,8 @@ dist-ssr
 # Wrangler
 .wrangler
 .dev.vars
+
+# Playwright
+playwright-report
+test-results
+tests/fixtures/test-image.png
