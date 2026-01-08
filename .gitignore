@@ -31,3 +31,4 @@ dist-ssr
 playwright-report
 test-results
 tests/fixtures/test-image.png
+.tmp

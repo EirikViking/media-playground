@@ -10,6 +10,7 @@
     "verify:worker": "node scripts/verify-worker.mjs",
     "verify:ui": "npx playwright test",
     "verify:e2e": "node scripts/verify-ci.mjs",
+    "verify": "node scripts/verify-all.mjs",
     "test": "npm run verify:e2e"
   },
   "dependencies": {
