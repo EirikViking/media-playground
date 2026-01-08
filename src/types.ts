@@ -14,7 +14,7 @@ export interface CloudAsset {
 // Local media item (pre-upload or local-only)
 export interface MediaItem {
   id: string;
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'audio';
   file?: File;
   url: string;
   thumbUrl?: string;

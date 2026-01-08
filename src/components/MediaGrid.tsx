@@ -72,6 +72,14 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
                 className="w-full h-full object-cover"
                 controls
               />
+            ) : item.type === 'audio' ? (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-pink-500 to-purple-600 text-white p-4">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm mb-3 animate-pulse">
+                  <span className="text-2xl">🎵</span>
+                </div>
+                <p className="text-xs font-medium text-center opacity-90 line-clamp-2">{item.title}</p>
+                <audio src={item.url} controls className="w-full mt-2 h-6" />
+              </div>
             ) : item.type === 'image' ? (
               <img
                 src={item.thumbUrl || item.url}
@@ -81,7 +89,7 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white">
-                <span className="text-4xl">🎵</span>
+                <span className="text-4xl">❓</span>
               </div>
             )}
 

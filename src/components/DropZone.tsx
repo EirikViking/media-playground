@@ -35,7 +35,9 @@ export const DropZone = ({ onFilesAdded }: DropZoneProps) => {
 
     const files = Array.from(e.dataTransfer.files);
     const mediaFiles = files.filter(file =>
-      file.type.startsWith('image/') || file.type.startsWith('video/')
+      file.type.startsWith('image/') ||
+      file.type.startsWith('video/') ||
+      file.type.startsWith('audio/')
     );
 
     if (mediaFiles.length > 0) {
@@ -70,7 +72,7 @@ export const DropZone = ({ onFilesAdded }: DropZoneProps) => {
       <input
         type="file"
         multiple
-        accept="image/*,video/*"
+        accept="image/*,video/*,audio/*"
         onChange={handleFileInput}
         className="hidden"
         id="file-input"
@@ -94,12 +96,12 @@ export const DropZone = ({ onFilesAdded }: DropZoneProps) => {
               {isDragging ? 'Feed the machine!' : 'Drop media here'}
             </h3>
             <p className="text-lg text-slate-500 dark:text-slate-400">
-              or click to browse from the boring file system
+              Photos, Videos, and Music
             </p>
           </div>
 
           <div className="inline-block px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Images (JPG, PNG, WebP) & Videos (MP4, WebM)
+            Images, Videos & Audio supported
           </div>
         </div>
       </label>

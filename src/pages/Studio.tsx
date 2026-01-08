@@ -41,12 +41,16 @@ export const Studio = () => {
   }, [searchParams]);
 
   const handleFilesAdded = async (files: File[]) => {
-    // Separate images and videos
-    const mediaFiles = files.filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
-    const unsupportedFiles = files.filter(f => !f.type.startsWith('image/') && !f.type.startsWith('video/'));
+    // Separate images, videos, and audio
+    const mediaFiles = files.filter(f =>
+      f.type.startsWith('image/') ||
+      f.type.startsWith('video/') ||
+      f.type.startsWith('audio/')
+    );
+    const unsupportedFiles = files.filter(f => !mediaFiles.includes(f));
 
     if (unsupportedFiles.length > 0) {
-      alert(`${unsupportedFiles.length} files skipped. Only images and videos are supported.`);
+      alert(`${unsupportedFiles.length} files skipped. Only images, videos, and audio are supported.`);
     }
 
     for (const file of mediaFiles) {
@@ -59,10 +63,13 @@ export const Studio = () => {
         }
 
         const dataUrl = await fileToDataUrl(file);
+        let type: MediaItem['type'] = 'image';
+        if (file.type.startsWith('video/')) type = 'video';
+        if (file.type.startsWith('audio/')) type = 'audio';
 
         const item: MediaItem = {
           id: crypto.randomUUID(),
-          type: file.type.startsWith('video/') ? 'video' : 'image',
+          type,
           file,
           url: dataUrl,
           dataUrl,

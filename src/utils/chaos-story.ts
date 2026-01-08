@@ -1,16 +1,39 @@
+const SUBJECTS = [
+    "en halvspist brødskive", "Bjørn Eidsvåg", "en gretten elg", "naboens katt",
+    "frossenpizza", "brunost", "en sliten hipster", "Kong Harald", "en Tesla i ladekø",
+    "en bortkommen turist", "Kurt Nilsen", "Kygo på ferie", "en gjeng med måker"
+];
 
-export const CHAOS_STORIES = [
-    "Once upon a time in Drammen, a moose walked into a bar. It ordered a waffle.",
-    "There is a legend that if you stare at this collage long enough, it stares back.",
-    "Denne collagen er sponset av Grandiosa. Respekt for Grandiosa.",
-    "I tried to make art, but then I remembered I'm just a JavaScript function.",
-    "If chaos had a face, it would look exactly like this. Or maybe like Erna Solberg dancing.",
-    "Warning: This image may contain traces of brown cheese and cross-country skiing.",
-    "Har du hørt om hunden som gikk over veien? Den ville til den andre siden. (Classic dad joke)",
-    "This is what happens when you let a Viking verify his own code.",
-    "Lagd med kjærlighet, kaffe, og en dæsj bug-fixing."
+const ACTIONS = [
+    "prøver å danse", "spiser taco", "går på ski innendørs", "klager på været",
+    "drømmer om syden", "ser på Dagsrevyen", "finner opp kruttet på nytt",
+    "kjører i kollektivfeltet", "kjemper mot vindmøller", "lager vafler uten rømme"
+];
+
+const CONTEXTS = [
+    "midt på Karl Johan.", "under nordlyset.", "i kø på polet.", "på toppen av Galdhøpiggen.",
+    "hos tannlegen.", "i en badstue.", "på hytta (uten strøm).", "i en rundkjøring i Drammen.",
+    "bak en pølsebod i Narvik.", "på Afterski i Hemsedal."
+];
+
+const AI_THOUGHTS = [
+    "Analyzing pixels... detected traces of heavy metal and happiness.",
+    "Scanning for Vikings... Found 3 potential candidates.",
+    "Calculating chaos levels... Result: 110% KOS.",
+    "Detecting high levels of 'Hygge' mixed with mild despair.",
+    "Visual cortex overload. Rebooting aesthetics engine...",
+    "Interpreting abstract shapes... Is that a Lutefisk?"
 ];
 
 export const getRandomStory = () => {
-    return CHAOS_STORIES[Math.floor(Math.random() * CHAOS_STORIES.length)];
+    // 30% chance of a "fake AI" technical analysis message
+    if (Math.random() < 0.3) {
+        return `[AI LOG]: ${AI_THOUGHTS[Math.floor(Math.random() * AI_THOUGHTS.length)]}`;
+    }
+
+    const subject = SUBJECTS[Math.floor(Math.random() * SUBJECTS.length)];
+    const action = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
+    const context = CONTEXTS[Math.floor(Math.random() * CONTEXTS.length)];
+
+    return `AI Vision: Jeg ser ${subject} som ${action} ${context}`;
 };
