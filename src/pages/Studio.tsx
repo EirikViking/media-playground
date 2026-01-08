@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { MediaItem } from '../types';
 import { useProject } from '../hooks/useProject';
@@ -8,13 +8,17 @@ import { DropZone } from '../components/DropZone';
 import { MediaGrid } from '../components/MediaGrid';
 import { MediaDetail } from '../components/MediaDetail';
 import { CollageCreator } from '../components/CollageCreator';
+import { ProjectsPanel } from '../components/ProjectsPanel';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fileToDataUrl } from '../utils/storage';
+import { api } from '../utils/api';
 
 export const Studio = () => {
-  const { project, addItem, updateItem, removeItem, createNewProject } = useProject();
+  const { project, addItem, updateItem, removeItem, createNewProject, setProject } = useProject();
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [projectTitle, setProjectTitle] = useState(project.name);
 
   const handleFilesAdded = async (files: File[]) => {
     for (const file of files) {
@@ -63,9 +67,92 @@ export const Studio = () => {
     if (project.items.length > 0) {
       if (window.confirm('Start fresh? This will clear your current masterpiece.')) {
         createNewProject();
+        setCurrentProjectId(null);
+        setProjectTitle('Untitled Project');
       }
     } else {
       createNewProject();
+      setCurrentProjectId(null);
+      setProjectTitle('Untitled Project');
+    }
+  };
+
+  // Prepare project metadata for saving (no file contents)
+  const prepareProjectData = useCallback(() => {
+    const mediaDescriptors = project.items.map(item => ({
+      id: item.id,
+      name: item.title,
+      type: item.type,
+      tags: item.tags,
+      notes: item.notes,
+      createdAt: item.createdAt,
+    }));
+
+    return JSON.stringify({
+      version: 1,
+      mediaItems: mediaDescriptors,
+      layout: {}, // Placeholder for future layout settings
+    });
+  }, [project.items]);
+
+  // Save project to backend
+  const handleSaveProject = async (existingId: string | null): Promise<{ id: string } | null> => {
+    const data = prepareProjectData();
+    const title = projectTitle || 'Untitled Project';
+
+    if (existingId) {
+      const result = await api.updateProject(existingId, title, data);
+      if (result.error) {
+        console.error('Failed to update project:', result.error);
+        return null;
+      }
+      return { id: existingId };
+    } else {
+      const result = await api.createProject(title, data);
+      if (result.error) {
+        console.error('Failed to create project:', result.error);
+        return null;
+      }
+      if (result.data) {
+        setCurrentProjectId(result.data.id);
+        return result.data;
+      }
+      return null;
+    }
+  };
+
+  // Load project from backend
+  const handleLoadProject = async (projectId: string) => {
+    const result = await api.getProject(projectId);
+
+    if (result.error) {
+      console.error('Failed to load project:', result.error);
+      return;
+    }
+
+    if (result.data) {
+      setCurrentProjectId(result.data.id);
+      setProjectTitle(result.data.title);
+
+      // Parse stored data and restore what we can
+      try {
+        const parsed = JSON.parse(result.data.data);
+
+        // For now, we just restore the project name
+        // Media items need to be re-uploaded since we don't store file contents
+        setProject(prev => ({
+          ...prev,
+          name: result.data!.title,
+          updatedAt: Date.now(),
+        }));
+
+        // Note: Media files need to be re-added since we don't store file contents
+        if (parsed.mediaItems?.length > 0) {
+          alert(`Project "${result.data.title}" loaded. Note: ${parsed.mediaItems.length} media items were referenced but need to be re-uploaded (file contents are not stored remotely).`);
+        }
+      } catch (e) {
+        console.error('Failed to parse project data:', e);
+      }
     }
   };
 
@@ -84,6 +171,13 @@ export const Studio = () => {
               <span className="hidden sm:block text-sm text-slate-500 font-medium px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
                 {project.items.length} item{project.items.length !== 1 ? 's' : ''} in staging
               </span>
+              <ProjectsPanel
+                currentProjectId={currentProjectId}
+                currentProjectTitle={projectTitle}
+                onSave={handleSaveProject}
+                onLoad={handleLoadProject}
+                onTitleChange={setProjectTitle}
+              />
               <Button onClick={handleNewProject} variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Clear
@@ -146,3 +240,4 @@ export const Studio = () => {
     </div>
   );
 };
+

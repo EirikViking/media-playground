@@ -1,0 +1,8 @@
+name = "media-playground-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "media-playground-db"
+database_id = "PLACEHOLDER_REPLACE_AFTER_CREATE"

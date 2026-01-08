@@ -66,6 +66,7 @@ export const useProject = () => {
 
   return {
     project,
+    setProject,
     addItem,
     updateItem,
     removeItem,
