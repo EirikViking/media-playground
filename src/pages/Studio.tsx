@@ -56,6 +56,7 @@ export const Studio = () => {
         // Validate file
         const validation = validateFile(file);
         if (!validation.valid) {
+          alert(`Whoops! ${file.name} is too big/invalid. ${validation.error}`);
           console.warn(`Skipping ${file.name}: ${validation.error}`);
           continue;
         }
