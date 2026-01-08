@@ -67,12 +67,27 @@ test.describe('Phase 3A: Image Upload and Sharing', () => {
         await page.keyboard.press('Escape');
 
         // Step 5: Click Upload button
+        // Step 5: Click Upload button
         const uploadButton = page.getByRole('button', { name: /upload/i });
+
+        // Wait for it to be visible and enabled (uploads are async)
         if (await uploadButton.isVisible()) {
+            await expect(uploadButton).toBeEnabled({ timeout: 10000 });
             await uploadButton.click();
 
-            // Wait for upload to complete (cloud badge appears)
-            await expect(page.locator('[class*="bg-green-500"]').first()).toBeVisible({ timeout: 30000 });
+            // Wait for upload to complete (cloud badge appears) OR error
+            const successBadge = page.locator('[class*="bg-green-500"]').first();
+            const errorBadge = page.locator('[class*="bg-red-500"]').first();
+
+            await expect(successBadge.or(errorBadge)).toBeVisible({ timeout: 60000 });
+
+            // If we see red, fail with clear message
+            if (await errorBadge.isVisible()) {
+                const errorTitle = await errorBadge.getAttribute('title');
+                throw new Error(`Upload failed: ${errorTitle}`);
+            }
+
+            await expect(successBadge).toBeVisible();
         }
 
         // Step 6: Open Share dialog
