@@ -3,30 +3,78 @@
  * CI Verification Orchestrator
  * Builds and starts servers, runs tests, then cleans up
  * 
- * Usage:
- *   node scripts/verify-ci.mjs
+ * Features:
+ * - Automatic free port selection
+ * - Process output logging to .tmp/
+ * - Robust cleanup on all exit paths
+ * - Detailed diagnostics on failure
  */
 
 import { spawn, execSync } from 'child_process';
 import { setTimeout as sleep } from 'timers/promises';
+import { createServer } from 'net';
+import { mkdirSync, existsSync, rmSync, createWriteStream } from 'fs';
+import { join } from 'path';
 
 const WORKER_PORT = 8787;
-const FRONTEND_PORT = 5174;
-const WORKER_URL = `http://127.0.0.1:${WORKER_PORT}`;
-const FRONTEND_URL = `http://127.0.0.1:${FRONTEND_PORT}`;
+const FRONTEND_PORT_START = 5173;
+const FRONTEND_PORT_END = 5190;
 const MAX_WAIT_MS = 90000;
 const POLL_INTERVAL_MS = 1000;
 
 const processes = [];
 const processOutputs = new Map();
+const logStreams = new Map();
+const TMP_DIR = '.tmp';
+
+// Ensure .tmp directory exists and is clean
+if (existsSync(TMP_DIR)) {
+    rmSync(TMP_DIR, { recursive: true, force: true });
+}
+mkdirSync(TMP_DIR, { recursive: true });
 
 function log(emoji, message) {
     const timestamp = new Date().toISOString().slice(11, 19);
     console.log(`[${timestamp}] ${emoji} ${message}`);
 }
 
+/**
+ * Find a free port by attempting to bind
+ */
+async function findFreePort(start, end) {
+    for (let port = start; port <= end; port++) {
+        if (await isPortFree(port)) {
+            return port;
+        }
+    }
+    throw new Error(`No free ports found in range ${start}-${end}`);
+}
+
+function isPortFree(port) {
+    return new Promise((resolve) => {
+        const server = createServer();
+        server.once('error', () => resolve(false));
+        server.once('listening', () => {
+            server.close();
+            resolve(true);
+        });
+        server.listen(port, '127.0.0.1');
+    });
+}
+
 function cleanup() {
     log('🧹', 'Cleaning up processes...');
+
+    // Close all log streams
+    for (const stream of logStreams.values()) {
+        try {
+            stream.end();
+        } catch (e) {
+            // Ignore
+        }
+    }
+
+    // Kill all spawned processes
     for (const proc of processes) {
         try {
             if (process.platform === 'win32') {
@@ -45,6 +93,7 @@ function cleanup() {
     log('✅', 'Cleanup complete');
 }
 
+// Register cleanup handlers for all exit paths
 process.on('SIGINT', () => {
     log('⚠️', 'Received SIGINT');
     cleanup();
@@ -53,6 +102,18 @@ process.on('SIGINT', () => {
 
 process.on('SIGTERM', () => {
     log('⚠️', 'Received SIGTERM');
+    cleanup();
+    process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+    log('❌', `Uncaught exception: ${error.message}`);
+    cleanup();
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+    log('❌', `Unhandled rejection: ${reason}`);
     cleanup();
     process.exit(1);
 });
@@ -71,7 +132,6 @@ async function waitForEndpoint(url, name, expectedContent = null) {
             clearTimeout(timeoutId);
 
             if (expectedContent) {
-                // Strict check for frontend: 200 OK + correct content type + specific body content
                 if (response.status === 200) {
                     const contentType = response.headers.get('content-type') || '';
                     if (contentType.includes('text/html')) {
@@ -83,7 +143,6 @@ async function waitForEndpoint(url, name, expectedContent = null) {
                     }
                 }
             } else if (response.ok || response.status < 500) {
-                // Loose check for API readiness (accepts success or functional error)
                 log('✅', `${name} is ready! (${Date.now() - startTime}ms)`);
                 return true;
             }
@@ -120,15 +179,24 @@ function startProcess(command, args, cwd, name, env = {}) {
     processes.push(proc);
     processOutputs.set(proc.pid, '');
 
+    // Create log file for this process
+    const logFile = join(TMP_DIR, `${name.toLowerCase().replace(/\s/g, '-')}.log`);
+    const logStream = createWriteStream(logFile);
+    logStreams.set(proc.pid, logStream);
+
     const appendOutput = (data) => {
         const text = data.toString();
         const current = processOutputs.get(proc.pid) || '';
-        // Keep last 10KB
         processOutputs.set(proc.pid, (current + text).slice(-10000));
-        // Print to console with prefix
-        text.split('\n').filter(line => line.trim()).forEach(line => {
-            console.log(`  [${name}] ${line}`);
-        });
+
+        // Write to log file
+        logStream.write(text);
+
+        // Print to console with prefix (only important lines to avoid noise)
+        const lines = text.split('\n').filter(line => line.trim());
+        if (lines.length > 0 && lines.length < 5) {
+            lines.forEach(line => console.log(`  [${name}] ${line}`));
+        }
     };
 
     proc.stdout?.on('data', appendOutput);
@@ -143,6 +211,12 @@ function startProcess(command, args, cwd, name, env = {}) {
             log('❌', `${name} exited with code ${code}`);
         } else if (signal) {
             log('⚠️', `${name} killed by signal ${signal}`);
+        }
+        // Close log stream
+        const stream = logStreams.get(proc.pid);
+        if (stream) {
+            stream.end();
+            logStreams.delete(proc.pid);
         }
     });
 
@@ -196,20 +270,29 @@ async function main() {
             log('⚠️', 'Migration may have already been applied');
         }
 
-        // Step 3: Build frontend (critical for reliable CI)
+        // Step 3: Find a free port for frontend
+        log('🔍', 'Finding free port for frontend...');
+        const FRONTEND_PORT = await findFreePort(FRONTEND_PORT_START, FRONTEND_PORT_END);
+        const FRONTEND_URL = `http://127.0.0.1:${FRONTEND_PORT}`;
+        const WORKER_URL = `http://127.0.0.1:${WORKER_PORT}`;
+
+        log('✅', `Using frontend port: ${FRONTEND_PORT}`);
+        log('✅', `Using worker port: ${WORKER_PORT}`);
+
+        // Step 4: Build frontend (critical for reliable CI)
         log('🔨', 'Building frontend...');
         execSync('npm run build', {
             stdio: 'inherit',
             env: { ...process.env, VITE_API_BASE: WORKER_URL }
         });
 
-        // Step 4: Start worker dev server
+        // Step 5: Start worker dev server
         startProcess('npm', ['run', 'dev', '--', '--port', WORKER_PORT.toString()], 'worker', 'Worker');
 
         // Give worker a moment to start binding
         await sleep(2000);
 
-        // Step 5: Start frontend preview server (more reliable than dev in CI)
+        // Step 6: Start frontend preview server
         startProcess(
             'npm',
             ['run', 'preview', '--', '--host', '127.0.0.1', '--port', FRONTEND_PORT.toString(), '--strictPort'],
@@ -217,7 +300,7 @@ async function main() {
             'Frontend'
         );
 
-        // Step 6: Wait for both servers to be ready
+        // Step 7: Wait for both servers to be ready
         await waitForEndpoint(`${WORKER_URL}/api/health`, 'Worker API');
         await waitForEndpoint(FRONTEND_URL, 'Frontend', '<div id="root">');
 
@@ -225,7 +308,7 @@ async function main() {
         log('🧪', 'All servers ready. Running tests...');
         console.log('');
 
-        // Step 7: Run worker verification
+        // Step 8: Run worker verification
         console.log('━'.repeat(60));
         console.log('  WORKER API TESTS');
         console.log('━'.repeat(60));
@@ -233,12 +316,13 @@ async function main() {
             VERIFY_API_BASE: WORKER_URL
         });
 
-        // Step 8: Run Playwright UI tests
+        // Step 9: Run Playwright UI tests
         console.log('');
         console.log('━'.repeat(60));
         console.log('  PLAYWRIGHT UI TESTS');
         console.log('━'.repeat(60));
         await runCommand('npx', ['playwright', 'test', '--reporter=list'], {
+            PLAYWRIGHT_BASE_URL: FRONTEND_URL,
             VERIFY_WEB_BASE: FRONTEND_URL,
             VERIFY_API_BASE: WORKER_URL
         });
@@ -261,12 +345,16 @@ async function main() {
         console.error('Error:', error.message);
 
         // Print last output from all processes
-        console.log('\n--- Process Outputs ---');
+        console.log('\n--- Process Outputs (last 200 lines each) ---');
         for (const [pid, output] of processOutputs) {
             if (output) {
-                console.log(`\nPID ${pid}:\n${output.slice(-2000)}`);
+                const lines = output.split('\n').slice(-200);
+                console.log(`\nPID ${pid}:\n${lines.join('\n')}`);
             }
         }
+
+        // Print log file locations
+        console.log(`\n📁 Full logs available in: ${TMP_DIR}/`);
         console.log('');
 
         cleanup();
