@@ -153,6 +153,7 @@ export const Studio = () => {
     );
 
     // Update items with results
+    // Update items with results
     result.successful.forEach(asset => {
       // Find matching item by fileName
       const item = project.items.find(i => i.file?.name === asset.fileName);
@@ -160,9 +161,10 @@ export const Studio = () => {
         updateItem(item.id, {
           cloudAsset: asset,
           uploadStatus: 'uploaded',
-          // Update URLs to use R2
-          url: getAssetUrl(projectId, asset.assetId, 'original'),
-          thumbUrl: getAssetUrl(projectId, asset.assetId, 'thumb'),
+          // Note: We intentionally DO NOT update 'url' or 'thumbUrl' here.
+          // We keep the local dataUrl/blobUrl for immediate, reliable display in the current session.
+          // The 'cloudAsset' property is sufficient to mark it as synced.
+          // On next project load, URLs will be constructed from the cloudAsset data.
         });
       }
     });

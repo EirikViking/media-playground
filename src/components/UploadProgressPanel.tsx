@@ -55,7 +55,7 @@ export const UploadProgressPanel = ({
                             <Upload className="w-5 h-5 text-purple-500" />
                         )}
                         <span className="font-medium">
-                            {isUploading ? 'Uploading...' : isDone ? 'Upload Complete' : 'Upload'}
+                            {isUploading ? 'Uploading...' : isDone ? (errors.length > 0 ? 'Completed with errors' : 'Upload Complete') : 'Upload'}
                         </span>
                     </div>
                     {!isUploading && (
