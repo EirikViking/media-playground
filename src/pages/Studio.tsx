@@ -86,8 +86,6 @@ export const Studio = () => {
     }
   };
 
-
-
   const handleItemUpdate = (updates: Partial<MediaItem>) => {
     if (selectedItem) {
       updateItem(selectedItem.id, updates);

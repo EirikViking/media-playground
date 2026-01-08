@@ -1,6 +1,7 @@
 import { useCallback, useState, DragEvent } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, FileUp } from 'lucide-react';
+import { UPLOAD_LIMITS } from '../types';
 
 interface DropZoneProps {
   onFilesAdded: (files: File[]) => void;
@@ -35,9 +36,7 @@ export const DropZone = ({ onFilesAdded }: DropZoneProps) => {
 
     const files = Array.from(e.dataTransfer.files);
     const mediaFiles = files.filter(file =>
-      file.type.startsWith('image/') ||
-      file.type.startsWith('video/') ||
-      file.type.startsWith('audio/')
+      UPLOAD_LIMITS.allowedTypes.includes(file.type)
     );
 
     if (mediaFiles.length > 0) {
@@ -72,7 +71,7 @@ export const DropZone = ({ onFilesAdded }: DropZoneProps) => {
       <input
         type="file"
         multiple
-        accept="image/*,video/*,audio/*"
+        accept={UPLOAD_LIMITS.allowedTypes.join(',')}
         onChange={handleFileInput}
         className="hidden"
         id="file-input"
