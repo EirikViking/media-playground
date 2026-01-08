@@ -10,25 +10,34 @@ import { MediaDetail } from '../components/MediaDetail';
 import { CollageCreator } from '../components/CollageCreator';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { fileToDataUrl } from '../utils/storage';
 
 export const Studio = () => {
   const { project, addItem, updateItem, removeItem, createNewProject } = useProject();
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
 
-  const handleFilesAdded = (files: File[]) => {
-    files.forEach((file) => {
-      const item: MediaItem = {
-        id: crypto.randomUUID(),
-        type: file.type.startsWith('image/') ? 'image' : 'video',
-        file,
-        url: URL.createObjectURL(file),
-        title: file.name,
-        tags: [],
-        notes: '',
-        createdAt: Date.now(),
-      };
-      addItem(item);
-    });
+  const handleFilesAdded = async (files: File[]) => {
+    for (const file of files) {
+      try {
+        // Convert file to base64 for persistent storage
+        const dataUrl = await fileToDataUrl(file);
+
+        const item: MediaItem = {
+          id: crypto.randomUUID(),
+          type: file.type.startsWith('image/') ? 'image' : 'video',
+          file,
+          url: dataUrl, // Use dataUrl as url for display
+          dataUrl, // Store for persistence
+          title: file.name,
+          tags: [],
+          notes: '',
+          createdAt: Date.now(),
+        };
+        addItem(item);
+      } catch (error) {
+        console.error('Failed to process file:', file.name, error);
+      }
+    }
   };
 
   const handleItemUpdate = (updates: Partial<MediaItem>) => {

@@ -1,8 +1,9 @@
 export interface MediaItem {
   id: string;
   type: 'image' | 'video';
-  file: File;
+  file?: File;
   url: string;
+  dataUrl?: string; // Base64 data URL for persistence
   title: string;
   tags: string[];
   notes: string;
