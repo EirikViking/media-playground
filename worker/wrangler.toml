@@ -5,4 +5,5 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "media-playground-db"
-database_id = "PLACEHOLDER_REPLACE_AFTER_CREATE"
+database_id = "b7d133ea-e49b-4ef6-bf92-1fa73f83fb71"
+

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FolderOpen, Save, Trash2, RefreshCw, Cloud, CloudOff, X, ChevronRight } from 'lucide-react';
+import { FolderOpen, Trash2, RefreshCw, Cloud, X, ChevronRight, HardDrive } from 'lucide-react';
 import { Button } from './Button';
 import { api, ProjectSummary } from '../utils/api';
 
@@ -24,7 +24,8 @@ export const ProjectsPanel = ({
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [backendAvailable, setBackendAvailable] = useState(true);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [backendAvailable, setBackendAvailable] = useState<boolean | null>(null); // null = checking
 
     // Load projects list
     const loadProjects = async () => {
@@ -46,7 +47,10 @@ export const ProjectsPanel = ({
 
     // Check backend on mount
     useEffect(() => {
-        api.healthCheck().then(setBackendAvailable);
+        api.healthCheck().then((available) => {
+            console.log('[ProjectsPanel] Backend health check:', available ? 'OK' : 'UNAVAILABLE');
+            setBackendAvailable(available);
+        });
     }, []);
 
     // Load projects when panel opens
@@ -59,16 +63,27 @@ export const ProjectsPanel = ({
     const handleSave = async () => {
         setSaving(true);
         setError(null);
+        setSuccessMessage(null);
 
         const result = await onSave(currentProjectId);
 
         if (result) {
+            if (backendAvailable) {
+                setSuccessMessage('Saved to cloud!');
+            } else {
+                setSuccessMessage('Saved locally (cloud unavailable)');
+            }
             await loadProjects();
         } else {
             setError('Failed to save project');
         }
 
         setSaving(false);
+
+        // Clear success message after 3 seconds
+        if (result) {
+            setTimeout(() => setSuccessMessage(null), 3000);
+        }
     };
 
     const handleDelete = async (id: string) => {
@@ -99,10 +114,12 @@ export const ProjectsPanel = ({
             >
                 <FolderOpen className="w-4 h-4" />
                 Projects
-                {backendAvailable ? (
+                {backendAvailable === null ? (
+                    <RefreshCw className="w-3 h-3 animate-spin text-slate-400" />
+                ) : backendAvailable ? (
                     <Cloud className="w-3 h-3 text-green-500" />
                 ) : (
-                    <CloudOff className="w-3 h-3 text-orange-500" />
+                    <HardDrive className="w-3 h-3 text-orange-500" />
                 )}
             </Button>
 
@@ -154,21 +171,31 @@ export const ProjectsPanel = ({
                                     />
                                 </div>
 
-                                {/* Save Button */}
+                                {/* Save Button - always enabled */}
                                 <Button
                                     onClick={handleSave}
-                                    disabled={saving || !backendAvailable}
+                                    disabled={saving}
                                     className="w-full"
                                     size="sm"
                                 >
                                     {saving ? (
                                         <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : backendAvailable ? (
+                                        <Cloud className="w-4 h-4 mr-2" />
                                     ) : (
-                                        <Save className="w-4 h-4 mr-2" />
+                                        <HardDrive className="w-4 h-4 mr-2" />
                                     )}
                                     {currentProjectId ? 'Update Project' : 'Save Project'}
                                 </Button>
                             </div>
+
+                            {/* Success Message */}
+                            {successMessage && (
+                                <div className="mx-4 mt-4 p-3 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-sm rounded-lg flex items-center gap-2">
+                                    {backendAvailable ? <Cloud className="w-4 h-4" /> : <HardDrive className="w-4 h-4" />}
+                                    {successMessage}
+                                </div>
+                            )}
 
                             {/* Error Message */}
                             {error && (
@@ -177,11 +204,11 @@ export const ProjectsPanel = ({
                                 </div>
                             )}
 
-                            {/* Backend Warning */}
-                            {!backendAvailable && (
+                            {/* Backend Status Info */}
+                            {backendAvailable === false && (
                                 <div className="mx-4 mt-4 p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 text-sm rounded-lg flex items-start gap-2">
-                                    <CloudOff className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                    <span>Backend unavailable. Projects are saved locally only.</span>
+                                    <HardDrive className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                    <span>Cloud unavailable. Saving locally.</span>
                                 </div>
                             )}
 
@@ -214,8 +241,8 @@ export const ProjectsPanel = ({
                                             <div
                                                 key={project.id}
                                                 className={`group p-3 rounded-lg border transition-colors cursor-pointer ${project.id === currentProjectId
-                                                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                                                        : 'border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700'
+                                                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                                                    : 'border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700'
                                                     }`}
                                                 onClick={() => onLoad(project.id)}
                                             >

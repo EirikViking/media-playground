@@ -3,10 +3,15 @@
  * Falls back gracefully if backend is unavailable
  */
 
-// API base URL - relative in production, localhost in dev
+// API base URL configuration
+// In dev: localhost worker
+// In production: deployed Cloudflare Worker
 const API_BASE = import.meta.env.DEV
     ? 'http://localhost:8787'
-    : '';
+    : 'https://media-playground-api.eirikviking.workers.dev';
+
+console.log('[API] Mode:', import.meta.env.DEV ? 'development' : 'production');
+console.log('[API] Base URL:', API_BASE);
 
 export interface ProjectSummary {
     id: string;
