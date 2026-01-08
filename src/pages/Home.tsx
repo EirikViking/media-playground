@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Video, Image as ImageIcon, Zap } from 'lucide-react';
+import { Sparkles, ArrowRight, Video, Image as ImageIcon, Zap, Gamepad2 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { AboutModal } from '../components/AboutModal';
@@ -20,7 +20,7 @@ export const Home = () => {
 
       <header className="p-6 flex justify-between items-center relative z-10 max-w-7xl mx-auto w-full">
         <span className="font-display text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          KEG
+          Kurt Edgar & Eirik
         </span>
         <ThemeToggle />
       </header>
@@ -33,12 +33,12 @@ export const Home = () => {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="space-y-6"
           >
-            <h1 className="text-7xl md:text-9xl font-bold font-display tracking-tight leading-[0.9] text-slate-900 dark:text-white">
-              <span className="block hover:scale-105 transition-transform duration-500 cursor-default">KURT</span>
+            <h1 className="text-6xl md:text-8xl font-bold font-display tracking-tight leading-[0.9] text-slate-900 dark:text-white">
+              <span className="block hover:scale-105 transition-transform duration-500 cursor-default">KURT EDGAR</span>
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent block hover:scale-105 transition-transform duration-500 cursor-default">
-                EDGAR'S
+                & EIRIK'S
               </span>
-              <span className="block hover:scale-105 transition-transform duration-500 cursor-default">GALLERY</span>
+              <span className="block hover:scale-105 transition-transform duration-500 cursor-default">PLAYGROUND</span>
             </h1>
 
             <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-light leading-relaxed">
@@ -59,7 +59,13 @@ export const Home = () => {
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            <Button variant="secondary" size="lg" className="min-w-48 text-lg" onClick={() => setIsAboutOpen(true)}>
+            <Link to="/games">
+              <Button variant="secondary" size="lg" className="min-w-48 text-lg shadow-sm">
+                <Gamepad2 className="w-5 h-5 mr-2" />
+                Games Arcade
+              </Button>
+            </Link>
+            <Button variant="ghost" size="lg" className="text-lg" onClick={() => setIsAboutOpen(true)}>
               Learn More
             </Button>
           </motion.div>
@@ -83,14 +89,14 @@ export const Home = () => {
             <FeatureCard
               icon={<Zap className="w-8 h-8 text-pink-500" />}
               title="Instant Zen"
-              desc="No uploads. It's all local, baby."
+              desc="Chill mode. Works with your uploads too."
             />
           </motion.div>
         </div>
       </main>
 
       <footer className="relative z-10 p-8 text-center text-slate-500 dark:text-slate-500 text-sm">
-        <p>© {new Date().getFullYear()} Kurt Edgar's Gallery. Warning: May contain traces of genius.</p>
+        <p>© {new Date().getFullYear()} Kurt Edgar & Eirik's Playground. v{__APP_VERSION__}</p>
       </footer>
 
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />

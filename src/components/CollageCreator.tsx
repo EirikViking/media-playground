@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { MediaItem } from '../types';
-import { generateCollage, downloadImage } from '../utils/collage';
+import { generateCollage, downloadImage, STYLES } from '../utils/collage';
 import { getRandomStory } from '../utils/chaos-story';
 import { Button } from './Button';
-import { Wand2, Download, RefreshCw, Sparkles } from 'lucide-react';
+import { Wand2, Download, RefreshCw, Sparkles, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ChaosMixPlayer } from './ChaosMixPlayer';
 
 interface CollageCreatorProps {
   items: MediaItem[];
@@ -12,6 +13,7 @@ interface CollageCreatorProps {
 
 export const CollageCreator = ({ items }: CollageCreatorProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showChaosPlayer, setShowChaosPlayer] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [story, setStory] = useState<string | null>(null);
 
@@ -21,7 +23,8 @@ export const CollageCreator = ({ items }: CollageCreatorProps) => {
     setIsGenerating(true);
     setStory(null);
     try {
-      const collageUrl = await generateCollage(items);
+      const randomStyle = STYLES[Math.floor(Math.random() * STYLES.length)];
+      const collageUrl = await generateCollage(items, 1200, 800, randomStyle);
       setPreviewUrl(collageUrl);
       setStory(getRandomStory());
     } catch (error) {
@@ -66,27 +69,37 @@ export const CollageCreator = ({ items }: CollageCreatorProps) => {
         </div>
       ) : (
         <div className="space-y-8">
-          <div className="flex items-center justify-between p-4 bg-white/50 dark:bg-slate-900/50 rounded-xl border border-white/50 dark:border-slate-800">
+          <div className="flex items-center justify-between p-4 bg-white/50 dark:bg-slate-900/50 rounded-xl border border-white/50 dark:border-slate-800 flex-wrap gap-4">
             <p className="font-medium text-slate-700 dark:text-slate-300">
               {imageCount} image{imageCount !== 1 ? 's' : ''} ready for mixing
             </p>
-            <Button
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              className="min-w-40 shadow-purple-500/20"
-            >
-              {isGenerating ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Mixing...
-                </>
-              ) : (
-                <>
-                  <Wand2 className="w-4 h-4 mr-2" />
-                  Generate Chaos
-                </>
-              )}
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setShowChaosPlayer(true)}
+                variant="secondary"
+                className="shadow-sm"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Live Mix
+              </Button>
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                className="min-w-40 shadow-purple-500/20"
+              >
+                {isGenerating ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Mixing...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    Generate Chaos
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
           {previewUrl && (
@@ -135,6 +148,7 @@ export const CollageCreator = ({ items }: CollageCreatorProps) => {
           )}
         </div>
       )}
+      <ChaosMixPlayer items={items} isOpen={showChaosPlayer} onClose={() => setShowChaosPlayer(false)} />
     </motion.div>
   );
 };

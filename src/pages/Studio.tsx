@@ -11,7 +11,8 @@ import { CollageCreator } from '../components/CollageCreator';
 import { ProjectsPanel } from '../components/ProjectsPanel';
 import { ShareButton } from '../components/ShareButton';
 import { UploadProgressPanel } from '../components/UploadProgressPanel';
-import { ArrowLeft, Trash2, Upload, Cloud } from 'lucide-react';
+import { AdminPanel } from '../components/AdminPanel';
+import { ArrowLeft, Trash2, Upload, Cloud, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fileToDataUrl } from '../utils/storage';
 import { api } from '../utils/api';
@@ -30,6 +31,7 @@ export const Studio = () => {
   const [uploadTotal, setUploadTotal] = useState(0);
   const [uploadCurrent, setUploadCurrent] = useState<UploadProgress | undefined>();
   const [uploadErrors, setUploadErrors] = useState<Array<{ fileName: string; error: string }>>([]);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   // Load shared project from URL on mount
   useEffect(() => {
@@ -54,6 +56,7 @@ export const Studio = () => {
         // Validate file
         const validation = validateFile(file);
         if (!validation.valid) {
+          alert(`Whoops! ${file.name} is too big/invalid. ${validation.error}`);
           console.warn(`Skipping ${file.name}: ${validation.error}`);
           continue;
         }
@@ -343,6 +346,9 @@ export const Studio = () => {
                 <Trash2 className="w-4 h-4 mr-2" />
                 Clear
               </Button>
+              <Button onClick={() => setIsAdminOpen(true)} variant="ghost" size="sm" title="Admin">
+                <Shield className="w-4 h-4" />
+              </Button>
               <ThemeToggle />
             </div>
           </div>
@@ -423,6 +429,8 @@ export const Studio = () => {
           setUploadErrors([]);
         }}
       />
+
+      <AdminPanel isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
     </div>
   );
 };

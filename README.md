@@ -1,4 +1,4 @@
-# Kurt Edgar's Gallery (Media Playground)
+# Kurt Edgar and Eirik’s playground
 
 A beautiful, modern web app for creating collages from your photos and videos. Now with cloud-based project persistence!
 
