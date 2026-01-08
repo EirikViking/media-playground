@@ -41,13 +41,9 @@ export const Studio = () => {
   }, [searchParams]);
 
   const handleFilesAdded = async (files: File[]) => {
-    // Separate images, videos, and audio
-    const mediaFiles = files.filter(f =>
-      f.type.startsWith('image/') ||
-      f.type.startsWith('video/') ||
-      f.type.startsWith('audio/')
-    );
-    const unsupportedFiles = files.filter(f => !mediaFiles.includes(f));
+    // Filter supported files using strict allowed types
+    const mediaFiles = files.filter(f => UPLOAD_LIMITS.allowedTypes.includes(f.type));
+    const unsupportedFiles = files.filter(f => !UPLOAD_LIMITS.allowedTypes.includes(f.type));
 
     if (unsupportedFiles.length > 0) {
       alert(`${unsupportedFiles.length} files skipped. Only images, videos, and audio are supported.`);
@@ -63,9 +59,11 @@ export const Studio = () => {
         }
 
         const dataUrl = await fileToDataUrl(file);
+
+        // Determine type based on MIME prefix
         let type: MediaItem['type'] = 'image';
         if (file.type.startsWith('video/')) type = 'video';
-        if (file.type.startsWith('audio/')) type = 'audio';
+        else if (file.type.startsWith('audio/')) type = 'audio';
 
         const item: MediaItem = {
           id: crypto.randomUUID(),

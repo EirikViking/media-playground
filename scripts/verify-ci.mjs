@@ -11,7 +11,7 @@ import { spawn, execSync } from 'child_process';
 import { setTimeout as sleep } from 'timers/promises';
 
 const WORKER_PORT = 8787;
-const FRONTEND_PORT = 5173;
+const FRONTEND_PORT = 5174;
 const WORKER_URL = `http://127.0.0.1:${WORKER_PORT}`;
 const FRONTEND_URL = `http://127.0.0.1:${FRONTEND_PORT}`;
 const MAX_WAIT_MS = 90000;

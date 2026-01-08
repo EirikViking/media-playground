@@ -61,7 +61,7 @@ test.describe('Phase 3A: Image Upload and Sharing', () => {
         await page.getByRole('button', { name: /save project/i }).click();
 
         // Wait for save to complete
-        await expect(page.getByText(/saved/i)).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText(/saved to cloud/i)).toBeVisible({ timeout: 10000 });
 
         // Close panel
         await page.keyboard.press('Escape');
