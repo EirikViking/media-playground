@@ -117,7 +117,11 @@ async function main() {
             },
             body: pngData
         });
-        assert(response.ok, `Upload original returned ${response.status}: ${await response.text()}`);
+
+        if (!response.ok) {
+            throw new Error(`Upload original returned ${response.status}: ${await response.text()}`);
+        }
+
         const data = await response.json();
         assert(data.ok === true, 'Upload did not return ok: true');
         assert(data.key === originalKey, `Wrong key returned: ${data.key}`);
@@ -133,7 +137,11 @@ async function main() {
             },
             body: pngData
         });
-        assert(response.ok, `Upload thumb returned ${response.status}`);
+
+        if (!response.ok) {
+            throw new Error(`Upload thumb returned ${response.status}: ${await response.text()}`);
+        }
+
         const data = await response.json();
         assert(data.ok === true, 'Upload did not return ok: true');
     });
@@ -206,7 +214,8 @@ async function main() {
 
     await test('Verify asset deleted from R2', async () => {
         const response = await fetch(`${API_BASE}/api/assets/original/${projectId}/${assetId}`);
-        assert(response.status === 404, `Expected 404, got ${response.status}`);
+        // 404 is the expected correct behavior for a deleted asset
+        assert(response.status === 404, `Expected 404 (Not Found) for deleted asset, got ${response.status}`);
     });
 
     await test('Delete test project', async () => {
