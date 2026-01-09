@@ -128,43 +128,33 @@ export const Studio = () => {
     }
   };
 
-  // UPDATED: Publish logic now saves the blob as a project asset (thumbnail) and saves the project
+  // UPDATED: Publish logic now uses api.publishChaos
   const handleChaosPublish = async (blob: Blob) => {
     if (!currentProjectId) return;
 
-    // 1. Upload the generated collage as 'chaos-cover.png'
-    const file = new File([blob], `chaos-cover-${Date.now()}.png`, { type: 'image/png' });
-
     setIsUploading(true);
     try {
-      const result = await uploadImages(currentProjectId, [file], () => { });
-      if (result.successful.length > 0) {
-        const asset = result.successful[0];
-        // Add to local items so it appears
-        const newItem: MediaItem = {
-          id: asset.assetId,
-          type: 'image',
-          url: fileToDataUrl(file) as any, // Temp local url
-          title: asset.fileName,
-          tags: [],
-          notes: '',
-          createdAt: Date.now(),
-          cloudAsset: asset,
-          uploadStatus: 'uploaded'
-        };
-        addItem(newItem);
+      // 1. Publish to Community Feed (Chaos Table)
+      const res = await api.publishChaos(currentProjectId, projectTitle, blob);
+
+      if (res.error) {
+        throw new Error(res.error);
       }
-    } catch (e) {
-      console.error("Cover upload failed", e);
+
+      // 2. Save Project Trigger (ensure latest state is available for viewers)
+      await handleSaveProject();
+
+      // 3. Refresh Community Feed
+      setChaosRefreshTrigger(prev => prev + 1);
+
+    } catch (e: any) {
+      console.error("Publish failed", e);
+      alert("Failed to publish to community: " + (e.message || "Unknown error"));
+      // Re-throw to let CollageCreator know it failed
+      throw e;
+    } finally {
+      setIsUploading(false);
     }
-
-    setIsUploading(false);
-
-    // 2. Save Project
-    await handleSaveProject();
-
-    // 3. Refresh Community Feed
-    setChaosRefreshTrigger(prev => prev + 1);
   };
 
   const handleItemUpdate = (updates: Partial<MediaItem>) => {
@@ -379,27 +369,31 @@ export const Studio = () => {
           <div className="flex flex-col gap-4">
             <h2 className="text-lg font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
               <Info className="w-5 h-5 text-purple-500" />
-              How The Studio Works
+              Studio Guide
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-white/50 dark:bg-slate-900/50 p-4 rounded-xl border border-purple-100 dark:border-slate-800">
-                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-1">1. Local Workspace</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Drag & drop media below. Audio and video mashes are supported!
-                  Your workspace is private until you share.
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-1 text-sm">Local vs Community</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  Your work is <span className="font-semibold">Local</span> and private until you choose to Share or Publish.
                 </p>
               </div>
               <div className="bg-white/50 dark:bg-slate-900/50 p-4 rounded-xl border border-purple-100 dark:border-slate-800">
-                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-1">2. Generate & Publish</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Use the Chaos Generator to create a collage.
-                  Click <span className="font-bold">Publish to Community</span> to save and share your work in the feed below.
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-1 text-sm">Upload</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  Drag & Drop images, video, and audio to build your project assets.
                 </p>
               </div>
               <div className="bg-white/50 dark:bg-slate-900/50 p-4 rounded-xl border border-purple-100 dark:border-slate-800">
-                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-1">3. Collaboration</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Use the Share button to get a link. Anyone with the link can view your project.
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-1 text-sm">Share</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  Click <span className="font-semibold">Share</span> to create a read-only link for friends to view your project.
+                </p>
+              </div>
+              <div className="bg-white/50 dark:bg-slate-900/50 p-4 rounded-xl border border-purple-100 dark:border-slate-800">
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-1 text-sm">Publish</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  <span className="font-semibold">Publish</span> posts your generated Chaos Collage to the public Community Feed.
                 </p>
               </div>
             </div>

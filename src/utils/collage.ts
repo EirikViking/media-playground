@@ -33,12 +33,28 @@ export const generateCollage = async (
 
   ctx.fillRect(0, 0, width, height);
 
-  const imageItems = items.filter(item => item.type === 'image' && item.url);
-  if (imageItems.length === 0) {
-    ctx.fillStyle = '#9ca3af';
-    ctx.font = '24px sans-serif';
+  // Filter for displayable items (images and videos with thumbnails)
+  const visualItems = items.filter(item =>
+    (item.type === 'image' && item.url) ||
+    (item.type === 'video' && item.thumbUrl)
+  );
+
+  if (visualItems.length === 0) {
+    // If we have audio but no visuals, make a cool audio waveform placeholder
+    const hasAudio = items.some(i => i.type === 'audio');
+
+    ctx.fillStyle = hasAudio ? '#1a1a1a' : '#9ca3af';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = hasAudio ? '#a855f7' : '#ffffff';
+    ctx.font = 'bold 64px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('No images to create collage', width / 2, height / 2);
+
+    if (hasAudio) {
+      ctx.fillText('♫ Audio Mash', width / 2, height / 2);
+    } else {
+      ctx.fillText('No visual media', width / 2, height / 2);
+    }
     return canvas.toDataURL('image/png');
   }
 
@@ -47,14 +63,18 @@ export const generateCollage = async (
       const img = new Image();
       img.crossOrigin = 'Anonymous';
       img.onload = () => resolve(img);
-      img.onerror = resolve as any; // Skip errors
+      img.onerror = () => {
+        console.warn("Failed to load image for collage:", url);
+        resolve(new Image()); // Return empty image
+      };
       img.src = url;
     });
   };
 
   const images = (await Promise.all(
-    imageItems.slice(0, 9).map(item => loadImage(item.url))
-  )).filter(img => img instanceof HTMLImageElement);
+    visualItems.slice(0, 9).map(item => loadImage(item.type === 'video' ? item.thumbUrl! : item.url))
+  )).filter(img => img.width > 0);
+
 
   if (style === 'scrapbook') {
     // Random placement

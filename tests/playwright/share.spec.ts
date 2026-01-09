@@ -125,7 +125,7 @@ test.describe('Phase 3A: Image Upload and Sharing', () => {
         await newPage.locator('[data-testid="asset-card"]').first().click();
 
         // Modal should appear with full image
-        await expect(newPage.locator('[class*="fixed"][class*="inset"]').last()).toBeVisible({ timeout: 5000 });
+        await expect(newPage.getByTestId('media-detail-modal')).toBeVisible({ timeout: 5000 });
 
         // Cleanup new context
         await newContext.close();

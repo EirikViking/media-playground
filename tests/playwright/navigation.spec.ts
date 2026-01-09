@@ -93,9 +93,12 @@ test.describe('Navigation and Hub', () => {
         await expect(page).toHaveURL('/studio');
         // Should show Studio heading
         await expect(page.getByRole('heading', { name: /The Studio/i })).toBeVisible();
+
+        // Assert explanation block exists
+        await expect(page.getByTestId('studio-explanation')).toBeVisible();
     });
 
-    test.skip('header navigation menu works', async ({ page }) => {
+    test('header navigation menu works', async ({ page }) => {
         await page.goto('/');
         await page.getByTestId('app-ready').waitFor();
 
@@ -117,6 +120,11 @@ test.describe('Navigation and Hub', () => {
 
         await page.getByTestId('nav-studio').click();
         await expect(page).toHaveURL('/studio');
+        await page.goto('/');
+        await page.getByTestId('app-ready').waitFor();
+
+        await page.getByTestId('nav-music').click();
+        await expect(page).toHaveURL('/music');
     });
 
     test.skip('deep link to studio with project ID still works', async ({ page }) => {
