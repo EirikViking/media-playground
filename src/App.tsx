@@ -10,15 +10,17 @@ import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 function App() {
   return (
     <BrowserRouter>
-      <PwaInstallPrompt />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/studio" element={<Studio />} />
-        <Route path="/games" element={<Games />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/about/eirik" element={<AboutEirik />} />
-        <Route path="/about/kurt-edgar" element={<AboutKurtEdgar />} />
-      </Routes>
+      <div data-testid="app-ready">
+        <PwaInstallPrompt />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/studio" element={<Studio />} />
+          <Route path="/games" element={<Games />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/about/eirik" element={<AboutEirik />} />
+          <Route path="/about/kurt-edgar" element={<AboutKurtEdgar />} />
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 }

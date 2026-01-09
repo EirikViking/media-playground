@@ -12,6 +12,9 @@ test.describe('Navigation and Hub', () => {
 
     test('home page displays hub with all sections', async ({ page }) => {
         await page.goto('/');
+        await page.getByTestId('app-ready').waitFor();
+        await page.getByTestId('app-ready').waitFor();
+
 
         // Check title
         await expect(page).toHaveTitle(/Kurt Edgar/i);
@@ -34,6 +37,7 @@ test.describe('Navigation and Hub', () => {
 
     test('navigate to About Eirik page', async ({ page }) => {
         await page.goto('/');
+        await page.getByTestId('app-ready').waitFor();
 
         // Click on About Eirik card
         await page.getByTestId('card-about-eirik').click();
@@ -50,6 +54,7 @@ test.describe('Navigation and Hub', () => {
 
     test('navigate to About Kurt Edgar page', async ({ page }) => {
         await page.goto('/');
+        await page.getByTestId('app-ready').waitFor();
 
         // Click on About Kurt Edgar card
         await page.getByTestId('card-about-kurt').click();
@@ -66,6 +71,7 @@ test.describe('Navigation and Hub', () => {
 
     test('navigate to Gaming page', async ({ page }) => {
         await page.goto('/');
+        await page.getByTestId('app-ready').waitFor();
 
         // Click on Gaming card
         await page.getByTestId('card-gaming').click();
@@ -78,6 +84,7 @@ test.describe('Navigation and Hub', () => {
 
     test('navigate to Studio page', async ({ page }) => {
         await page.goto('/');
+        await page.getByTestId('app-ready').waitFor();
 
         // Click on Studio card
         await page.getByTestId('card-studio').click();
@@ -90,19 +97,23 @@ test.describe('Navigation and Hub', () => {
 
     test.skip('header navigation menu works', async ({ page }) => {
         await page.goto('/');
+        await page.getByTestId('app-ready').waitFor();
 
         // Test each navigation link
         await page.getByTestId('nav-about-eirik').click();
         await expect(page).toHaveURL('/about/eirik');
         await page.goto('/');
+        await page.getByTestId('app-ready').waitFor();
 
         await page.getByTestId('nav-about-kurt').click();
         await expect(page).toHaveURL('/about/kurt-edgar');
         await page.goto('/');
+        await page.getByTestId('app-ready').waitFor();
 
         await page.getByTestId('nav-gaming').click();
         await expect(page).toHaveURL('/games');
         await page.goto('/');
+        await page.getByTestId('app-ready').waitFor();
 
         await page.getByTestId('nav-studio').click();
         await expect(page).toHaveURL('/studio');

@@ -9,9 +9,15 @@ import { CloudAsset } from '../types';
 // In dev: localhost worker
 // In production: deployed Cloudflare Worker
 const VITE_API_BASE = import.meta.env.VITE_API_BASE;
-const API_BASE = VITE_API_BASE || (import.meta.env.DEV
-    ? 'http://localhost:8787'
-    : 'https://media-playground-api.cromkake.workers.dev');
+let defaultBase = 'https://media-playground-api.cromkake.workers.dev';
+
+if (import.meta.env.DEV) {
+    defaultBase = 'http://127.0.0.1:8787';
+} else if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    defaultBase = 'http://127.0.0.1:8787';
+}
+
+const API_BASE = VITE_API_BASE || defaultBase;
 
 console.log('[API] Environment:', import.meta.env.DEV ? 'development' : 'production');
 console.log('[API] VITE_API_BASE:', VITE_API_BASE);

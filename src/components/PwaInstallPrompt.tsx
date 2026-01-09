@@ -7,7 +7,13 @@ export const PwaInstallPrompt = () => {
     const [showIosHint, setShowIosHint] = useState(false);
     const [isInstallable, setIsInstallable] = useState(false);
 
+
+
     useEffect(() => {
+        if (import.meta.env.MODE === 'test' || (typeof window !== 'undefined' && (window as any).__E2E__)) {
+            return;
+        }
+
         const handler = (e: Event) => {
             e.preventDefault();
             setDeferredPrompt(e);
@@ -25,6 +31,10 @@ export const PwaInstallPrompt = () => {
 
         return () => window.removeEventListener('beforeinstallprompt', handler);
     }, []);
+
+    if (import.meta.env.MODE === 'test' || (typeof window !== 'undefined' && (window as any).__E2E__)) {
+        return null;
+    }
 
     const handleInstallClick = async () => {
         if (!deferredPrompt) return;
