@@ -1,27 +1,80 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Beer, AlertTriangle, RotateCcw, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, RotateCcw, Plus, Minus } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { Button } from '../components/Button';
 import { BeerRiskMeter } from '../components/BeerRiskMeter';
 import { playWarningSound } from '../utils/beep';
 
-const FACTS = [
-    "One beer. A gentle buzz, minimal impairment.",
-    "Two beers. Feeling chattier, but reaction time slows slightly.",
-    "Three beers. Inhibitions drop. You might think you're funnier than you are.",
-    "Four beers. Coordination wobbles. Driving is definitely out.",
-    "Five beers. Emotions amplify. Happy becomes happier, sad becomes sadder.",
-    "Six beers. Balance issues. Stick to hydration now.",
-    "Seven beers. Slurring starts. Tomorrow's hangover is loading...",
-    "Eight beers. Significant impairment. Nausea risk increases.",
-    "Nine beers. Memory encoding fails. 'What happened last night?' territory.",
-    "Ten beers. Motor control compromised. Sleep quality will be terrible."
-];
+interface Message {
+    headline: string;
+    serious: string;
+    suggestion: string;
+}
+
+const MESSAGES: Record<number, Message> = {
+    0: {
+        headline: "Ready to start?",
+        serious: "Zero alcohol in system. Full capacity.",
+        suggestion: "Drink water if you're thirsty."
+    },
+    1: {
+        headline: "The First Sip 🍺",
+        serious: "Almost no impairment, but your liver knows.",
+        suggestion: "Savor it and pace yourself."
+    },
+    2: {
+        headline: "Double Trouble",
+        serious: "Chatty and relaxed. Reaction time dips slightly.",
+        suggestion: "Great time for a water break."
+    },
+    3: {
+        headline: "Confidence Boost",
+        serious: "You think you're funnier. You probably aren't.",
+        suggestion: "Definitely do not drive."
+    },
+    4: {
+        headline: "The Wobble Begins",
+        serious: "Fine motor skills are checking out.",
+        suggestion: "Eat something substantial now."
+    },
+    5: {
+        headline: "High Spirits",
+        serious: "Emotions amplified. Happy is happier, sad is sadder.",
+        suggestion: "Phone down. Don't text your ex."
+    },
+    6: {
+        headline: "Slippery Slope",
+        serious: "Balance checks required. Slurring feels natural.",
+        suggestion: "Switch to water immediately."
+    },
+    7: {
+        headline: "Last Call Territory",
+        serious: "Tomorrow is going to hurt. Dehydration loading...",
+        suggestion: "Seriously, take a break."
+    },
+    8: {
+        headline: "RED ZONE 🚨",
+        serious: "Significant impairment. Nausea likely.",
+        suggestion: "Stop. Hydrate. Get home safe."
+    },
+    9: {
+        headline: "Memory Eraser",
+        serious: "Blackout risk. 'What happened?' territory.",
+        suggestion: "Find a sofa. Stay there."
+    }
+};
+
+const MAX_MESSAGE = {
+    headline: "System Overload ⚠️",
+    serious: "Severe intoxication. Health risk rising fast.",
+    suggestion: "Stop immediately. Ask for help."
+};
 
 export const BeerCalculator = () => {
     const [count, setCount] = useState(0);
+    const [shakeKey, setShakeKey] = useState(0);
 
     const handleIncrement = () => {
         const newCount = count + 1;
@@ -30,6 +83,7 @@ export const BeerCalculator = () => {
             playWarningSound();
         }
         setCount(newCount);
+        setShakeKey(prev => prev + 1);
     };
 
     const handleDecrement = () => {
@@ -40,13 +94,15 @@ export const BeerCalculator = () => {
 
     const handleReset = () => {
         setCount(0);
+        setShakeKey(0);
     };
 
-    const getFact = () => {
-        if (count === 0) return "Start clicking +1 to begin.";
-        if (count <= 10) return FACTS[count - 1];
-        return `${FACTS[9]} At this point, the risks climb very fast.`;
-    };
+    const currentMessage = count <= 9 ? MESSAGES[count] : MAX_MESSAGE;
+
+    // Tilt angle increases with count, capped at 15 degrees
+    // Alternates direction slightly to look organic: count * 2 * (1 or -1) is too erratic? 
+    // Just a constant tilt that gets steeper.
+    const tiltAngle = Math.min(count * 2, 20);
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
@@ -66,33 +122,43 @@ export const BeerCalculator = () => {
                 </div>
             </header>
 
-            <main className="flex-1 flex flex-col items-center justify-start pt-12 px-6 pb-12">
+            <main className="flex-1 flex flex-col items-center justify-start pt-8 px-6 pb-12">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="max-w-md w-full space-y-8"
                 >
                     {/* Main Card */}
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-xl border border-slate-200 dark:border-slate-800 space-y-8">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-xl border border-slate-200 dark:border-slate-800 space-y-6 relative overflow-hidden">
 
-                        {/* Header icon */}
-                        <div className="flex flex-col items-center">
-                            <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center mb-4 text-amber-600 dark:text-amber-500">
-                                <Beer className="w-8 h-8" />
+                        {/* Beer Can Display */}
+                        <div className="flex justify-center mb-2 h-[160px] items-end relative z-10">
+                            {/* Wrapper for shake animation */}
+                            <div
+                                key={shakeKey}
+                                className={shakeKey > 0 ? (count >= 8 ? "animate-shake-strong" : "animate-shake-gentle") : ""}
+                            >
+                                {/* Inner image for tilt */}
+                                <img
+                                    src="/beervan.png"
+                                    alt="Isbjørn Lite beer can"
+                                    className="w-[100px] md:w-[140px] drop-shadow-2xl transition-transform duration-500 ease-out object-contain origin-bottom"
+                                    style={{
+                                        transform: `rotate(${tiltAngle}deg)`
+                                    }}
+                                />
                             </div>
-                            <h2 className="text-3xl font-bold font-display text-slate-900 dark:text-white">
-                                How many?
-                            </h2>
                         </div>
 
                         {/* Counter Display */}
-                        <div className="flex justify-center items-center py-6">
+                        <div className="flex flex-col items-center justify-center space-y-2 relative z-10">
+                            <h2 className="text-sm uppercase tracking-wider text-slate-500 font-bold">How many?</h2>
                             <motion.span
                                 key={count}
                                 initial={{ scale: 0.8, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
-                                className={`text-8xl font-black font-display tracking-tighter ${count >= 8 ? 'text-red-600 drop-shadow-lg' :
-                                        count >= 4 ? 'text-orange-500' : 'text-slate-900 dark:text-white'
+                                className={`text-7xl font-black font-display tracking-tighter ${count >= 8 ? 'text-red-600 drop-shadow-md' :
+                                    count >= 4 ? 'text-orange-500' : 'text-slate-900 dark:text-white'
                                     }`}
                             >
                                 {count}
@@ -100,7 +166,7 @@ export const BeerCalculator = () => {
                         </div>
 
                         {/* Controls */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4 relative z-10">
                             <Button
                                 variant="secondary"
                                 size="lg"
@@ -116,14 +182,14 @@ export const BeerCalculator = () => {
                                 size="lg"
                                 onClick={handleIncrement}
                                 aria-label="Increase beer count"
-                                className={count >= 7 ? 'animate-pulse hover:animate-none' : ''}
+                                className={count >= 7 ? 'animate-pulse hover:animate-none shadow-orange-500/20' : ''}
                             >
                                 <Plus className="w-5 h-5 mr-2" />
                                 One More
                             </Button>
                         </div>
 
-                        <div className="flex justify-center">
+                        <div className="flex justify-center relative z-10">
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -137,22 +203,34 @@ export const BeerCalculator = () => {
                         </div>
 
                         {/* Risk Meter */}
-                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 relative z-10">
                             <BeerRiskMeter count={count} />
                         </div>
 
-                        {/* Fact Box */}
-                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 min-h-[5rem] flex items-center justify-center text-center">
+                        {/* New Message System */}
+                        <div className={`rounded-xl p-5 text-center transition-colors duration-300 relative z-10 border ${count >= 8
+                            ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30'
+                            : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800'
+                            }`}>
                             <AnimatePresence mode="wait">
-                                <motion.p
+                                <motion.div
                                     key={count}
                                     initial={{ opacity: 0, y: 5 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -5 }}
-                                    className="text-slate-600 dark:text-slate-300 font-medium"
+                                    className="space-y-2"
                                 >
-                                    {getFact()}
-                                </motion.p>
+                                    <h3 className={`font-display font-bold text-lg ${count >= 8 ? 'text-red-700 dark:text-red-400' : 'text-slate-900 dark:text-white'
+                                        }`}>
+                                        {currentMessage.headline}
+                                    </h3>
+                                    <p className="text-slate-700 dark:text-slate-300 font-medium leading-tight">
+                                        {currentMessage.serious}
+                                    </p>
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm italic pt-1">
+                                        💡 {currentMessage.suggestion}
+                                    </p>
+                                </motion.div>
                             </AnimatePresence>
                         </div>
                     </div>
@@ -164,13 +242,13 @@ export const BeerCalculator = () => {
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
-                                className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex items-start gap-3"
+                                className="bg-red-600 text-white shadow-lg shadow-red-500/30 rounded-2xl p-4 flex items-start gap-3"
                             >
-                                <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                                <AlertTriangle className="w-6 h-6 text-white flex-shrink-0 mt-0.5 animate-bounce" />
                                 <div>
-                                    <h3 className="font-bold text-red-700 dark:text-red-400">Red Zone</h3>
-                                    <p className="text-red-600 dark:text-red-300 text-sm mt-1">
-                                        Red zone: consider stopping, hydrate, and take a break.
+                                    <h3 className="font-bold text-white">Red Zone Warning</h3>
+                                    <p className="text-red-100 text-sm mt-1">
+                                        Consider stopping, hydrate, and take a break. Your body is under stress.
                                     </p>
                                 </div>
                             </motion.div>

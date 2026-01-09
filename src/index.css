@@ -22,8 +22,61 @@
   .glass {
     @apply bg-white/70 dark:bg-black/70 backdrop-blur-xl border border-white/20 dark:border-white/10;
   }
-  
+
   .glass-card {
     @apply bg-white/50 dark:bg-slate-900/50 backdrop-blur-lg border border-white/20 dark:border-white/10 shadow-xl;
+  }
+
+  /* Beer Can Animations */
+  @keyframes shake-gentle {
+
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+
+    25% {
+      transform: rotate(-5deg);
+    }
+
+    75% {
+      transform: rotate(5deg);
+    }
+  }
+
+  @keyframes shake-strong {
+
+    0%,
+    100% {
+      transform: rotate(0deg) scale(1);
+    }
+
+    10% {
+      transform: rotate(-10deg) scale(1.1);
+    }
+
+    20% {
+      transform: rotate(10deg) scale(1.1);
+    }
+
+    30% {
+      transform: rotate(-10deg) scale(1.1);
+    }
+
+    40% {
+      transform: rotate(10deg) scale(1.1);
+    }
+
+    50% {
+      transform: rotate(0deg) scale(1);
+    }
+  }
+
+  .animate-shake-gentle {
+    animation: shake-gentle 0.4s ease-in-out;
+  }
+
+  .animate-shake-strong {
+    animation: shake-strong 0.5s ease-in-out;
   }
 }
