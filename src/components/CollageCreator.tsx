@@ -9,9 +9,10 @@ import { ChaosMixPlayer } from './ChaosMixPlayer';
 
 interface CollageCreatorProps {
   items: MediaItem[];
+  onPublish?: (blob: Blob) => Promise<void>;
 }
 
-export const CollageCreator = ({ items }: CollageCreatorProps) => {
+export const CollageCreator = ({ items, onPublish }: CollageCreatorProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showChaosPlayer, setShowChaosPlayer] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -27,6 +28,18 @@ export const CollageCreator = ({ items }: CollageCreatorProps) => {
       const collageUrl = await generateCollage(items, 1200, 800, randomStyle);
       setPreviewUrl(collageUrl);
       setStory(getRandomStory());
+
+      if (onPublish) {
+        try {
+          // Convert data URL to blob
+          const res = await fetch(collageUrl);
+          const blob = await res.blob();
+          await onPublish(blob);
+        } catch (e) {
+          console.error('Failed to publish chaos:', e);
+        }
+      }
+
     } catch (error) {
       console.error('Failed to generate collage:', error);
     } finally {

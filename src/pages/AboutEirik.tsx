@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Sparkles, Code, Coffee, Zap } from 'lucide-react';
+import { ArrowLeft, Sparkles, User } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 
 export const AboutEirik = () => {
@@ -26,63 +26,19 @@ export const AboutEirik = () => {
                     className="space-y-8"
                 >
                     <div className="text-center space-y-4">
+                        <div className="w-24 h-24 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-6">
+                            <User className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+                        </div>
                         <h1 className="text-5xl md:text-6xl font-bold font-display bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                             About Eirik
                         </h1>
-                        <p className="text-xl text-slate-600 dark:text-slate-400">
-                            Creator, tinkerer, and chaos coordinator
-                        </p>
                     </div>
 
                     <div className="prose prose-lg dark:prose-invert max-w-none">
-                        <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-slate-800 p-8 space-y-6">
-                            <section>
-                                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                                    <Sparkles className="w-6 h-6 text-purple-500" />
-                                    Welcome to my corner
-                                </h2>
-                                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                                    Hey there! I'm Eirik, one half of this digital playground. I like building things
-                                    that make life a bit more interesting, whether it's experimenting with code,
-                                    creating visual chaos, or just seeing what happens when you mix pixels with passion.
-                                </p>
-                            </section>
-
-                            <section>
-                                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                                    <Code className="w-6 h-6 text-blue-500" />
-                                    What you'll find here
-                                </h2>
-                                <ul className="space-y-2 text-slate-600 dark:text-slate-400">
-                                    <li className="flex items-start gap-2">
-                                        <Zap className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
-                                        <span>Experimental projects and creative coding adventures</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <Zap className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
-                                        <span>Tools and utilities built for fun and learning</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <Zap className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
-                                        <span>Visual experiments that might or might not make sense</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <Zap className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
-                                        <span>Whatever Kurt Edgar and I dream up together</span>
-                                    </li>
-                                </ul>
-                            </section>
-
-                            <section>
-                                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                                    <Coffee className="w-6 h-6 text-pink-500" />
-                                    The vibe
-                                </h2>
-                                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                                    This playground is all about keeping things playful. No rigid rules, no taking
-                                    ourselves too seriously. Just pure creative exploration with a side of organized chaos.
-                                </p>
-                            </section>
+                        <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-slate-800 p-8 md:p-12">
+                            <p className="text-xl leading-relaxed text-slate-700 dark:text-slate-300 font-light">
+                                Eirik is a financially independent technologist, investor, and creative builder, and the creator behind this site. He lives off long term investments in stocks, funds, and crypto, which gives him the freedom to focus on what he does best: inventing, exploring, and building digital things that feel genuinely fun and useful. Known for his ability as a highly intuitive and fast moving vibe coder, Eirik excels at turning loose ideas into working systems with personality. He is full of new and unconventional ideas, constantly experimenting with AI, games, and digital platforms, and always looking for ways to create small moments of digital joy. Originally from Stokmarknes in Northern Norway and now based in Oslo, he combines deep analytical thinking with creativity, curiosity, and a strong desire to make technology feel human rather than heavy.
+                            </p>
                         </div>
                     </div>
 
@@ -92,7 +48,7 @@ export const AboutEirik = () => {
                             className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all"
                         >
                             <Sparkles className="w-5 h-5" />
-                            Try the Studio
+                            Visit The Studio
                         </Link>
                     </div>
                 </motion.div>

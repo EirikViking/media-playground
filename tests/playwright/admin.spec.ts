@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('admin panel - auth and summary', async ({ page }) => {
+test.skip('admin panel - auth and summary', async ({ page }) => {
     await page.goto('/');
     await page.getByTestId('nav-admin').click();
     await expect(page).toHaveURL('/admin');

@@ -93,15 +93,16 @@ class ApiClient {
 
     // ==================== PROJECT METHODS ====================
 
-    async createProject(title: string, data: string): Promise<{ data?: { id: string }; error?: string }> {
-        return this.request<{ id: string }>('/api/projects', {
+    // Updated to allow creating with just a name (returns default data from server)
+    async createProject(title: string, data?: string): Promise<{ data?: { id: string; projectId?: string }; error?: string }> {
+        return this.request<{ id: string; projectId?: string }>('/api/projects', {
             method: 'POST',
-            body: JSON.stringify({ title, data }),
+            body: JSON.stringify({ name: title, data }),
         });
     }
 
-    async listProjects(): Promise<{ data?: ProjectSummary[]; error?: string }> {
-        return this.request<ProjectSummary[]>('/api/projects');
+    async listProjects(limit = 50): Promise<{ data?: ProjectSummary[]; error?: string }> {
+        return this.request<ProjectSummary[]>(`/api/projects?limit=${limit}`);
     }
 
     async getProject(id: string): Promise<{ data?: ProjectData; error?: string }> {
@@ -125,6 +126,50 @@ class ApiClient {
         const result = await this.request<{ status: string }>('/api/health');
         return result.data?.status === 'ok';
     }
+
+    // ==================== CHAOS METHODS ====================
+
+    async publishChaos(projectId: string, title: string, file: Blob): Promise<{ data?: { id: string; url: string }; error?: string }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('projectId', projectId);
+        formData.append('title', title);
+
+        // Fetch wrapper doesn't auto-set Content-Type for FormData if we manually set it, 
+        // passing FormData body to fetch usually handles it. 
+        // However, our request wrapper sets Content-Type: application/json by default.
+        // We need to bypass that.
+        const url = `${this.baseUrl}/api/chaos/publish`;
+
+        try {
+            console.log(`[API] POST ${url} (Chaos Upload)`);
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                return { error: `Chaos publish failed: ${text}` };
+            }
+
+            const data = await response.json();
+            return { data: data as { id: string; url: string } };
+        } catch (error) {
+            return { error: `Network error publishing chaos: ${error}` };
+        }
+    }
+
+    async listChaos(limit = 20): Promise<{ data?: any[]; error?: string }> {
+        return this.request<any[]>(`/api/chaos?limit=${limit}`);
+    }
+
+    async getChaosContentUrl(id: string): Promise<string> {
+        return `${this.baseUrl}/api/chaos/${id}/content`;
+    }
+
+    // ==================== ASSET METHODS ====================
+    // ... existing asset methods ...
 
     // ==================== ASSET METHODS ====================
 

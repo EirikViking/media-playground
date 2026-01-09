@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { MediaItem, CloudAsset, ProjectJsonData, UPLOAD_LIMITS } from '../types';
 import { useProject } from '../hooks/useProject';
@@ -8,12 +8,13 @@ import { DropZone } from '../components/DropZone';
 import { MediaGrid } from '../components/MediaGrid';
 import { MediaDetail } from '../components/MediaDetail';
 import { CollageCreator } from '../components/CollageCreator';
-import { ProjectsPanel } from '../components/ProjectsPanel';
 import { ShareButton } from '../components/ShareButton';
 import { UploadProgressPanel } from '../components/UploadProgressPanel';
+import { CreateProjectModal } from '../components/CreateProjectModal';
+import { ChaosFeed } from '../components/ChaosFeed';
+import { ProjectsGallery } from '../components/ProjectsGallery';
 
-import { ArrowLeft, Trash2, Upload, Cloud, Shield } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ArrowLeft, Trash2, Upload, Shield, Layout, Settings } from 'lucide-react';
 import { fileToDataUrl } from '../utils/storage';
 import { api } from '../utils/api';
 import { uploadImages, UploadProgress, validateFile, getAssetUrl } from '../utils/upload';
@@ -24,6 +25,11 @@ export const Studio = () => {
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [projectTitle, setProjectTitle] = useState(project.name);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Modal and Sidebar State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [chaosRefreshTrigger, setChaosRefreshTrigger] = useState(0);
 
   // Upload state
   const [isUploading, setIsUploading] = useState(false);
@@ -37,12 +43,22 @@ export const Studio = () => {
   useEffect(() => {
     const projectIdFromUrl = searchParams.get('project');
     if (projectIdFromUrl && projectIdFromUrl !== currentProjectId) {
-      console.log('[Studio] Loading shared project:', projectIdFromUrl);
       handleLoadProject(projectIdFromUrl);
     }
   }, [searchParams]);
 
   const handleFilesAdded = async (files: File[]) => {
+    // Enforcement: Project required
+    if (!currentProjectId) {
+      setPendingFiles(files);
+      setIsCreateModalOpen(true);
+      return;
+    }
+
+    processFiles(files);
+  };
+
+  const processFiles = async (files: File[]) => {
     // Filter supported files using strict allowed types
     const mediaFiles = files.filter(f => UPLOAD_LIMITS.allowedTypes.includes(f.type));
     const unsupportedFiles = files.filter(f => !UPLOAD_LIMITS.allowedTypes.includes(f.type));
@@ -53,17 +69,14 @@ export const Studio = () => {
 
     for (const file of mediaFiles) {
       try {
-        // Validate file
         const validation = validateFile(file);
         if (!validation.valid) {
           alert(`Whoops! ${file.name} is too big/invalid. ${validation.error}`);
-          console.warn(`Skipping ${file.name}: ${validation.error}`);
           continue;
         }
 
         const dataUrl = await fileToDataUrl(file);
 
-        // Determine type based on MIME prefix
         let type: MediaItem['type'] = 'image';
         if (file.type.startsWith('video/')) type = 'video';
         else if (file.type.startsWith('audio/')) type = 'audio';
@@ -87,6 +100,35 @@ export const Studio = () => {
     }
   };
 
+  const handleProjectCreated = async (name: string) => {
+    const res = await api.createProject(name);
+    if (res.data) {
+      setCurrentProjectId(res.data.id);
+      setProjectTitle(name);
+      setSearchParams({ project: res.data.id });
+
+      // Clear local project state to match fresh start
+      createNewProject();
+      setProject(p => ({ ...p, name }));
+
+      setIsCreateModalOpen(false);
+
+      // Process pending files if any
+      if (pendingFiles.length > 0) {
+        processFiles(pendingFiles);
+        setPendingFiles([]);
+      }
+    } else {
+      alert('Failed to create project: ' + res.error);
+    }
+  };
+
+  const handleChaosPublish = async (blob: Blob) => {
+    if (!currentProjectId) return;
+    await api.publishChaos(currentProjectId, `${projectTitle} Chaos`, blob);
+    setChaosRefreshTrigger(prev => prev + 1);
+  };
+
   const handleItemUpdate = (updates: Partial<MediaItem>) => {
     if (selectedItem) {
       updateItem(selectedItem.id, updates);
@@ -96,7 +138,7 @@ export const Studio = () => {
 
   const handleNewProject = () => {
     if (project.items.length > 0) {
-      if (window.confirm('Start fresh? This will clear your current masterpiece.')) {
+      if (window.confirm('Start fresh? This will clear your current workspace.')) {
         createNewProject();
         setCurrentProjectId(null);
         setProjectTitle('Untitled Project');
@@ -110,24 +152,12 @@ export const Studio = () => {
     }
   };
 
-  // Get pending upload items (files that are not yet uploaded)
   const pendingUploads = project.items.filter(
     item => item.file && item.uploadStatus !== 'uploaded'
   );
 
-  // Handle upload of pending images
   const handleUploadImages = async () => {
-    let projectId = currentProjectId;
-
-    if (!projectId) {
-      // Need to save project first
-      const saveResult = await handleSaveProject(null);
-      if (!saveResult) {
-        alert('Please save the project first before uploading images.');
-        return;
-      }
-      projectId = saveResult.id;
-    }
+    if (!currentProjectId) return; // Should be handled by modal enforcement
 
     const filesToUpload = pendingUploads
       .filter(item => item.file)
@@ -138,7 +168,7 @@ export const Studio = () => {
     // Check limit
     const existingAssets = project.items.filter(i => i.cloudAsset).length;
     if (existingAssets + filesToUpload.length > UPLOAD_LIMITS.maxAssetsPerProject) {
-      alert(`Maximum ${UPLOAD_LIMITS.maxAssetsPerProject} images per project. You have ${existingAssets} uploaded.`);
+      alert(`Maximum ${UPLOAD_LIMITS.maxAssetsPerProject} images per project.`);
       return;
     }
 
@@ -147,13 +177,12 @@ export const Studio = () => {
     setUploadTotal(filesToUpload.length);
     setUploadErrors([]);
 
-    // Mark items as uploading
     filesToUpload.forEach(({ id }) => {
       updateItem(id, { uploadStatus: 'uploading' });
     });
 
     const result = await uploadImages(
-      projectId,
+      currentProjectId,
       filesToUpload.map(f => f.file),
       (completed, total, current) => {
         setUploadCompleted(completed);
@@ -162,19 +191,12 @@ export const Studio = () => {
       }
     );
 
-    // Update items with results
-    // Update items with results
     result.successful.forEach(asset => {
-      // Find matching item by fileName
       const item = project.items.find(i => i.file?.name === asset.fileName);
       if (item) {
         updateItem(item.id, {
           cloudAsset: asset,
           uploadStatus: 'uploaded',
-          // Note: We intentionally DO NOT update 'url' or 'thumbUrl' here.
-          // We keep the local dataUrl/blobUrl for immediate, reliable display in the current session.
-          // The 'cloudAsset' property is sufficient to mark it as synced.
-          // On next project load, URLs will be constructed from the cloudAsset data.
         });
       }
     });
@@ -191,11 +213,14 @@ export const Studio = () => {
 
     setUploadErrors(result.failed);
     setIsUploading(false);
+
+    // Auto-save project after upload
+    handleSaveProject();
   };
 
-  // Prepare project data for saving
-  const prepareProjectData = useCallback((): string => {
-    // Only include cloud assets in saved data
+  const handleSaveProject = async () => {
+    if (!currentProjectId) return;
+
     const assets = project.items
       .filter(item => item.cloudAsset)
       .map(item => item.cloudAsset!);
@@ -206,44 +231,14 @@ export const Studio = () => {
       layout: {},
     };
 
-    return JSON.stringify(data);
-  }, [project.items]);
-
-  // Save project to backend
-  const handleSaveProject = async (existingId: string | null): Promise<{ id: string } | null> => {
-    const data = prepareProjectData();
-    const title = projectTitle || 'Untitled Project';
-
-    if (existingId) {
-      const result = await api.updateProject(existingId, title, data);
-      if (result.error) {
-        console.error('Failed to update project:', result.error);
-        return null;
-      }
-      return { id: existingId };
-    } else {
-      const result = await api.createProject(title, data);
-      if (result.error) {
-        console.error('Failed to create project:', result.error);
-        return null;
-      }
-      if (result.data) {
-        setCurrentProjectId(result.data.id);
-        // Update URL with project ID for sharing
-        setSearchParams({ project: result.data.id });
-        return result.data;
-      }
-      return null;
-    }
+    await api.updateProject(currentProjectId, projectTitle, JSON.stringify(data));
   };
 
-  // Load project from backend (including shared projects)
   const handleLoadProject = async (projectId: string) => {
     const result = await api.getProject(projectId);
 
     if (result.error) {
       console.error('Failed to load project:', result.error);
-      alert('Failed to load project. It may not exist or the backend is unavailable.');
       return;
     }
 
@@ -252,11 +247,8 @@ export const Studio = () => {
       setProjectTitle(result.data.title);
       setSearchParams({ project: result.data.id });
 
-      // Parse stored data
       try {
         const parsed = JSON.parse(result.data.data) as ProjectJsonData;
-
-        // Convert cloud assets to MediaItems
         const items: MediaItem[] = (parsed.assets || []).map((asset: CloudAsset) => ({
           id: asset.assetId,
           type: 'image' as const,
@@ -277,55 +269,45 @@ export const Studio = () => {
           createdAt: project.createdAt,
           updatedAt: Date.now(),
         });
-
       } catch (e) {
         console.error('Failed to parse project data:', e);
       }
     }
   };
 
-  // Delete asset handler
   const handleRemoveItem = async (itemId: string) => {
     const item = project.items.find(i => i.id === itemId);
-
     if (item?.cloudAsset && currentProjectId) {
-      // Delete from R2
-      const result = await api.deleteAsset(currentProjectId, item.cloudAsset.assetId);
-      if (result.error) {
-        console.error('Failed to delete asset from cloud:', result.error);
-        // Continue with local removal anyway
-      }
+      await api.deleteAsset(currentProjectId, item.cloudAsset.assetId);
     }
-
     removeItem(itemId);
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
       <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               <Link to="/" className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
                 <ArrowLeft className="w-5 h-5" />
-                <span className="font-medium">Back to Gallery</span>
+                <span className="font-medium">Hub</span>
               </Link>
+              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700"></div>
+              <h1 className="font-display font-bold text-xl text-slate-900 dark:text-white">The Studio</h1>
             </div>
             <div className="flex items-center gap-3">
               <span className="hidden sm:block text-sm text-slate-500 font-medium px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
                 {project.items.length} item{project.items.length !== 1 ? 's' : ''}
-                {pendingUploads.length > 0 && (
-                  <span className="text-orange-500 ml-1">({pendingUploads.length} pending)</span>
-                )}
               </span>
 
-              {/* Upload Button */}
               {pendingUploads.length > 0 && (
                 <Button
                   onClick={handleUploadImages}
                   disabled={isUploading}
                   size="sm"
-                  className="flex items-center gap-2"
+                  variant="primary"
+                  className="flex items-center gap-2 animate-pulse"
                 >
                   <Upload className="w-4 h-4" />
                   Upload ({pendingUploads.length})
@@ -334,80 +316,93 @@ export const Studio = () => {
 
               <ShareButton projectId={currentProjectId} projectTitle={projectTitle} />
 
-              <ProjectsPanel
-                currentProjectId={currentProjectId}
-                currentProjectTitle={projectTitle}
-                onSave={handleSaveProject}
-                onLoad={handleLoadProject}
-                onTitleChange={setProjectTitle}
-              />
-
-              <Button onClick={handleNewProject} variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
-                <Trash2 className="w-4 h-4 mr-2" />
-                Clear
-              </Button>
+              <ThemeToggle />
               <Link to="/admin">
                 <Button variant="ghost" size="sm" title="Admin">
                   <Shield className="w-4 h-4" />
                 </Button>
               </Link>
-              <ThemeToggle />
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-12 space-y-12">
-        <div className="space-y-2">
-          <h1 className="text-4xl md:text-5xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-4">
-            The Studio
-            {currentProjectId && (
-              <span className="text-sm px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full border border-purple-200 dark:border-purple-800 font-medium tracking-wide">
-                Multiplayer
-              </span>
+      <main className="max-w-[1600px] mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_350px] gap-8">
+
+          {/* Main Content Area */}
+          <div className="space-y-8 min-w-0">
+
+            {/* DropZone / Welcome */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-1 shadow-sm border border-slate-200 dark:border-slate-800">
+              <DropZone onFilesAdded={handleFilesAdded} />
+            </div>
+
+            {/* Media Grid */}
+            {project.items.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Layout className="w-5 h-5 text-purple-500" />
+                    Workspace
+                  </h2>
+                </div>
+                <MediaGrid
+                  items={project.items}
+                  onItemClick={setSelectedItem}
+                  onItemRemove={handleRemoveItem}
+                />
+              </div>
             )}
-          </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-400">
-            Where the magic (and errors) happen. {currentProjectId ? 'Changes are synced to the cloud when you save.' : 'Everything is local until you save.'}
-          </p>
-        </div>
 
-        <section>
-          <DropZone onFilesAdded={handleFilesAdded} />
-        </section>
+            {/* Chaos Creator */}
+            {project.items.length > 0 && (
+              <CollageCreator items={project.items} onPublish={handleChaosPublish} />
+            )}
+          </div>
 
-        {project.items.length > 0 && (
-          <>
-            <section>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
-                  <span className="w-2 h-8 bg-purple-600 rounded-full inline-block"></span>
-                  Your Assets
-                </h2>
-                {project.items.some(i => i.cloudAsset) && (
-                  <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                    <Cloud className="w-4 h-4" />
-                    {project.items.filter(i => i.cloudAsset).length} in cloud
-                  </div>
+          {/* Sidebar */}
+          <div className="space-y-6 xl:sticky xl:top-24 h-fit">
+
+            {/* Project Card */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Settings className="w-4 h-4" /> Project
+                </h3>
+                {currentProjectId && (
+                  <span className="text-[10px] font-mono bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500">
+                    {currentProjectId.slice(0, 8)}
+                  </span>
                 )}
               </div>
-              <MediaGrid
-                items={project.items}
-                onItemClick={setSelectedItem}
-                onItemRemove={handleRemoveItem}
-              />
-            </section>
 
-            <motion.section
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="pt-8"
-            >
-              <CollageCreator items={project.items} />
-            </motion.section>
-          </>
-        )}
+              <div className="mb-6">
+                <div className="text-sm text-slate-500 uppercase tracking-wider font-semibold mb-1">Current Name</div>
+                <div className="text-lg font-display font-medium truncate" title={projectTitle}>
+                  {projectTitle}
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button onClick={handleNewProject} variant="ghost" size="sm" className="w-full text-red-500 hover:text-red-600 border border-slate-200 dark:border-slate-700">
+                  <Trash2 className="w-4 h-4 mr-2" /> Start Over
+                </Button>
+              </div>
+            </div>
+
+            {/* Projects Gallery */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+              <ProjectsGallery onSelect={handleLoadProject} currentProjectId={currentProjectId} />
+            </div>
+
+            {/* Chaos Feed */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+              <ChaosFeed refreshTrigger={chaosRefreshTrigger} />
+            </div>
+
+          </div>
+        </div>
       </main>
 
       {selectedItem && (
@@ -432,6 +427,11 @@ export const Studio = () => {
         }}
       />
 
+      <CreateProjectModal
+        isOpen={isCreateModalOpen}
+        onClose={() => { setIsCreateModalOpen(false); setPendingFiles([]); }}
+        onCreate={handleProjectCreated}
+      />
 
     </div>
   );

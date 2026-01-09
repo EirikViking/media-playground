@@ -314,13 +314,140 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // ==================== PROJECT ENDPOINTS ====================
 
+    // ... (interfaces)
+
+    interface ChaosItem {
+        id: string;
+        project_id: string;
+        title: string;
+        created_at: string;
+        output_key: string;
+        output_type: string;
+        output_size: number;
+    }
+
+    // ... (existing helper functions)
+
+    // ==================== CHAOS ENDPOINTS ====================
+
+    // POST /api/chaos/publish
+    if (method === 'POST' && path === '/api/chaos/publish') {
+        try {
+            const contentType = request.headers.get('Content-Type') || '';
+            if (!contentType.includes('multipart/form-data')) {
+                return errorResponse('Content-Type must be multipart/form-data', 400, origin);
+            }
+
+            const formData = await request.formData();
+            const file = formData.get('file') as File;
+            const projectId = formData.get('projectId') as string;
+            const title = formData.get('title') as string || 'Untitled Chaos';
+
+            if (!file || !projectId) {
+                return errorResponse('Missing file or projectId', 400, origin);
+            }
+
+            const chaosId = crypto.randomUUID();
+            const key = `chaos/${projectId}/${chaosId}`;
+
+            // Upload to R2
+            await env.BUCKET.put(key, await file.arrayBuffer(), {
+                httpMetadata: {
+                    contentType: file.type,
+                    cacheControl: 'public, max-age=31536000, immutable',
+                },
+            });
+
+            // Save to D1
+            const now = new Date().toISOString();
+            await env.DB.prepare(
+                'INSERT INTO chaos_items (id, project_id, title, created_at, output_key, output_type, output_size) VALUES (?, ?, ?, ?, ?, ?, ?)'
+            ).bind(chaosId, projectId, title, now, key, file.type, file.size).run();
+
+            // Return success with public URL (constructed client side or returned here)
+            // We'll return the ID and let client construct URL via /api/chaos/:id/content or similar if needed, 
+            // but for R2 we might want a direct proxy endpoint.
+            return jsonResponse({
+                id: chaosId,
+                url: `/api/chaos/${chaosId}/content`,
+                createdAt: now
+            }, 201, origin);
+
+        } catch (error) {
+            console.error('Chaos publish error:', error);
+            return errorResponse('Failed to publish chaos', 500, origin);
+        }
+    }
+
+    // GET /api/chaos - List chaos items
+    if (method === 'GET' && path === '/api/chaos') {
+        try {
+            const url = new URL(request.url);
+            const limit = parseInt(url.searchParams.get('limit') || '20', 10);
+
+            // Allow basic pagination if needed later, for now just limit
+            const result = await env.DB.prepare(
+                'SELECT * FROM chaos_items ORDER BY created_at DESC LIMIT ?'
+            ).bind(limit).all<ChaosItem>();
+
+            return jsonResponse(result.results, 200, origin);
+        } catch (error) {
+            console.error('List chaos error:', error);
+            return errorResponse('Failed to list chaos', 500, origin);
+        }
+    }
+
+    // GET /api/chaos/:id - Get chaos item details
+    const chaosMatch = path.match(/^\/api\/chaos\/([^/]+)$/);
+    if (method === 'GET' && chaosMatch) {
+        const id = chaosMatch[1];
+        try {
+            const result = await env.DB.prepare('SELECT * FROM chaos_items WHERE id = ?').bind(id).first<ChaosItem>();
+            if (!result) return errorResponse('Chaos item not found', 404, origin);
+            return jsonResponse(result, 200, origin);
+        } catch (error) {
+            return errorResponse('Failed to get chaos item', 500, origin);
+        }
+    }
+
+    // GET /api/chaos/:id/content - content proxy
+    const chaosContentMatch = path.match(/^\/api\/chaos\/([^/]+)\/content$/);
+    if (method === 'GET' && chaosContentMatch) {
+        const id = chaosContentMatch[1];
+        try {
+            const item = await env.DB.prepare('SELECT output_key FROM chaos_items WHERE id = ?').bind(id).first<{ output_key: string }>();
+            if (!item) return errorResponse('Chaos item not found', 404, origin);
+
+            const object = await env.BUCKET.get(item.output_key);
+            if (!object) return errorResponse('File not found', 404, origin);
+
+            return new Response(object.body, {
+                headers: {
+                    'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+                    'Cache-Control': 'public, max-age=31536000, immutable',
+                    'ETag': object.etag,
+                    ...corsHeaders(origin),
+                }
+            });
+        } catch (e) {
+            return errorResponse('Failed to get content', 500, origin);
+        }
+    }
+
+    // ==================== PROJECT ENDPOINTS ====================
+
     // POST /api/projects - Create project
+    // Updated to support { name: string } input
     if (method === 'POST' && path === '/api/projects') {
         try {
-            const body = await request.json() as ProjectData;
+            const body = await request.json() as any;
 
-            if (!body.title || !body.data) {
-                return errorResponse('Missing required fields: title, data', 400, origin);
+            // Support both old { title, data } and new { name }
+            const title = body.title || body.name;
+            const data = body.data || JSON.stringify({ version: 1, assets: [], mediaItems: [] });
+
+            if (!title) {
+                return errorResponse('Missing required field: name (or title)', 400, origin);
             }
 
             const id = crypto.randomUUID();
@@ -328,21 +455,24 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
             await env.DB.prepare(
                 'INSERT INTO projects (id, title, data, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
-            ).bind(id, body.title, body.data, now, now).run();
+            ).bind(id, title, data, now, now).run();
 
-            return jsonResponse({ id }, 201, origin);
+            return jsonResponse({ id, projectId: id }, 201, origin);
         } catch (error) {
             console.error('Create project error:', error);
             return errorResponse('Failed to create project', 500, origin);
         }
     }
 
-    // GET /api/projects - List projects
+    // GET /api/projects - List projects (Public Gallery)
     if (method === 'GET' && path === '/api/projects') {
         try {
+            const url = new URL(request.url);
+            const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+
             const result = await env.DB.prepare(
-                'SELECT id, title, updated_at FROM projects ORDER BY updated_at DESC'
-            ).all<Pick<Project, 'id' | 'title' | 'updated_at'>>();
+                'SELECT id, title, updated_at, created_at FROM projects ORDER BY updated_at DESC LIMIT ?'
+            ).bind(limit).all<Pick<Project, 'id' | 'title' | 'updated_at' | 'created_at'>>();
 
             return jsonResponse(result.results, 200, origin);
         } catch (error) {
