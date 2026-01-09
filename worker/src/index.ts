@@ -442,24 +442,27 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
         try {
             const projectsCount = await env.DB.prepare('SELECT COUNT(*) as count FROM projects').first<{ count: number }>();
-            const projects = await env.DB.prepare('SELECT data FROM projects').all<{ data: string }>();
 
-            let totalAssets = 0;
+            // Scan R2 for real storage stats
             let totalSize = 0;
+            let totalObjects = 0;
+            let truncated = true;
+            let cursor;
 
-            for (const p of projects.results) {
-                try {
-                    const data = JSON.parse(p.data) as ProjectJsonData;
-                    if (data.assets) {
-                        totalAssets += data.assets.length;
-                        totalSize += data.assets.reduce((sum, a) => sum + (a.byteSize || 0), 0);
-                    }
-                } catch { } // Ignore format errors
+            while (truncated) {
+                const list = await env.BUCKET.list({ cursor });
+                truncated = list.truncated;
+                cursor = (list as any).cursor;
+
+                totalSize += list.objects.reduce((sum, o) => sum + o.size, 0);
+                totalObjects += list.objects.length;
             }
+
+            const estimatedAssets = Math.floor(totalObjects / 2);
 
             return jsonResponse({
                 projects: projectsCount?.count || 0,
-                assets: totalAssets,
+                assets: estimatedAssets,
                 totalSize,
                 totalSizeMB: Math.round(totalSize / 1024 / 1024 * 100) / 100
             }, 200, origin);
@@ -482,30 +485,49 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         }
     }
 
-    // GET /api/admin/db/media (List all assets by scanning projects)
+    // GET /api/admin/db/media (List all assets from R2)
     if (method === 'GET' && path === '/api/admin/db/media') {
         if (!isAdmin) return errorResponse('Unauthorized', 401, origin);
 
         try {
+            // 1. Get D1 projects for metadata lookup
             const projects = await env.DB.prepare('SELECT id, title, data FROM projects').all<{ id: string, title: string, data: string }>();
-            const allAssets = [];
+            const projectMap = new Map<string, string>();
+            const assetNameMap = new Map<string, string>();
 
             for (const p of projects.results) {
+                projectMap.set(p.id, p.title);
                 try {
                     const data = JSON.parse(p.data) as ProjectJsonData;
                     if (data.assets) {
-                        for (const a of data.assets) {
-                            allAssets.push({
-                                ...a,
-                                projectId: p.id,
-                                projectTitle: p.title
-                            });
-                        }
+                        for (const a of data.assets) assetNameMap.set(a.assetId, a.fileName);
                     }
                 } catch { }
             }
 
-            return jsonResponse(allAssets, 200, origin);
+            // 2. List R2
+            const list = await env.BUCKET.list({ limit: 900 });
+            const assets: any[] = [];
+
+            list.objects.forEach(o => {
+                if (o.key.endsWith('/original')) {
+                    const parts = o.key.split('/');
+                    if (parts.length === 3) {
+                        const projectId = parts[0];
+                        const assetId = parts[1];
+
+                        assets.push({
+                            assetId,
+                            projectId,
+                            fileName: assetNameMap.get(assetId) || 'Orphaned File',
+                            projectTitle: projectMap.get(projectId) || 'Unknown Project',
+                            byteSize: o.size,
+                        });
+                    }
+                }
+            });
+
+            return jsonResponse(assets, 200, origin);
         } catch (error) {
             return errorResponse('Failed to list media', 500, origin);
         }
@@ -560,37 +582,35 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         }
     }
 
-    // DELETE /api/admin/db/media/:id (Delete specific asset globally)
-    const adminDelAssetMatch = path.match(/^\/api\/admin\/db\/media\/([^/]+)$/);
+    // DELETE /api/admin/db/media/:projectId/:assetId (Delete specific asset globally)
+    const adminDelAssetMatch = path.match(/^\/api\/admin\/db\/media\/([^/]+)\/([^/]+)$/);
     if (method === 'DELETE' && adminDelAssetMatch) {
         if (!isAdmin) return errorResponse('Unauthorized', 401, origin);
-        const assetId = adminDelAssetMatch[1];
+        const projectId = adminDelAssetMatch[1];
+        const assetId = adminDelAssetMatch[2];
 
         try {
-            const projects = await env.DB.prepare('SELECT id, data FROM projects').all<{ id: string, data: string }>();
-            let found = false;
+            // Delete from R2
+            await Promise.all([
+                env.BUCKET.delete(`${projectId}/${assetId}/original`),
+                env.BUCKET.delete(`${projectId}/${assetId}/thumb`)
+            ]);
 
-            for (const p of projects.results) {
+            // Try to clean from D1 if exists
+            const project = await env.DB.prepare('SELECT data FROM projects WHERE id = ?').bind(projectId).first<{ data: string }>();
+            if (project) {
                 try {
-                    const data = JSON.parse(p.data) as ProjectJsonData;
+                    const data = JSON.parse(project.data) as ProjectJsonData;
                     if (data.assets) {
                         const idx = data.assets.findIndex(a => a.assetId === assetId);
                         if (idx !== -1) {
-                            const asset = data.assets[idx];
-                            await Promise.all([
-                                env.BUCKET.delete(asset.originalKey),
-                                env.BUCKET.delete(asset.thumbKey)
-                            ]);
                             data.assets.splice(idx, 1);
-                            await updateProjectData(env, p.id, data);
-                            found = true;
-                            break;
+                            await updateProjectData(env, projectId, data);
                         }
                     }
                 } catch { }
             }
 
-            if (!found) return errorResponse('Asset not found', 404, origin);
             return jsonResponse({ ok: true }, 200, origin);
         } catch (error) {
             return errorResponse('Failed to delete media', 500, origin);
