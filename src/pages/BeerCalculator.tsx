@@ -15,61 +15,66 @@ interface Message {
 
 const MESSAGES: Record<number, Message> = {
     0: {
-        headline: "Ready to start?",
-        serious: "Zero alcohol in system. Full capacity.",
-        suggestion: "Drink water if you're thirsty."
+        headline: "Level 0: Zero Alcohol",
+        serious: "Completely sober. Full mental capacity.",
+        suggestion: "Stay hydrated and ready."
     },
     1: {
-        headline: "The First Sip 🍺",
-        serious: "Almost no impairment, but your liver knows.",
+        headline: "Level 1: The Starter",
+        serious: "Mild relaxation. Your liver is active.",
         suggestion: "Savor it and pace yourself."
     },
     2: {
-        headline: "Double Trouble",
-        serious: "Chatty and relaxed. Reaction time dips slightly.",
-        suggestion: "Great time for a water break."
+        headline: "Level 2: Warming Up",
+        serious: "Reaction time slows slightly. Feeling chatty.",
+        suggestion: "Have a glass of water now."
     },
     3: {
-        headline: "Confidence Boost",
-        serious: "You think you're funnier. You probably aren't.",
-        suggestion: "Definitely do not drive."
+        headline: "Level 3: The Buzz",
+        serious: "Inhibitions drop. Judgement softens.",
+        suggestion: "Do not drive. Seriously."
     },
     4: {
-        headline: "The Wobble Begins",
-        serious: "Fine motor skills are checking out.",
-        suggestion: "Eat something substantial now."
+        headline: "Level 4: Wobbly",
+        serious: "Coordination impaired. Emotions amplified.",
+        suggestion: "Eat some substantial food."
     },
     5: {
-        headline: "High Spirits",
-        serious: "Emotions amplified. Happy is happier, sad is sadder.",
-        suggestion: "Phone down. Don't text your ex."
+        headline: "Level 5: Tipsy",
+        serious: "Balance slips. Reasoning gets fuzzy.",
+        suggestion: "Put the phone away. Don't text exes."
     },
     6: {
-        headline: "Slippery Slope",
-        serious: "Balance checks required. Slurring feels natural.",
+        headline: "Level 6: Slippery Slope",
+        serious: "Slurring speech. Hydration is critical.",
         suggestion: "Switch to water immediately."
     },
     7: {
-        headline: "Last Call Territory",
-        serious: "Tomorrow is going to hurt. Dehydration loading...",
-        suggestion: "Seriously, take a break."
+        headline: "Level 7: The Edge",
+        serious: "Hangover loading... Sleep quality will suffer.",
+        suggestion: "Stop now or take a very long break."
     },
     8: {
         headline: "RED ZONE 🚨",
         serious: "Significant impairment. Nausea likely.",
-        suggestion: "Stop. Hydrate. Get home safe."
+        suggestion: "Stop drinking. Hydrate. Get home safe."
     },
     9: {
-        headline: "Memory Eraser",
-        serious: "Blackout risk. 'What happened?' territory.",
-        suggestion: "Find a sofa. Stay there."
+        headline: "RED ZONE 🚨",
+        serious: "Blackout risk. Motor control failing.",
+        suggestion: "Find a safe place. Stay there."
+    },
+    10: {
+        headline: "RED ZONE ⚠️",
+        serious: "Severe intoxication. Vomiting risk.",
+        suggestion: "Do not be alone. Stop."
     }
 };
 
-const MAX_MESSAGE = {
-    headline: "System Overload ⚠️",
-    serious: "Severe intoxication. Health risk rising fast.",
-    suggestion: "Stop immediately. Ask for help."
+const EMERGENCY_MESSAGE = {
+    headline: "EMERGENCY ZONE 🚑",
+    serious: "Risk of alcohol poisoning. Unconscious risk.",
+    suggestion: "Seek help if unresponsive. Stop immediately."
 };
 
 export const BeerCalculator = () => {
@@ -97,11 +102,9 @@ export const BeerCalculator = () => {
         setShakeKey(0);
     };
 
-    const currentMessage = count <= 9 ? MESSAGES[count] : MAX_MESSAGE;
+    const currentMessage = count <= 10 ? MESSAGES[count] : EMERGENCY_MESSAGE;
 
-    // Tilt angle increases with count, capped at 15 degrees
-    // Alternates direction slightly to look organic: count * 2 * (1 or -1) is too erratic? 
-    // Just a constant tilt that gets steeper.
+    // Tilt angle increases with count, capped at 20 degrees
     const tiltAngle = Math.min(count * 2, 20);
 
     return (
@@ -158,7 +161,7 @@ export const BeerCalculator = () => {
                                 initial={{ scale: 0.8, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 className={`text-7xl font-black font-display tracking-tighter ${count >= 8 ? 'text-red-600 drop-shadow-md' :
-                                    count >= 4 ? 'text-orange-500' : 'text-slate-900 dark:text-white'
+                                        count >= 4 ? 'text-orange-500' : 'text-slate-900 dark:text-white'
                                     }`}
                             >
                                 {count}
@@ -209,8 +212,8 @@ export const BeerCalculator = () => {
 
                         {/* New Message System */}
                         <div className={`rounded-xl p-5 text-center transition-colors duration-300 relative z-10 border ${count >= 8
-                            ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30'
-                            : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800'
+                                ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30'
+                                : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800'
                             }`}>
                             <AnimatePresence mode="wait">
                                 <motion.div
@@ -256,7 +259,7 @@ export const BeerCalculator = () => {
                     </AnimatePresence>
 
                     <p className="text-center text-xs text-slate-400 dark:text-slate-600 max-w-xs mx-auto">
-                        For fun and general info only. Not medical advice. Please drink responsibly.
+                        Educational only. Not medical advice. Please drink responsibly.
                     </p>
                 </motion.div>
             </main>
