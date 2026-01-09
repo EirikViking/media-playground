@@ -63,7 +63,7 @@ test.describe('Phase 3A: Image Upload and Sharing', () => {
 
         // Step 3b: Wait for project to be created and image to appear in grid
         await expect(page.getByText('Current Name').first()).toBeVisible({ timeout: 10000 }); // Sidebar verifies existence
-        await expect(page.locator('[class*="aspect-square"]').first()).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('[data-testid="asset-card"]').first()).toBeVisible({ timeout: 10000 });
 
         // Step 5: Click Upload button
         const uploadButton = page.getByRole('button', { name: /upload/i });
@@ -116,13 +116,13 @@ test.describe('Phase 3A: Image Upload and Sharing', () => {
 
         // Step 9: Verify image loads in shared view
         // Wait for project to load
-        await expect(newPage.locator('[class*="aspect-square"]').first()).toBeVisible({ timeout: 15000 });
+        await expect(newPage.locator('[data-testid="asset-card"]').first()).toBeVisible({ timeout: 15000 });
 
         // Verify cloud badge is present (indicating R2 image)
         await expect(newPage.getByTestId('upload-success').first()).toBeVisible({ timeout: 10000 });
 
         // Step 10: Click on image to view full resolution
-        await newPage.locator('[class*="aspect-square"]').first().click();
+        await newPage.locator('[data-testid="asset-card"]').first().click();
 
         // Modal should appear with full image
         await expect(newPage.locator('[class*="fixed"][class*="inset"]').last()).toBeVisible({ timeout: 5000 });
