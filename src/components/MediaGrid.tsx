@@ -65,12 +65,29 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
             transition={{ duration: 0.2, delay: index * 0.05 }}
             className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-shadow bg-slate-200 dark:bg-slate-800"
             onClick={() => onItemClick(item)}
+            data-testid="asset-card"
           >
             {item.type === 'video' ? (
               <video
+                data-testid="video-asset"
                 src={item.url}
+                poster={item.thumbUrl || undefined}
                 className="w-full h-full object-cover"
-                controls
+                muted
+                loop
+                playsInline
+                onMouseEnter={(e) => {
+                  // Autoplay on hover (desktop only)
+                  if (window.matchMedia('(hover: hover)').matches) {
+                    e.currentTarget.play().catch(() => {
+                      // Ignore autoplay errors
+                    });
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.pause();
+                  e.currentTarget.currentTime = 0;
+                }}
               />
             ) : item.type === 'audio' ? (
               <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-pink-500 to-purple-600 text-white p-4">
@@ -82,6 +99,7 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
               </div>
             ) : item.type === 'image' ? (
               <img
+                data-testid="asset-thumb"
                 src={item.thumbUrl || item.url}
                 alt={item.title}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"

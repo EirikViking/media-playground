@@ -73,6 +73,77 @@ export async function generateThumbnail(file: File, maxWidth = UPLOAD_LIMITS.thu
 }
 
 /**
+ * Generate thumbnail from video file by capturing a frame
+ */
+export async function generateVideoThumbnail(file: File, maxWidth = UPLOAD_LIMITS.thumbWidth): Promise<{ blob: Blob; width: number; height: number }> {
+    return new Promise((resolve, reject) => {
+        const video = document.createElement('video');
+        const url = URL.createObjectURL(file);
+
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+
+        video.onloadedmetadata = () => {
+            // Seek to 0.5 seconds or 10% of duration
+            const seekTime = Math.min(0.5, video.duration * 0.1);
+            video.currentTime = seekTime;
+        };
+
+        video.onseeked = () => {
+            try {
+                // Calculate dimensions
+                let width = video.videoWidth;
+                let height = video.videoHeight;
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                // Create canvas and draw frame
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    URL.revokeObjectURL(url);
+                    reject(new Error('Failed to get canvas context'));
+                    return;
+                }
+
+                ctx.drawImage(video, 0, 0, width, height);
+
+                // Convert to blob
+                canvas.toBlob(
+                    (blob) => {
+                        URL.revokeObjectURL(url);
+                        if (blob) {
+                            resolve({ blob, width: video.videoWidth, height: video.videoHeight });
+                        } else {
+                            reject(new Error('Failed to create video thumbnail blob'));
+                        }
+                    },
+                    'image/jpeg',
+                    0.8
+                );
+            } catch (e) {
+                URL.revokeObjectURL(url);
+                reject(e);
+            }
+        };
+
+        video.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Failed to load video'));
+        };
+
+        video.src = url;
+    });
+}
+
+/**
  * Validate file before upload
  */
 export function validateFile(file: File): { valid: boolean; error?: string } {
@@ -153,12 +224,60 @@ export async function uploadImage(
                 thumbBlob = thumbResult.blob;
                 width = thumbResult.width;
                 height = thumbResult.height;
+            } else if (file.type.startsWith('video/')) {
+                try {
+                    const thumbResult = await generateVideoThumbnail(file);
+                    thumbBlob = thumbResult.blob;
+                    width = thumbResult.width;
+                    height = thumbResult.height;
+                } catch (videoError) {
+                    console.warn('Video thumbnail generation failed, using placeholder:', videoError);
+                    // Create a small placeholder image
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 320;
+                    canvas.height = 180;
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        ctx.fillStyle = '#1e293b';
+                        ctx.fillRect(0, 0, 320, 180);
+                        ctx.fillStyle = '#64748b';
+                        ctx.font = '48px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('🎬', 160, 90);
+                    }
+                    thumbBlob = await new Promise & lt; Blob & gt; ((resolve, reject) =& gt; {
+                        canvas.toBlob((blob) =& gt; {
+                            if (blob) resolve(blob);
+                            else reject(new Error('Failed to create placeholder'));
+                        }, 'image/jpeg', 0.8);
+                    });
+                    width = 320;
+                    height = 180;
+                }
             } else {
-                // For videos/audio, create a dummy placeholder thumbnail for now
-                // In a real app, we'd generate a frame poster
-                thumbBlob = new Blob([''], { type: 'text/plain' });
-                width = 0;
-                height = 0;
+                // For audio, create a placeholder thumbnail
+                const canvas = document.createElement('canvas');
+                canvas.width = 320;
+                canvas.height = 320;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.fillStyle = '#7c3aed';
+                    ctx.fillRect(0, 0, 320, 320);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = '64px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🎵', 160, 160);
+                }
+                thumbBlob = await new Promise & lt; Blob & gt; ((resolve, reject) =& gt; {
+                    canvas.toBlob((blob) =& gt; {
+                        if (blob) resolve(blob);
+                        else reject(new Error('Failed to create placeholder'));
+                    }, 'image/jpeg', 0.8);
+                });
+                width = 320;
+                height = 320;
             }
         } catch (e) {
             const error = e instanceof Error ? e.message : 'Thumbnail generation failed';
