@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
-import { Gamepad2, Play, Users, ArrowLeft } from 'lucide-react';
+import { Gamepad2, Play, Users, ArrowLeft, ExternalLink } from 'lucide-react';
 import { Button } from '../components/Button';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { Link } from 'react-router-dom';
+
+const ROAST_GAME_URL = 'https://c303a75a.roast-rage-redux2.pages.dev/';
 
 interface Game {
     id: string;
@@ -16,12 +18,12 @@ interface Game {
 
 const GAMES: Game[] = [
     {
-        id: 'roast-game',
-        title: 'Roast Game',
-        description: 'The ultimate roasting experience. Turn your beautiful photos into art (or something like it) with our chaos generator.',
-        image: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&q=80&w=2340', // Placeholder fire/roast img
+        id: 'roast-rage-redux-2',
+        title: 'Roast Rage Redux 2',
+        description: 'The ultimate roasting experience. Battle through waves of chaos in this action-packed web game. Play now or open in fullscreen for the best experience.',
+        image: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&q=80&w=2340',
         isFeatured: true,
-        tags: ['Chaos', 'Creative', 'Web Game']
+        tags: ['Action', 'Web Game', 'Featured']
     },
     {
         id: 'aoe4',
@@ -75,44 +77,55 @@ export const Games = () => {
                     </p>
                 </div>
 
-                {/* Featured Game */}
+                {/* Featured Game: Roast Rage Redux 2 */}
                 {featuredGame && (
                     <motion.section
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
-                        className="relative rounded-3xl overflow-hidden bg-slate-900 shadow-2xl mx-auto max-w-5xl group"
+                        className="relative rounded-3xl overflow-hidden bg-slate-900 shadow-2xl mx-auto max-w-5xl"
                     >
-                        <div className="absolute inset-0">
-                            <img
-                                src={featuredGame.image}
-                                alt={featuredGame.title}
-                                className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity duration-700"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
-                        </div>
-
-                        <div className="relative p-8 md:p-16 flex flex-col items-start gap-6 pt-32 md:pt-48">
-                            <div className="flex gap-2">
+                        {/* Game Header */}
+                        <div className="relative bg-gradient-to-br from-amber-500 via-orange-600 to-red-600 p-8 md:p-12">
+                            <div className="flex gap-2 mb-4">
                                 {featuredGame.tags.map(tag => (
-                                    <span key={tag} className="px-3 py-1 bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-wider rounded-full backdrop-blur-sm border border-amber-500/20">
+                                    <span key={tag} className="px-3 py-1 bg-black/30 text-white text-xs font-bold uppercase tracking-wider rounded-full backdrop-blur-sm border border-white/20">
                                         {tag}
                                     </span>
                                 ))}
                             </div>
-                            <h2 className="text-4xl md:text-6xl font-bold text-white font-display">
+                            <h2 className="text-4xl md:text-6xl font-bold text-white font-display mb-4">
                                 {featuredGame.title}
                             </h2>
-                            <p className="text-lg text-slate-200 max-w-xl leading-relaxed">
+                            <p className="text-lg text-white/90 max-w-2xl leading-relaxed mb-6">
                                 {featuredGame.description}
                             </p>
+                            <a
+                                href={ROAST_GAME_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 bg-white text-slate-900 px-6 py-3 rounded-full font-bold hover:bg-slate-100 transition-colors shadow-lg"
+                            >
+                                <ExternalLink className="w-5 h-5" />
+                                Open Fullscreen
+                            </a>
+                        </div>
 
-                            <Link to="/studio">
-                                <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-slate-900 border-none font-bold text-lg px-8 shadow-lg shadow-amber-900/20">
-                                    <Play className="w-6 h-6 mr-2 fill-current" />
-                                    Play Now
-                                </Button>
-                            </Link>
+                        {/* Game Iframe */}
+                        <div className="relative w-full bg-black" style={{ paddingBottom: '56.25%' }}>
+                            <iframe
+                                src={ROAST_GAME_URL}
+                                title="Roast Rage Redux 2"
+                                className="absolute inset-0 w-full h-full border-0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
+                        </div>
+
+                        {/* Mobile Hint */}
+                        <div className="p-4 bg-slate-800/50 backdrop-blur-sm text-center text-sm text-slate-300">
+                            <p className="md:hidden">💡 For best experience, tap "Open Fullscreen" above or rotate your device to landscape.</p>
+                            <p className="hidden md:block">Use WASD or Arrow Keys to move. Click to shoot. Have fun!</p>
                         </div>
                     </motion.section>
                 )}
