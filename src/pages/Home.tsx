@@ -42,6 +42,13 @@ export const Home = () => {
               About Kurt Edgar
             </Link>
             <Link
+              to="/beer-calculator"
+              className="text-sm font-medium text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 transition-colors"
+              data-testid="nav-beer-calc"
+            >
+              Beer Calculator
+            </Link>
+            <Link
               to="/games"
               className="text-sm font-medium text-slate-600 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 transition-colors"
               data-testid="nav-gaming"
