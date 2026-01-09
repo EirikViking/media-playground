@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test('admin panel - auth and summary', async ({ page }) => {
-    await page.goto('/admin');
+    await page.goto('/');
+    await page.getByTestId('nav-admin').click();
+    await expect(page).toHaveURL('/admin');
 
     // Check strict auth UI
     await expect(page.getByText('Restricted Access')).toBeVisible();

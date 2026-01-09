@@ -62,6 +62,7 @@ export const Home = () => {
           <Link
             to="/admin"
             className="text-sm font-medium text-slate-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors"
+            data-testid="nav-admin"
           >
             Admin
           </Link>
