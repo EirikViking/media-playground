@@ -1,8 +1,6 @@
 import { motion } from 'framer-motion';
-import { Gamepad2, Users, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Gamepad2, Users, ExternalLink } from 'lucide-react';
 import { Button } from '../components/Button';
-import { ThemeToggle } from '../components/ThemeToggle';
-import { Link } from 'react-router-dom';
 
 const ROAST_GAME_URL = 'https://c303a75a.roast-rage-redux2.pages.dev/';
 
@@ -54,18 +52,7 @@ export const Games = () => {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white pb-20">
             {/* Header */}
-            <header className="p-6 flex justify-between items-center max-w-7xl mx-auto">
-                <Link
-                    to="/"
-                    className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                    Back to Hub
-                </Link>
-                <ThemeToggle />
-            </header>
-
-            <main className="max-w-7xl mx-auto px-6 space-y-16">
+            <main className="max-w-7xl mx-auto px-6 space-y-16 pt-8">
 
                 {/* Header Section */}
                 <div className="text-center space-y-4 pt-8">

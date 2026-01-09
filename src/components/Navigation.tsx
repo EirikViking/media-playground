@@ -10,9 +10,11 @@ export const Navigation = () => {
     return (
         <>
             <div className="flex items-center gap-8">
-                <span className="font-display text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    Kurt Edgar & Eirik
-                </span>
+                <Link to="/" data-testid="nav-home">
+                    <span className="font-display text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        Kurt Edgar & Eirik
+                    </span>
+                </Link>
 
                 {/* Desktop Nav */}
                 <nav className="hidden md:flex items-center gap-6">

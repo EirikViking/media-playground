@@ -36,6 +36,7 @@ export const AdminPasswordModal = ({ isOpen, onClose, onConfirm, title = "Admin 
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
                 className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl relative z-10 border border-slate-200 dark:border-slate-800"
+                data-testid="admin-password-modal"
             >
                 <button
                     onClick={onClose}
@@ -62,13 +63,14 @@ export const AdminPasswordModal = ({ isOpen, onClose, onConfirm, title = "Admin 
                         placeholder="Enter Admin Password"
                         className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-purple-500 outline-none"
                         autoFocus
+                        data-testid="admin-password-input"
                     />
 
                     <div className="flex gap-2">
                         <Button variant="ghost" className="flex-1" onClick={onClose} type="button">
                             Cancel
                         </Button>
-                        <Button variant="danger" className="flex-1" type="submit" disabled={!password}>
+                        <Button variant="danger" className="flex-1" type="submit" disabled={!password} data-testid="admin-confirm-delete-btn">
                             Verify & Delete
                         </Button>
                     </div>

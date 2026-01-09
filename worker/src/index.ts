@@ -775,7 +775,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             features: {
                 d1: true,
                 r2: typeof env.BUCKET !== 'undefined',
-                adminConfigured: true,
+                adminConfigured: !!(env.ADMIN_PASSWORD && env.ADMIN_PASSWORD !== 'eirik123'),
             }
         }, 200, origin);
     }

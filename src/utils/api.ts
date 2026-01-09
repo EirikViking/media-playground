@@ -128,9 +128,12 @@ class ApiClient {
         });
     }
 
-    async healthCheck(): Promise<boolean> {
-        const result = await this.request<{ status: string }>('/api/health');
-        return result.data?.status === 'ok';
+    async healthCheck(): Promise<{ ok: boolean; adminConfigured?: boolean }> {
+        const result = await this.request<{ status: string; features?: { adminConfigured: boolean } }>('/api/health');
+        return {
+            ok: result.data?.status === 'ok',
+            adminConfigured: result.data?.features?.adminConfigured
+        };
     }
 
     // ==================== CHAOS METHODS ====================

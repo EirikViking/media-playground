@@ -1,25 +1,12 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, Gamepad2 } from 'lucide-react';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { Users, Gamepad2 } from 'lucide-react';
 import { MessengerButtons } from '../components/MessengerButtons';
 import { HoverVideo } from '../components/HoverVideo';
 
 export const AboutKurtEdgar = () => {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-            <header className="p-6 flex justify-between items-center max-w-4xl mx-auto">
-                <Link
-                    to="/"
-                    className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                    data-testid="back-to-home"
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                    Back to Hub
-                </Link>
-                <ThemeToggle />
-            </header>
-
             <main className="max-w-4xl mx-auto px-6 py-12">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}

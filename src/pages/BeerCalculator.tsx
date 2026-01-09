@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, AlertTriangle, RotateCcw, Plus, Minus, Settings } from 'lucide-react';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { AlertTriangle, RotateCcw, Plus, Minus, Settings } from 'lucide-react';
 import { Button } from '../components/Button';
 import { BeerRiskMeter } from '../components/BeerRiskMeter';
 import { playBeerTone, speakMessage } from '../utils/audioSystem';
@@ -98,26 +96,6 @@ export const BeerCalculator = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
-            <header className="p-6 flex justify-between items-center max-w-4xl mx-auto w-full relative z-20">
-                <Link
-                    to="/"
-                    className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                    Back to Hub
-                </Link>
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => setSettingsOpen(!settingsOpen)}
-                        className={`p-2 rounded-full transition-colors ${settingsOpen ? 'bg-purple-100 text-purple-600' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                        aria-label="Audio Settings"
-                    >
-                        <Settings className="w-5 h-5" />
-                    </button>
-                    <ThemeToggle />
-                </div>
-            </header>
-
             {/* Settings Panel */}
             <AnimatePresence>
                 {settingsOpen && (
@@ -181,6 +159,14 @@ export const BeerCalculator = () => {
                 >
                     {/* Main Card */}
                     <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-xl border border-slate-200 dark:border-slate-800 space-y-6 relative overflow-hidden">
+
+                        <button
+                            onClick={() => setSettingsOpen(!settingsOpen)}
+                            className={`absolute top-4 right-4 p-2 rounded-full transition-colors z-20 ${settingsOpen ? 'bg-purple-100 text-purple-600' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                            aria-label="Audio Settings"
+                        >
+                            <Settings className="w-5 h-5" />
+                        </button>
 
                         {/* Beer Can Display */}
                         <div className="flex justify-center mb-2 h-[180px] items-end relative z-10">

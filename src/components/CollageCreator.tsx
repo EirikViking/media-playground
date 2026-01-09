@@ -6,6 +6,7 @@ import { Button } from './Button';
 import { Wand2, Download, RefreshCw, Sparkles, Play, Share2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ChaosMixPlayer } from './ChaosMixPlayer';
+import confetti from 'canvas-confetti';
 
 interface CollageCreatorProps {
   items: MediaItem[];
@@ -54,6 +55,14 @@ export const CollageCreator = ({ items, onPublish }: CollageCreatorProps) => {
     try {
       await onPublish(currentBlob);
       setPublished(true);
+      if (!(window as any).__E2E__) {
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#a855f7', '#ec4899', '#3b82f6'] // Chaos colors
+        });
+      }
     } catch (e) {
       console.error("Publish failed", e);
       alert("Failed to publish to community feed.");

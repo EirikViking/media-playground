@@ -13,14 +13,16 @@ test.describe('Navigation and Hub', () => {
     test('home page displays hub with all sections', async ({ page }) => {
         await page.goto('/');
         await page.getByTestId('app-ready').waitFor();
-        await page.getByTestId('app-ready').waitFor();
-
 
         // Check title
         await expect(page).toHaveTitle(/Kurt Edgar/i);
 
         // Check main heading strict match inside h1
         await expect(page.locator('h1').getByText('PLAYGROUND')).toBeVisible();
+
+        // Check hero text
+        await expect(page.getByTestId('hero-text')).toBeVisible();
+        await expect(page.getByTestId('hero-text')).toHaveText(/Kurt Edgar bravely clicks everything/);
 
         // Check all navigation links exist
         await expect(page.getByTestId('nav-about-eirik')).toBeVisible();
@@ -39,16 +41,14 @@ test.describe('Navigation and Hub', () => {
         await page.goto('/');
         await page.getByTestId('app-ready').waitFor();
 
-        // Click on About Eirik card
         await page.getByTestId('card-about-eirik').click();
 
-        // Should be on About Eirik page
         await expect(page).toHaveURL('/about/eirik');
         await expect(page.getByRole('heading', { name: /About Eirik/i })).toBeVisible();
         await expect(page.getByText(/financially independent technologist/i)).toBeVisible();
 
-        // Test back navigation
-        await page.getByTestId('back-to-home').click();
+        // Test back navigation using Main Menu Logo
+        await page.getByTestId('nav-home').click();
         await expect(page).toHaveURL('/');
     });
 
@@ -56,16 +56,13 @@ test.describe('Navigation and Hub', () => {
         await page.goto('/');
         await page.getByTestId('app-ready').waitFor();
 
-        // Click on About Kurt Edgar card
         await page.getByTestId('card-about-kurt').click();
 
-        // Should be on About Kurt Edgar page
         await expect(page).toHaveURL('/about/kurt-edgar');
         await expect(page.getByRole('heading', { name: /About Kurt Edgar/i })).toBeVisible();
         await expect(page.getByText(/active his whole life/i)).toBeVisible();
 
-        // Test back navigation
-        await page.getByTestId('back-to-home').click();
+        await page.getByTestId('nav-home').click();
         await expect(page).toHaveURL('/');
     });
 
@@ -73,12 +70,9 @@ test.describe('Navigation and Hub', () => {
         await page.goto('/');
         await page.getByTestId('app-ready').waitFor();
 
-        // Click on Gaming card
         await page.getByTestId('card-gaming').click();
 
-        // Should be on Games page
         await expect(page).toHaveURL('/games');
-        // Page heading is "Game Center"
         await expect(page.getByRole('heading', { name: /Game Center/i })).toBeVisible();
     });
 
@@ -86,13 +80,11 @@ test.describe('Navigation and Hub', () => {
         await page.goto('/');
         await page.getByTestId('app-ready').waitFor();
 
-        // Click on Studio card
         await page.getByTestId('card-studio').click();
 
-        // Should be on Studio page
         await expect(page).toHaveURL('/studio');
-        // Should show Studio heading
-        await expect(page.getByRole('heading', { name: /The Studio/i })).toBeVisible();
+        // Should show Studio heading (Updated)
+        await expect(page.getByRole('heading', { name: /Studio Workspace/i })).toBeVisible();
 
         // Assert explanation block exists
         await expect(page.getByTestId('studio-explanation')).toBeVisible();
@@ -127,19 +119,8 @@ test.describe('Navigation and Hub', () => {
         await expect(page).toHaveURL('/music');
     });
 
-    test.skip('deep link to studio with project ID still works', async ({ page }) => {
-        // Test that existing deep links are preserved
-        await page.goto('/studio?project=test-id-123');
-
-        // Should be on Studio page
-        await expect(page).toHaveURL(/\/studio\?project=/);
-        await expect(page.locator('text=Drop media here')).toBeVisible();
-    });
-
     test('admin route still accessible', async ({ page }) => {
         await page.goto('/admin');
-
-        // Should see admin login
         await expect(page).toHaveURL('/admin');
         await expect(page.getByText('Restricted Access')).toBeVisible();
     });

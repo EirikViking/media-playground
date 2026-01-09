@@ -10,7 +10,6 @@ import {
   Code,
   Music
 } from 'lucide-react';
-import { Navigation } from '../components/Navigation';
 
 export const Home = () => {
   return (
@@ -21,10 +20,6 @@ export const Home = () => {
         <div className="absolute top-[40%] -left-[10%] w-[600px] h-[600px] bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '10s' }} />
         <div className="absolute -bottom-[20%] right-[20%] w-[600px] h-[600px] bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '12s' }} />
       </div>
-
-      <header className="p-6 flex justify-between items-center relative z-20 max-w-7xl mx-auto w-full">
-        <Navigation />
-      </header>
 
       <main className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-6">
         <div className="max-w-6xl w-full text-center space-y-12">
@@ -42,9 +37,8 @@ export const Home = () => {
               <span className="block hover:scale-105 transition-transform duration-500 cursor-default">PLAYGROUND</span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto font-light leading-relaxed">
-              Welcome to our creative hub! Explore who we are, challenge yourself with games,
-              or jump into The Studio to create something extraordinary.
+            <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto font-light leading-relaxed" data-testid="hero-text">
+              This is where Eirik builds bold ideas, and Kurt Edgar bravely clicks everything he’s not supposed to, usually with an Isbjørn beer in hand.
             </p>
           </motion.div>
 

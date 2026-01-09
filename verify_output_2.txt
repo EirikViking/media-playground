@@ -22,7 +22,7 @@ computing gzip size...
 [2mdist/[22m[32mindex.html                 [39m[1m[2m  0.87 kB[22m[1m[22m[2m │ gzip:   0.49 kB[22m
 [2mdist/[22m[35massets/index-DVBKA44H.css  [39m[1m[2m 57.29 kB[22m[1m[22m[2m │ gzip:   9.10 kB[22m
 [2mdist/[22m[36massets/index-2F1QuGAj.js   [39m[1m[2m464.22 kB[22m[1m[22m[2m │ gzip: 143.22 kB[22m
-[32m✓ built in 6.26s[39m
+[32m✓ built in 6.55s[39m
 
 ✅ Build passed
 
@@ -38,10 +38,10 @@ computing gzip size...
 ║     Media Playground E2E Verification Suite                  ║
 ╚══════════════════════════════════════════════════════════════╝
 
-[21:38:04] ℹ️ Environment: Local
-[21:38:04] ℹ️ Platform: win32
-[21:38:04] ℹ️ Node: v24.12.0
-[21:38:04] 📦 Installing worker dependencies...
+[21:45:42] ℹ️ Environment: Local
+[21:45:42] ℹ️ Platform: win32
+[21:45:42] ℹ️ Node: v24.12.0
+[21:45:42] 📦 Installing worker dependencies...
 
 up to date, audited 49 packages in 1s
 
@@ -49,7 +49,7 @@ up to date, audited 49 packages in 1s
   run `npm fund` for details
 
 found 0 vulnerabilities
-[21:38:05] 🗄️ Running D1 migrations...
+[21:45:44] 🗄️ Running D1 migrations...
 
 > media-playground-api@1.0.0 db:migrate:local
 > wrangler d1 execute media-playground-db --local --file=./schema.sql
@@ -69,7 +69,7 @@ Use --remote if you want to access the remote instance.
     "results": [],
     "success": true,
     "meta": {
-      "duration": 2
+      "duration": 1
     }
   },
   {
@@ -80,10 +80,10 @@ Use --remote if you want to access the remote instance.
     }
   }
 ]
-[21:38:08] 🔍 Finding free port for frontend...
-[21:38:08] ✅ Using frontend port: 5173
-[21:38:08] ✅ Using worker port: 8787
-[21:38:08] 🔨 Building frontend...
+[21:45:46] 🔍 Finding free port for frontend...
+[21:45:46] ✅ Using frontend port: 5173
+[21:45:46] ✅ Using worker port: 8787
+[21:45:46] 🔨 Building frontend...
 
 > media-playground@1.0.0 build
 > tsc && vite build
@@ -96,9 +96,9 @@ computing gzip size...
 [2mdist/[22m[32mindex.html                 [39m[1m[2m  0.87 kB[22m[1m[22m[2m │ gzip:   0.49 kB[22m
 [2mdist/[22m[35massets/index-DVBKA44H.css  [39m[1m[2m 57.29 kB[22m[1m[22m[2m │ gzip:   9.10 kB[22m
 [2mdist/[22m[36massets/index-BTvLkQtj.js   [39m[1m[2m464.05 kB[22m[1m[22m[2m │ gzip: 143.16 kB[22m
-[32m✓ built in 6.39s[39m
-[21:38:19] 🚀 Starting Worker: npm run dev -- --port 8787 (cwd: worker)
-(node:33116) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+[32m✓ built in 5.95s[39m
+[21:45:56] 🚀 Starting Worker: npm run dev -- --port 8787 (cwd: worker)
+(node:26212) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
 (Use `node --trace-deprecation ...` to show where the warning was created)
   [Worker] > media-playground-api@1.0.0 dev
   [Worker] > wrangler dev --port 8787
@@ -109,23 +109,23 @@ computing gzip size...
   [Worker] [37menv.DB[39m ([2mmedia-playground-db[22m)              [38;2;189;91;8mD1 Database[39m      [34mlocal[39m
   [Worker] [37menv.BUCKET[39m ([2mmedia-playground-assets[22m)      [38;2;189;91;8mR2 Bucket  [39m      [34mlocal[39m
   [Worker] [2m⎔ Starting local server...[22m
-[21:38:21] 🚀 Starting Frontend: npm run preview -- --host 127.0.0.1 --port 5173 --strictPort (cwd: .)
-[21:38:21] ⏳ Waiting for Worker API at http://127.0.0.1:8787/api/health...
+[21:45:58] 🚀 Starting Frontend: npm run preview -- --host 127.0.0.1 --port 5173 --strictPort (cwd: .)
+[21:45:58] ⏳ Waiting for Worker API at http://127.0.0.1:8787/api/health...
   [Worker] [32m[wrangler:info][39m Ready on [32mhttp://127.0.0.1:8787[39m
-[21:38:21] ✅ Worker API is ready! (455ms)
-[21:38:21] ⏳ Waiting for Frontend at http://127.0.0.1:5173...
-  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(377ms)[39m[0m
+[21:45:58] ✅ Worker API is ready! (348ms)
+[21:45:58] ⏳ Waiting for Frontend at http://127.0.0.1:5173...
+  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(296ms)[39m[0m
   [Frontend] > media-playground@1.0.0 preview
   [Frontend] > vite preview --host 127.0.0.1 --port 5173 --strictPort
   [Frontend]   [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5173[22m/[39m
-[21:38:23] ✅ Frontend is ready! (1351ms)
+[21:46:00] ✅ Frontend is ready! (1446ms)
 
-[21:38:23] 🧪 All servers ready. Running tests...
+[21:46:00] 🧪 All servers ready. Running tests...
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   WORKER API TESTS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[21:38:23] ▶️ Running: node scripts/verify-worker.mjs
+[21:46:00] ▶️ Running: node scripts/verify-worker.mjs
 ╔══════════════════════════════════════════════════════════════╗
 ║       Media Playground Worker Verification Suite             ║
 ╚══════════════════════════════════════════════════════════════╝
@@ -134,42 +134,42 @@ computing gzip size...
 
 📋 Phase 1: Health Check
 
-  ⏳ Health check endpoint discovery...   [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(3ms)[39m[0m
+  ⏳ Health check endpoint discovery...   [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(4ms)[39m[0m
 ✅ PASS
-  ⏳ Health response has correct structure...   [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(2ms)[39m[0m
+  ⏳ Health response has correct structure...   [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(3ms)[39m[0m
 ✅ PASS
 
 📋 Phase 2: Project Creation
 
   ⏳ Create test project... 
-     (Project ID: 23a07817-3892-46ed-9996-d006fb5f8d00)
+     (Project ID: 437a354b-332c-4a48-87de-acba5aff49f9)
 ✅ PASS
 
 📋 Phase 3: Asset Upload (R2)
 
-  [Worker] [32m[wrangler:info][39m [0m[1mPOST[22m /api/projects [32m[1m201[22m Created [39m[90m(53ms)[39m[0m
-  ⏳ Upload original image to R2...   [Worker] [32m[wrangler:info][39m [0m[1mPUT[22m /api/upload/23a07817-3892-46ed-9996-d006fb5f8d00/40976220-3eb2-4077-be43-5105cc149bac/original [32m[1m200[22m OK [39m[90m(26ms)[39m[0m
+  ⏳ Upload original image to R2...   [Worker] [32m[wrangler:info][39m [0m[1mPOST[22m /api/projects [32m[1m201[22m Created [39m[90m(38ms)[39m[0m
+  [Worker] [32m[wrangler:info][39m [0m[1mPUT[22m /api/upload/437a354b-332c-4a48-87de-acba5aff49f9/72fc51b4-982a-4082-a5a0-cba82d6f17f8/original [32m[1m200[22m OK [39m[90m(30ms)[39m[0m
 ✅ PASS
-  ⏳ Upload thumbnail to R2...   [Worker] [32m[wrangler:info][39m [0m[1mPUT[22m /api/upload/23a07817-3892-46ed-9996-d006fb5f8d00/40976220-3eb2-4077-be43-5105cc149bac/thumb [32m[1m200[22m OK [39m[90m(15ms)[39m[0m
+  ⏳ Upload thumbnail to R2...   [Worker] [32m[wrangler:info][39m [0m[1mPUT[22m /api/upload/437a354b-332c-4a48-87de-acba5aff49f9/72fc51b4-982a-4082-a5a0-cba82d6f17f8/thumb [32m[1m200[22m OK [39m[90m(13ms)[39m[0m
 ✅ PASS
   ⏳ Commit asset metadata... ✅ PASS
 
 📋 Phase 4: Asset Retrieval (R2 Streaming)
 
-  ⏳ Fetch original from R2...   [Worker] [32m[wrangler:info][39m [0m[1mPOST[22m /api/projects/23a07817-3892-46ed-9996-d006fb5f8d00/assets/commit [32m[1m200[22m OK [39m[90m(10ms)[39m[0m
-  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/assets/original/23a07817-3892-46ed-9996-d006fb5f8d00/40976220-3eb2-4077-be43-5105cc149bac [32m[1m200[22m OK [39m[90m(5ms)[39m[0m
+  ⏳ Fetch original from R2...   [Worker] [32m[wrangler:info][39m [0m[1mPOST[22m /api/projects/437a354b-332c-4a48-87de-acba5aff49f9/assets/commit [32m[1m200[22m OK [39m[90m(13ms)[39m[0m
+  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/assets/original/437a354b-332c-4a48-87de-acba5aff49f9/72fc51b4-982a-4082-a5a0-cba82d6f17f8 [32m[1m200[22m OK [39m[90m(5ms)[39m[0m
 ✅ PASS
   ⏳ Fetch thumbnail from R2... ✅ PASS
-  ⏳ Project data includes asset...   [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/assets/thumb/23a07817-3892-46ed-9996-d006fb5f8d00/40976220-3eb2-4077-be43-5105cc149bac [32m[1m200[22m OK [39m[90m(4ms)[39m[0m
+  ⏳ Project data includes asset...   [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/assets/thumb/437a354b-332c-4a48-87de-acba5aff49f9/72fc51b4-982a-4082-a5a0-cba82d6f17f8 [32m[1m200[22m OK [39m[90m(3ms)[39m[0m
 ✅ PASS
 
 📋 Phase 5: Cleanup
 
-  ⏳ Delete asset...   [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/projects/23a07817-3892-46ed-9996-d006fb5f8d00 [32m[1m200[22m OK [39m[90m(5ms)[39m[0m
+  ⏳ Delete asset...   [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/projects/437a354b-332c-4a48-87de-acba5aff49f9 [32m[1m200[22m OK [39m[90m(5ms)[39m[0m
 ✅ PASS
-  ⏳ Verify asset deleted from R2...   [Worker] [32m[wrangler:info][39m [0m[1mDELETE[22m /api/projects/23a07817-3892-46ed-9996-d006fb5f8d00/assets/40976220-3eb2-4077-be43-5105cc149bac [32m[1m200[22m OK [39m[90m(17ms)[39m[0m
+  ⏳ Verify asset deleted from R2...   [Worker] [32m[wrangler:info][39m [0m[1mDELETE[22m /api/projects/437a354b-332c-4a48-87de-acba5aff49f9/assets/72fc51b4-982a-4082-a5a0-cba82d6f17f8 [32m[1m200[22m OK [39m[90m(18ms)[39m[0m
 ✅ PASS
-  ⏳ Delete test project...   [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/assets/original/23a07817-3892-46ed-9996-d006fb5f8d00/40976220-3eb2-4077-be43-5105cc149bac [33m[1m404[22m Not Found [39m[90m(4ms)[39m[0m
+  ⏳ Delete test project...   [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/assets/original/437a354b-332c-4a48-87de-acba5aff49f9/72fc51b4-982a-4082-a5a0-cba82d6f17f8 [33m[1m404[22m Not Found [39m[90m(3ms)[39m[0m
 ✅ PASS
 
 ╔══════════════════════════════════════════════════════════════╗
@@ -178,47 +178,47 @@ computing gzip size...
 
 ✅ All verifications PASSED
 
-  [Worker] [32m[wrangler:info][39m [0m[1mDELETE[22m /api/projects/23a07817-3892-46ed-9996-d006fb5f8d00 [32m[1m200[22m OK [39m[90m(8ms)[39m[0m
+  [Worker] [32m[wrangler:info][39m [0m[1mDELETE[22m /api/projects/437a354b-332c-4a48-87de-acba5aff49f9 [32m[1m200[22m OK [39m[90m(10ms)[39m[0m
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   PLAYWRIGHT UI TESTS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[21:38:23] ▶️ Running: npx playwright test --reporter=list
+[21:46:00] ▶️ Running: npx playwright test --reporter=list
 
 Running 17 tests using 1 worker
 
-  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/chaos [32m[1m200[22m OK [39m[90m(17ms)[39m[0m
-  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/projects [32m[1m200[22m OK [39m[90m(41ms)[39m[0m
-  ✘   1 [chromium] › tests\playwright\admin_actions.spec.ts:11:3 › Admin Actions › community project delete flow UI (806ms)
+  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/chaos [32m[1m200[22m OK [39m[90m(14ms)[39m[0m
+  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/projects [32m[1m200[22m OK [39m[90m(18ms)[39m[0m
+  ✘   1 [chromium] › tests\playwright\admin_actions.spec.ts:11:3 › Admin Actions › community project delete flow UI (749ms)
   -   2 [chromium] › tests\playwright\admin.spec.ts:10:8 › Admin Panel › admin panel - auth and summary
-  ✓   3 [chromium] › tests\playwright\music.spec.ts:14:3 › Music Library › renders music library correctly (846ms)
-  ✓   4 [chromium] › tests\playwright\music.spec.ts:23:3 › Music Library › playlist renders items (649ms)
-  ✓   5 [chromium] › tests\playwright\music.spec.ts:31:3 › Music Library › search filters tracks (665ms)
-  ✓   6 [chromium] › tests\playwright\music.spec.ts:49:3 › Music Library › kurt mode toggles (681ms)
-  ✓   7 [chromium] › tests\playwright\music.spec.ts:59:3 › Music Library › mini player appears (475ms)
-  ✓   8 [chromium] › tests\playwright\navigation.spec.ts:18:3 › Navigation and Hub › home page displays hub with all sections (445ms)
-  ✓   9 [chromium] › tests\playwright\navigation.spec.ts:46:3 › Navigation and Hub › navigate to About Eirik page (719ms)
-  ✓  10 [chromium] › tests\playwright\navigation.spec.ts:62:3 › Navigation and Hub › navigate to About Kurt Edgar page (774ms)
-  ✓  11 [chromium] › tests\playwright\navigation.spec.ts:76:3 › Navigation and Hub › navigate to Gaming page (604ms)
-  [Worker] [32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/chaos [32m[1m204[22m No Content [39m[90m(5ms)[39m[0m
-  [Worker] [32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/projects [32m[1m204[22m No Content [39m[90m(7ms)[39m[0m
+  ✓   3 [chromium] › tests\playwright\music.spec.ts:14:3 › Music Library › renders music library correctly (618ms)
+  ✓   4 [chromium] › tests\playwright\music.spec.ts:23:3 › Music Library › playlist renders items (586ms)
+  ✓   5 [chromium] › tests\playwright\music.spec.ts:31:3 › Music Library › search filters tracks (549ms)
+  ✓   6 [chromium] › tests\playwright\music.spec.ts:49:3 › Music Library › kurt mode toggles (554ms)
+  ✓   7 [chromium] › tests\playwright\music.spec.ts:59:3 › Music Library › mini player appears (472ms)
+  ✓   8 [chromium] › tests\playwright\navigation.spec.ts:18:3 › Navigation and Hub › home page displays hub with all sections (489ms)
+  ✓   9 [chromium] › tests\playwright\navigation.spec.ts:46:3 › Navigation and Hub › navigate to About Eirik page (659ms)
+  ✓  10 [chromium] › tests\playwright\navigation.spec.ts:62:3 › Navigation and Hub › navigate to About Kurt Edgar page (572ms)
+  ✓  11 [chromium] › tests\playwright\navigation.spec.ts:76:3 › Navigation and Hub › navigate to Gaming page (497ms)
+  [Worker] [32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/chaos [32m[1m204[22m No Content [39m[90m(3ms)[39m[0m
+  [Worker] [32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/projects [32m[1m204[22m No Content [39m[90m(3ms)[39m[0m
   [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/chaos [32m[1m200[22m OK [39m[90m(10ms)[39m[0m
   [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/projects [32m[1m200[22m OK [39m[90m(16ms)[39m[0m
   ✓  12 [chromium] › tests\playwright\navigation.spec.ts:87:3 › Navigation and Hub › navigate to Studio page (522ms)
-  [Worker] [32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/projects [32m[1m204[22m No Content [39m[90m(4ms)[39m[0m
   [Worker] [32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/chaos [32m[1m204[22m No Content [39m[90m(7ms)[39m[0m
-  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/chaos [32m[1m200[22m OK [39m[90m(11ms)[39m[0m
-  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/projects [32m[1m200[22m OK [39m[90m(14ms)[39m[0m
-  ✓  13 [chromium] › tests\playwright\navigation.spec.ts:102:3 › Navigation and Hub › header navigation menu works (1.2s)
-  ✓  14 [chromium] › tests\playwright\navigation.spec.ts:128:3 › Navigation and Hub › admin route still accessible (397ms)
+  [Worker] [32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/projects [32m[1m204[22m No Content [39m[90m(3ms)[39m[0m
+  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/chaos [32m[1m200[22m OK [39m[90m(8ms)[39m[0m
+  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/projects [32m[1m200[22m OK [39m[90m(13ms)[39m[0m
+  ✓  13 [chromium] › tests\playwright\navigation.spec.ts:102:3 › Navigation and Hub › header navigation menu works (1.1s)
+  ✓  14 [chromium] › tests\playwright\navigation.spec.ts:128:3 › Navigation and Hub › admin route still accessible (353ms)
   -  15 [chromium] › tests\playwright\share.spec.ts:35:8 › Phase 3A: Image Upload and Sharing › upload image, get cloud badge, and share
-  [Worker] [32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/projects [32m[1m204[22m No Content [39m[90m(10ms)[39m[0m
   [Worker] [32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/chaos [32m[1m204[22m No Content [39m[90m(9ms)[39m[0m
-  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/chaos [32m[1m200[22m OK [39m[90m(7ms)[39m[0m
-  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/projects [32m[1m200[22m OK [39m[90m(11ms)[39m[0m
-  ✘  16 [chromium] › tests\playwright\share.spec.ts:152:3 › Phase 3A: Image Upload and Sharing › reject oversized file with friendly message (467ms)
-  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(3ms)[39m[0m
-  ✓  17 [chromium] › tests\playwright\share.spec.ts:166:3 › Phase 3A: Image Upload and Sharing › health endpoint available (330ms)
+  [Worker] [32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/projects [32m[1m204[22m No Content [39m[90m(6ms)[39m[0m
+  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/chaos [32m[1m200[22m OK [39m[90m(16ms)[39m[0m
+  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/projects [32m[1m200[22m OK [39m[90m(20ms)[39m[0m
+  ✘  16 [chromium] › tests\playwright\share.spec.ts:152:3 › Phase 3A: Image Upload and Sharing › reject oversized file with friendly message (501ms)
+  [Worker] [32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(2ms)[39m[0m
+  ✓  17 [chromium] › tests\playwright\share.spec.ts:166:3 › Phase 3A: Image Upload and Sharing › health endpoint available (260ms)
 
 
   1) [chromium] › tests\playwright\admin_actions.spec.ts:11:3 › Admin Actions › community project delete flow UI 
@@ -245,14 +245,14 @@ Running 17 tests using 1 worker
     [2m  - waiting for getByText('Test Project')[22m
 
 
-      41 |
-      42 |         // Check if our mocked project is there
-    > 43 |         await expect(page.getByText('Test Project')).toBeVisible();
+      42 |
+      43 |         // Check if our mocked project is there
+    > 44 |         await expect(page.getByText('Test Project')).toBeVisible();
          |                                                      ^
-      44 |
-      45 |         // Check delete button exists (it should always exist for everyone, but triggers admin modal)
-      46 |         const deleteBtn = page.getByTestId('delete-project-test-project-123');
-        at C:\Vibe-coding-cdrive\simple-frontend-app\media-playground\tests\playwright\admin_actions.spec.ts:43:54
+      45 |
+      46 |         // Check delete button exists (it should always exist for everyone, but triggers admin modal)
+      47 |         const deleteBtn = page.getByTestId('delete-project-test-project-123');
+        at C:\Vibe-coding-cdrive\simple-frontend-app\media-playground\tests\playwright\admin_actions.spec.ts:44:54
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
     test-results\admin_actions-Admin-Actions-community-project-delete-flow-UI-chromium\test-failed-1.png
@@ -295,7 +295,7 @@ Running 17 tests using 1 worker
     [chromium] › tests\playwright\admin_actions.spec.ts:11:3 › Admin Actions › community project delete flow UI 
     [chromium] › tests\playwright\share.spec.ts:152:3 › Phase 3A: Image Upload and Sharing › reject oversized file with friendly message 
   2 skipped
-  13 passed (16.1s)
+  13 passed (14.1s)
 
 ╔══════════════════════════════════════════════════════════════╗
 ║  ❌  VERIFICATION FAILED                                     ║
@@ -305,7 +305,7 @@ Error: Command failed with exit code 1
 
 --- Process Outputs (last 200 lines each) ---
 
-PID 22064:
+PID 33040:
 
 > media-playground-api@1.0.0 dev
 > wrangler dev --port 8787
@@ -320,37 +320,37 @@ Your Worker has access to the following bindings:
 
 [2m⎔ Starting local server...[22m
 [32m[wrangler:info][39m Ready on [32mhttp://127.0.0.1:8787[39m
-[32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(377ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(296ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(4ms)[39m[0m
 [32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(3ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(2ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mPOST[22m /api/projects [32m[1m201[22m Created [39m[90m(53ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mPUT[22m /api/upload/23a07817-3892-46ed-9996-d006fb5f8d00/40976220-3eb2-4077-be43-5105cc149bac/original [32m[1m200[22m OK [39m[90m(26ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mPUT[22m /api/upload/23a07817-3892-46ed-9996-d006fb5f8d00/40976220-3eb2-4077-be43-5105cc149bac/thumb [32m[1m200[22m OK [39m[90m(15ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mPOST[22m /api/projects/23a07817-3892-46ed-9996-d006fb5f8d00/assets/commit [32m[1m200[22m OK [39m[90m(10ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mGET[22m /api/assets/original/23a07817-3892-46ed-9996-d006fb5f8d00/40976220-3eb2-4077-be43-5105cc149bac [32m[1m200[22m OK [39m[90m(5ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mGET[22m /api/assets/thumb/23a07817-3892-46ed-9996-d006fb5f8d00/40976220-3eb2-4077-be43-5105cc149bac [32m[1m200[22m OK [39m[90m(4ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mGET[22m /api/projects/23a07817-3892-46ed-9996-d006fb5f8d00 [32m[1m200[22m OK [39m[90m(5ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mDELETE[22m /api/projects/23a07817-3892-46ed-9996-d006fb5f8d00/assets/40976220-3eb2-4077-be43-5105cc149bac [32m[1m200[22m OK [39m[90m(17ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mGET[22m /api/assets/original/23a07817-3892-46ed-9996-d006fb5f8d00/40976220-3eb2-4077-be43-5105cc149bac [33m[1m404[22m Not Found [39m[90m(4ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mDELETE[22m /api/projects/23a07817-3892-46ed-9996-d006fb5f8d00 [32m[1m200[22m OK [39m[90m(8ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mGET[22m /api/chaos [32m[1m200[22m OK [39m[90m(17ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mGET[22m /api/projects [32m[1m200[22m OK [39m[90m(41ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/chaos [32m[1m204[22m No Content [39m[90m(5ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/projects [32m[1m204[22m No Content [39m[90m(7ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mPOST[22m /api/projects [32m[1m201[22m Created [39m[90m(38ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mPUT[22m /api/upload/437a354b-332c-4a48-87de-acba5aff49f9/72fc51b4-982a-4082-a5a0-cba82d6f17f8/original [32m[1m200[22m OK [39m[90m(30ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mPUT[22m /api/upload/437a354b-332c-4a48-87de-acba5aff49f9/72fc51b4-982a-4082-a5a0-cba82d6f17f8/thumb [32m[1m200[22m OK [39m[90m(13ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mPOST[22m /api/projects/437a354b-332c-4a48-87de-acba5aff49f9/assets/commit [32m[1m200[22m OK [39m[90m(13ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mGET[22m /api/assets/original/437a354b-332c-4a48-87de-acba5aff49f9/72fc51b4-982a-4082-a5a0-cba82d6f17f8 [32m[1m200[22m OK [39m[90m(5ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mGET[22m /api/assets/thumb/437a354b-332c-4a48-87de-acba5aff49f9/72fc51b4-982a-4082-a5a0-cba82d6f17f8 [32m[1m200[22m OK [39m[90m(3ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mGET[22m /api/projects/437a354b-332c-4a48-87de-acba5aff49f9 [32m[1m200[22m OK [39m[90m(5ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mDELETE[22m /api/projects/437a354b-332c-4a48-87de-acba5aff49f9/assets/72fc51b4-982a-4082-a5a0-cba82d6f17f8 [32m[1m200[22m OK [39m[90m(18ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mGET[22m /api/assets/original/437a354b-332c-4a48-87de-acba5aff49f9/72fc51b4-982a-4082-a5a0-cba82d6f17f8 [33m[1m404[22m Not Found [39m[90m(3ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mDELETE[22m /api/projects/437a354b-332c-4a48-87de-acba5aff49f9 [32m[1m200[22m OK [39m[90m(10ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mGET[22m /api/chaos [32m[1m200[22m OK [39m[90m(14ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mGET[22m /api/projects [32m[1m200[22m OK [39m[90m(18ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/chaos [32m[1m204[22m No Content [39m[90m(3ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/projects [32m[1m204[22m No Content [39m[90m(3ms)[39m[0m
 [32m[wrangler:info][39m [0m[1mGET[22m /api/chaos [32m[1m200[22m OK [39m[90m(10ms)[39m[0m
 [32m[wrangler:info][39m [0m[1mGET[22m /api/projects [32m[1m200[22m OK [39m[90m(16ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/projects [32m[1m204[22m No Content [39m[90m(4ms)[39m[0m
 [32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/chaos [32m[1m204[22m No Content [39m[90m(7ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mGET[22m /api/chaos [32m[1m200[22m OK [39m[90m(11ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mGET[22m /api/projects [32m[1m200[22m OK [39m[90m(14ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/projects [32m[1m204[22m No Content [39m[90m(10ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/projects [32m[1m204[22m No Content [39m[90m(3ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mGET[22m /api/chaos [32m[1m200[22m OK [39m[90m(8ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mGET[22m /api/projects [32m[1m200[22m OK [39m[90m(13ms)[39m[0m
 [32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/chaos [32m[1m204[22m No Content [39m[90m(9ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mGET[22m /api/chaos [32m[1m200[22m OK [39m[90m(7ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mGET[22m /api/projects [32m[1m200[22m OK [39m[90m(11ms)[39m[0m
-[32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(3ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mOPTIONS[22m /api/projects [32m[1m204[22m No Content [39m[90m(6ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mGET[22m /api/chaos [32m[1m200[22m OK [39m[90m(16ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mGET[22m /api/projects [32m[1m200[22m OK [39m[90m(20ms)[39m[0m
+[32m[wrangler:info][39m [0m[1mGET[22m /api/health [32m[1m200[22m OK [39m[90m(2ms)[39m[0m
 
 
-PID 34568:
+PID 32744:
 
 > media-playground@1.0.0 preview
 > vite preview --host 127.0.0.1 --port 5173 --strictPort
@@ -360,7 +360,7 @@ PID 34568:
 
 📁 Full logs available in: .tmp/
 
-[21:38:42] 🧹 Cleaning up processes...
-[21:38:42] ✅ Cleanup complete
+[21:46:17] 🧹 Cleaning up processes...
+[21:46:17] ✅ Cleanup complete
 
 ❌ E2E Tests failed

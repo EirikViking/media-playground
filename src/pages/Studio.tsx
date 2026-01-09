@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { MediaItem, CloudAsset, ProjectJsonData, UPLOAD_LIMITS } from '../types';
 import { useProject } from '../hooks/useProject';
-import { ThemeToggle } from '../components/ThemeToggle';
 import { Button } from '../components/Button';
 import { DropZone } from '../components/DropZone';
 import { MediaGrid } from '../components/MediaGrid';
@@ -14,7 +13,7 @@ import { CreateProjectModal } from '../components/CreateProjectModal';
 import { ChaosFeed } from '../components/ChaosFeed';
 import { ProjectsGallery } from '../components/ProjectsGallery';
 
-import { ArrowLeft, Trash2, Upload, Shield, Layout, Settings, Globe, Info } from 'lucide-react';
+import { Trash2, Upload, Layout, Settings, Globe, Info } from 'lucide-react';
 import { fileToDataUrl } from '../utils/storage';
 import { api } from '../utils/api';
 import { uploadImages, UploadProgress, validateFile, getAssetUrl } from '../utils/upload';
@@ -218,6 +217,22 @@ export const Studio = () => {
       }
     );
 
+    // FIX: Construct the new state manually to ensure handleSaveProject sees it
+    const updatedItems = project.items.map(item => {
+      // Check success
+      const successAsset = result.successful.find(asset => asset.fileName === item.file?.name);
+      if (successAsset) {
+        return { ...item, cloudAsset: successAsset, uploadStatus: 'uploaded' as const };
+      }
+      // Check failure
+      const failure = result.failed.find(f => f.fileName === item.file?.name);
+      if (failure) {
+        return { ...item, uploadStatus: 'error' as const, uploadError: failure.error };
+      }
+      return item;
+    });
+
+    // Update local state (visuals)
     result.successful.forEach(asset => {
       const item = project.items.find(i => i.file?.name === asset.fileName);
       if (item) {
@@ -241,15 +256,19 @@ export const Studio = () => {
     setUploadErrors(result.failed);
     setIsUploading(false);
 
-    handleSaveProject();
+    // Save with the *correct* updated items
+    handleSaveProject(updatedItems);
     setChaosRefreshTrigger(prev => prev + 1);
   };
 
-  const handleSaveProject = async () => {
+  // FIX: Accept items override to handle race condition where state isn't updated yet
+  const handleSaveProject = async (itemsOverride?: MediaItem[]) => {
     if (!currentProjectId) return;
 
+    const currentItems = itemsOverride || project.items;
+
     // Collect all assets (uploaded)
-    const assets = project.items
+    const assets = currentItems
       .filter(item => item.cloudAsset)
       .map(item => item.cloudAsset!);
 
@@ -323,14 +342,9 @@ export const Studio = () => {
       <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm">
         <div className="max-w-[1600px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <Link to="/" className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-                <ArrowLeft className="w-5 h-5" />
-                <span className="font-medium">Hub</span>
-              </Link>
-              <div className="h-6 w-px bg-slate-200 dark:bg-slate-700"></div>
-              <h1 className="font-display font-bold text-xl text-slate-900 dark:text-white">The Studio</h1>
-            </div>
+            <h1 className="font-display font-bold text-xl text-slate-900 dark:text-white flex items-center gap-2">
+              Studio Workspace
+            </h1>
             <div className="flex items-center gap-3">
               <span className="hidden sm:block text-sm text-slate-500 font-medium px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
                 {project.items.length} item{project.items.length !== 1 ? 's' : ''}
@@ -350,13 +364,6 @@ export const Studio = () => {
               )}
 
               <ShareButton projectId={currentProjectId} projectTitle={projectTitle} />
-
-              <ThemeToggle />
-              <Link to="/admin">
-                <Button variant="ghost" size="sm" title="Admin">
-                  <Shield className="w-4 h-4" />
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
