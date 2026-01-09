@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Lock, Trash2, AlertTriangle, ArrowLeft, Database, HardDrive, FileImage } from 'lucide-react';
+import { Shield, Lock, Trash2, AlertTriangle, ArrowLeft, Database, HardDrive, FileImage, Link as LinkIcon, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { API_BASE } from '../utils/api';
@@ -13,6 +13,7 @@ export const Admin = () => {
     const [media, setMedia] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [copiedAssetId, setCopiedAssetId] = useState<string | null>(null);
 
     // Auth check wrapper
     const authenticatedFetch = async (path: string, options: RequestInit = {}) => {
@@ -104,6 +105,17 @@ export const Admin = () => {
             setError('Error deleting item');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const copyLinkToClipboard = async (projectId: string, assetId: string, fileName: string) => {
+        const url = `${API_BASE}/api/assets/original/${projectId}/${assetId}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            setCopiedAssetId(assetId);
+            setTimeout(() => setCopiedAssetId(null), 2000);
+        } catch (e) {
+            alert(`Failed to copy link. URL: ${url}`);
         }
     };
 
@@ -307,13 +319,26 @@ export const Admin = () => {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <button
-                                                    onClick={() => handleDelete(`/api/admin/db/media/${m.projectId}/${m.assetId}`, `Delete asset "${m.fileName}"?`)}
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                                    title="Delete Asset"
-                                                >
-                                                    <Trash2 className="w-5 h-5" />
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => copyLinkToClipboard(m.projectId, m.assetId, m.fileName)}
+                                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                                        title="Copy Link to Asset"
+                                                    >
+                                                        {copiedAssetId === m.assetId ? (
+                                                            <Check className="w-5 h-5 text-green-600" />
+                                                        ) : (
+                                                            <LinkIcon className="w-5 h-5" />
+                                                        )}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(`/api/admin/db/media/${m.projectId}/${m.assetId}`, `Delete asset "${m.fileName}"?`)}
+                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                        title="Delete Asset"
+                                                    >
+                                                        <Trash2 className="w-5 h-5" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
