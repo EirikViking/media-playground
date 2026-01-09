@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Lock, Trash2, AlertTriangle, ArrowLeft, Database, HardDrive, FileImage } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
+import { API_BASE } from '../utils/api';
 
 export const Admin = () => {
     const [password, setPassword] = useState('');
@@ -309,7 +308,7 @@ export const Admin = () => {
                                                     </div>
                                                 </div>
                                                 <button
-                                                    onClick={() => handleDelete(`/api/admin/db/media/${m.assetId}`, `Delete asset "${m.fileName}"?`)}
+                                                    onClick={() => handleDelete(`/api/admin/db/media/${m.projectId}/${m.assetId}`, `Delete asset "${m.fileName}"?`)}
                                                     className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                                     title="Delete Asset"
                                                 >
