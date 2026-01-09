@@ -1,27 +1,39 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Play, Pause, SkipBack, SkipForward, Shuffle, Volume2, Music, VolumeX } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 
-const TRACKS = [
+const RAW_TRACKS = [
     {
-        title: "Eirik's Logic Flow",
         url: "https://media-playground-api.cromkake.workers.dev/api/assets/original/1fc3d85b-9a12-4a51-9d9f-211432738e0d/073fb463-164a-410b-bf52-29c19088d8c5"
     },
     {
-        title: "Critical Component",
         url: "https://media-playground-api.cromkake.workers.dev/api/assets/original/1fc3d85b-9a12-4a51-9d9f-211432738e0d/20adb989-3d55-43d0-a166-1768fd1f7fbd"
     },
     {
-        title: "Async Await Beat",
         url: "https://media-playground-api.cromkake.workers.dev/api/assets/original/1fc3d85b-9a12-4a51-9d9f-211432738e0d/218e6e5c-bf36-4a7e-8790-d16736beb3cc"
     },
     {
-        title: "Undefined Behavior",
         url: "https://media-playground-api.cromkake.workers.dev/api/assets/original/1fc3d85b-9a12-4a51-9d9f-211432738e0d/3df8601f-f384-460f-bee1-12d4b2a8e06e"
     }
 ];
+
+const TITLE_WORDS = [
+    'Kurt Edgar', 'Stokmarknes', 'Eirik', 'Satan', 'Jævel',
+    'Bæ sa sauen', 'Kuk i bir', 'Rock', 'Heavy', 'Puddel'
+];
+
+// Simple deterministic RNG
+const pseudoRandom = (seed: string) => {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+        const char = seed.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
+};
 
 export const AwesomeMusic = () => {
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -32,6 +44,24 @@ export const AwesomeMusic = () => {
     const [volume, setVolume] = useState(0.8);
     const [isShuffle, setIsShuffle] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
+
+    // Generate stable titles
+    const tracks = useMemo(() => {
+        return RAW_TRACKS.map((track, i) => {
+            const seed = track.url + i;
+            const rand = pseudoRandom(seed);
+            const wordCount = (rand % 2) + 2; // 2 or 3 words
+            const titleWords = [];
+            for (let j = 0; j < wordCount; j++) {
+                const wordIndex = (rand + j * 17) % TITLE_WORDS.length;
+                titleWords.push(TITLE_WORDS[wordIndex]);
+            }
+            return {
+                ...track,
+                title: titleWords.join(' ')
+            };
+        });
+    }, []);
 
     useEffect(() => {
         if (audioRef.current) {
@@ -65,16 +95,16 @@ export const AwesomeMusic = () => {
 
     const handleNext = () => {
         if (isShuffle) {
-            const nextIndex = Math.floor(Math.random() * TRACKS.length);
+            const nextIndex = Math.floor(Math.random() * tracks.length);
             setCurrentTrackIndex(nextIndex);
         } else {
-            setCurrentTrackIndex((prev) => (prev + 1) % TRACKS.length);
+            setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
         }
         setIsPlaying(true);
     };
 
     const handlePrev = () => {
-        setCurrentTrackIndex((prev) => (prev - 1 + TRACKS.length) % TRACKS.length);
+        setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
         setIsPlaying(true);
     };
 
@@ -143,10 +173,10 @@ export const AwesomeMusic = () => {
                     {/* Info */}
                     <div className="text-center mb-8">
                         <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 font-display" data-testid="track-title">
-                            {TRACKS[currentTrackIndex].title}
+                            {tracks[currentTrackIndex].title}
                         </h2>
                         <p className="text-slate-500 dark:text-slate-400 text-sm">
-                            Generic Artist &bull; Amazing Album
+                            Awesome Music by Eirik
                         </p>
                     </div>
 
@@ -193,7 +223,7 @@ export const AwesomeMusic = () => {
                             </button>
                         </div>
 
-                        <div className="w-9" /> {/* Spacer balance */}
+                        <div className="w-9" />
                     </div>
 
                     {/* Volume */}
@@ -219,7 +249,7 @@ export const AwesomeMusic = () => {
                 {/* Playlist Drawer / List */}
                 <div className="mt-8 w-full max-w-md space-y-2">
                     <h3 className="text-sm font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider mb-4 px-2">Playlist</h3>
-                    {TRACKS.map((track, i) => (
+                    {tracks.map((track, i) => (
                         <button
                             key={i}
                             onClick={() => {
@@ -256,7 +286,7 @@ export const AwesomeMusic = () => {
 
             <audio
                 ref={audioRef}
-                src={TRACKS[currentTrackIndex].url}
+                src={tracks[currentTrackIndex].url}
                 onTimeUpdate={handleTimeUpdate}
                 onEnded={handleTrackEnd}
             />

@@ -11,10 +11,10 @@ import { CollageCreator } from '../components/CollageCreator';
 import { ShareButton } from '../components/ShareButton';
 import { UploadProgressPanel } from '../components/UploadProgressPanel';
 import { CreateProjectModal } from '../components/CreateProjectModal';
-import { ChaosFeed } from '../components/ChaosFeed'; // Now the main feed
-import { ProjectsGallery } from '../components/ProjectsGallery'; // Keep for sidebar or removing? We'll keep it simple/remove or keep in sidebar for easy switching.
+import { ChaosFeed } from '../components/ChaosFeed';
+import { ProjectsGallery } from '../components/ProjectsGallery';
 
-import { ArrowLeft, Trash2, Upload, Shield, Layout, Settings, Sparkles, Globe, Monitor } from 'lucide-react';
+import { ArrowLeft, Trash2, Upload, Shield, Layout, Settings, Globe, Info } from 'lucide-react';
 import { fileToDataUrl } from '../utils/storage';
 import { api } from '../utils/api';
 import { uploadImages, UploadProgress, validateFile, getAssetUrl } from '../utils/upload';
@@ -29,7 +29,6 @@ export const Studio = () => {
   // Modal and Sidebar State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  // chaosRefreshTrigger is passed to ChaosFeed (Community Feed)
   const [chaosRefreshTrigger, setChaosRefreshTrigger] = useState(0);
 
   // Upload state
@@ -69,7 +68,6 @@ export const Studio = () => {
     }
 
     // Mash Mode Rule: Only one audio file per batch
-    // Strictly enforced below using allAudio check
     const allAudio = mediaFiles.filter(f => f.type.startsWith('audio/'));
     if (allAudio.length > 1) {
       alert("Mash Validity Error: Only one audio track allowed per batch for background music harmony.");
@@ -116,13 +114,11 @@ export const Studio = () => {
       setProjectTitle(name);
       setSearchParams({ project: res.data.id });
 
-      // Clear local project state to match fresh start
       createNewProject();
       setProject(p => ({ ...p, name }));
 
       setIsCreateModalOpen(false);
 
-      // Process pending files if any
       if (pendingFiles.length > 0) {
         processFiles(pendingFiles);
         setPendingFiles([]);
@@ -132,10 +128,42 @@ export const Studio = () => {
     }
   };
 
+  // UPDATED: Publish logic now saves the blob as a project asset (thumbnail) and saves the project
   const handleChaosPublish = async (blob: Blob) => {
     if (!currentProjectId) return;
-    await api.publishChaos(currentProjectId, `${projectTitle} Chaos`, blob);
-    // When chaos is published, refresh the community feed
+
+    // 1. Upload the generated collage as 'chaos-cover.png'
+    const file = new File([blob], `chaos-cover-${Date.now()}.png`, { type: 'image/png' });
+
+    setIsUploading(true);
+    try {
+      const result = await uploadImages(currentProjectId, [file], () => { });
+      if (result.successful.length > 0) {
+        const asset = result.successful[0];
+        // Add to local items so it appears
+        const newItem: MediaItem = {
+          id: asset.assetId,
+          type: 'image',
+          url: fileToDataUrl(file) as any, // Temp local url
+          title: asset.fileName,
+          tags: [],
+          notes: '',
+          createdAt: Date.now(),
+          cloudAsset: asset,
+          uploadStatus: 'uploaded'
+        };
+        addItem(newItem);
+      }
+    } catch (e) {
+      console.error("Cover upload failed", e);
+    }
+
+    setIsUploading(false);
+
+    // 2. Save Project
+    await handleSaveProject();
+
+    // 3. Refresh Community Feed
     setChaosRefreshTrigger(prev => prev + 1);
   };
 
@@ -167,7 +195,7 @@ export const Studio = () => {
   );
 
   const handleUploadImages = async () => {
-    if (!currentProjectId) return; // Should be handled by modal enforcement
+    if (!currentProjectId) return;
 
     const filesToUpload = pendingUploads
       .filter(item => item.file)
@@ -175,7 +203,6 @@ export const Studio = () => {
 
     if (filesToUpload.length === 0) return;
 
-    // Check limit
     const existingAssets = project.items.filter(i => i.cloudAsset).length;
     if (existingAssets + filesToUpload.length > UPLOAD_LIMITS.maxAssetsPerProject) {
       alert(`Maximum ${UPLOAD_LIMITS.maxAssetsPerProject} images per project.`);
@@ -224,15 +251,14 @@ export const Studio = () => {
     setUploadErrors(result.failed);
     setIsUploading(false);
 
-    // Auto-save project after upload
     handleSaveProject();
-    // Refresh feed to show updated timestamp/content potentially?
     setChaosRefreshTrigger(prev => prev + 1);
   };
 
   const handleSaveProject = async () => {
     if (!currentProjectId) return;
 
+    // Collect all assets (uploaded)
     const assets = project.items
       .filter(item => item.cloudAsset)
       .map(item => item.cloudAsset!);
@@ -349,28 +375,33 @@ export const Studio = () => {
       <main className="max-w-[1600px] mx-auto px-6 py-8">
 
         {/* Explanation Block */}
-        <div className="mb-8 p-6 bg-gradient-to-r from-purple-500/5 to-blue-500/5 rounded-3xl border border-purple-100 dark:border-purple-900/30">
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="flex-1">
-              <h2 className="text-lg font-bold font-display text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
-                <Globe className="w-5 h-5" />
-                Community Chaos (Uploaded)
-              </h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Browse the global feed of mashes and chaos from other users.
-                Uploaded projects appear here. It's a shared space of creativity.
-              </p>
-            </div>
-            <div className="w-px bg-purple-200 dark:bg-purple-800/50 hidden md:block" />
-            <div className="flex-1">
-              <h2 className="text-lg font-bold font-display text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
-                <Monitor className="w-5 h-5" />
-                Local Chaos (Workspace)
-              </h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Your private laboratory. Drop files below to create Audio/Video/Image Mashes.
-                Combine 1 song + visuals for maximum impact.
-              </p>
+        <div className="mb-8 p-6 bg-gradient-to-r from-purple-500/5 to-blue-500/5 rounded-3xl border border-purple-100 dark:border-purple-900/30" data-testid="studio-explanation">
+          <div className="flex flex-col gap-4">
+            <h2 className="text-lg font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
+              <Info className="w-5 h-5 text-purple-500" />
+              How The Studio Works
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white/50 dark:bg-slate-900/50 p-4 rounded-xl border border-purple-100 dark:border-slate-800">
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-1">1. Local Workspace</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Drag & drop media below. Audio and video mashes are supported!
+                  Your workspace is private until you share.
+                </p>
+              </div>
+              <div className="bg-white/50 dark:bg-slate-900/50 p-4 rounded-xl border border-purple-100 dark:border-slate-800">
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-1">2. Generate & Publish</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Use the Chaos Generator to create a collage.
+                  Click <span className="font-bold">Publish to Community</span> to save and share your work in the feed below.
+                </p>
+              </div>
+              <div className="bg-white/50 dark:bg-slate-900/50 p-4 rounded-xl border border-purple-100 dark:border-slate-800">
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-1">3. Collaboration</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Use the Share button to get a link. Anyone with the link can view your project.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -382,10 +413,9 @@ export const Studio = () => {
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-purple-600" />
+                <Globe className="w-6 h-6 text-purple-600" />
                 Community Creations
               </h2>
-              {/* Filters could go here in future */}
             </div>
             <ChaosFeed refreshTrigger={chaosRefreshTrigger} />
           </section>
@@ -462,7 +492,7 @@ export const Studio = () => {
                 </div>
               </div>
 
-              {/* Simplified Local Gallery in Sidebar if needed, or remove? I'll keep it for navigation */}
+              {/* Simplified Local Gallery in Sidebar */}
               <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                 <h4 className="font-bold mb-4 text-sm text-slate-500 uppercase">Recent Projects</h4>
                 <ProjectsGallery onSelect={handleLoadProject} currentProjectId={currentProjectId} />
