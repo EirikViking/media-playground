@@ -1,4 +1,3 @@
-```typescript
 import { useState, useEffect } from 'react';
 import { Download, Share, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,16 +5,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Robust mobile detection
 const isMobileDevice = (): boolean => {
     if (typeof window === 'undefined') return false;
-    
+
     // 1. Check for coarse pointer (touch device)
     const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-    
+
     // 2. Check viewport width (mobile threshold)
     const isMobileWidth = window.matchMedia('(max-width: 768px)').matches;
-    
+
     // 3. User agent fallback for iOS and Android
     const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
+
     return hasCoarsePointer || isMobileWidth || mobileUA;
 };
 

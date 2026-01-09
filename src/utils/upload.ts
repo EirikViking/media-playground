@@ -246,8 +246,8 @@ export async function uploadImage(
                         ctx.textBaseline = 'middle';
                         ctx.fillText('🎬', 160, 90);
                     }
-                    thumbBlob = await new Promise & lt; Blob & gt; ((resolve, reject) =& gt; {
-                        canvas.toBlob((blob) =& gt; {
+                    thumbBlob = await new Promise<Blob>((resolve, reject) => {
+                        canvas.toBlob((blob) => {
                             if (blob) resolve(blob);
                             else reject(new Error('Failed to create placeholder'));
                         }, 'image/jpeg', 0.8);
@@ -270,8 +270,8 @@ export async function uploadImage(
                     ctx.textBaseline = 'middle';
                     ctx.fillText('🎵', 160, 160);
                 }
-                thumbBlob = await new Promise & lt; Blob & gt; ((resolve, reject) =& gt; {
-                    canvas.toBlob((blob) =& gt; {
+                thumbBlob = await new Promise<Blob>((resolve, reject) => {
+                    canvas.toBlob((blob) => {
                         if (blob) resolve(blob);
                         else reject(new Error('Failed to create placeholder'));
                     }, 'image/jpeg', 0.8);
