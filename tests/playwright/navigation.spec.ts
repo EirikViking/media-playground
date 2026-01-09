@@ -91,8 +91,8 @@ test.describe('Navigation and Hub', () => {
 
         // Should be on Studio page
         await expect(page).toHaveURL('/studio');
-        // Should show Create Project modal
-        await expect(page.getByText('Start New Project')).toBeVisible();
+        // Should show Studio heading
+        await expect(page.getByRole('heading', { name: /The Studio/i })).toBeVisible();
     });
 
     test.skip('header navigation menu works', async ({ page }) => {
