@@ -1,6 +1,23 @@
+```typescript
 import { useState, useEffect } from 'react';
-import { Download, Share } from 'lucide-react';
+import { Download, Share, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Robust mobile detection
+const isMobileDevice = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    
+    // 1. Check for coarse pointer (touch device)
+    const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    
+    // 2. Check viewport width (mobile threshold)
+    const isMobileWidth = window.matchMedia('(max-width: 768px)').matches;
+    
+    // 3. User agent fallback for iOS and Android
+    const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    return hasCoarsePointer || isMobileWidth || mobileUA;
+};
 
 export const PwaInstallPrompt = () => {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -10,19 +27,24 @@ export const PwaInstallPrompt = () => {
 
 
     useEffect(() => {
+        // Never show in test mode
         if (import.meta.env.MODE === 'test' || (typeof window !== 'undefined' && (window as any).__E2E__)) {
+            return;
+        }
+
+        // Only proceed if mobile device
+        if (!isMobileDevice()) {
             return;
         }
 
         const handler = (e: Event) => {
             e.preventDefault();
             setDeferredPrompt(e);
-            if ((window as any).__E2E__) return;
             setIsInstallable(true);
         };
         window.addEventListener('beforeinstallprompt', handler);
 
-        // iOS Detection
+        // iOS Detection (only on mobile)
         const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
         if (isIos && !isStandalone) {
@@ -32,7 +54,12 @@ export const PwaInstallPrompt = () => {
         return () => window.removeEventListener('beforeinstallprompt', handler);
     }, []);
 
+    // Don't render anything in test mode or on desktop
     if (import.meta.env.MODE === 'test' || (typeof window !== 'undefined' && (window as any).__E2E__)) {
+        return null;
+    }
+
+    if (!isMobileDevice()) {
         return null;
     }
 
