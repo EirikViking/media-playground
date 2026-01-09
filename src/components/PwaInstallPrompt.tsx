@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, Share, X } from 'lucide-react';
+import { Download, Share } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Robust mobile detection

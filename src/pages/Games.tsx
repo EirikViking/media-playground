@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Gamepad2, Play, Users, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Gamepad2, Users, ArrowLeft, ExternalLink } from 'lucide-react';
 import { Button } from '../components/Button';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { Link } from 'react-router-dom';
