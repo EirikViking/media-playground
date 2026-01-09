@@ -38,7 +38,13 @@ test.describe('Phase 3A: Image Upload and Sharing', () => {
         }
     });
 
-    test.skip('upload image, get cloud badge, and share', async ({ page, context }) => {
+    test.beforeEach(async ({ page }) => {
+        await page.addInitScript(() => {
+            (window as any).__E2E__ = true;
+        });
+    });
+
+    test('upload image, get cloud badge, and share', async ({ page, context }) => {
         // Step 1: Navigate to Studio
         await page.goto('/studio');
         await expect(page).toHaveTitle(/Kurt Edgar/i);

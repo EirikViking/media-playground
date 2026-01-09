@@ -97,7 +97,7 @@ class ApiClient {
     async createProject(title: string, data?: string): Promise<{ data?: { id: string; projectId?: string }; error?: string }> {
         return this.request<{ id: string; projectId?: string }>('/api/projects', {
             method: 'POST',
-            body: JSON.stringify({ name: title, data }),
+            body: JSON.stringify({ title, data: data || "{}" }),
         });
     }
 

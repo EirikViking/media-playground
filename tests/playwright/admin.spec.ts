@@ -1,23 +1,31 @@
 import { test, expect } from '@playwright/test';
 
-test.skip('admin panel - auth and summary', async ({ page }) => {
-    await page.goto('/');
-    await page.getByTestId('nav-admin').click();
-    await expect(page).toHaveURL('/admin');
+test.describe('Admin Panel', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.addInitScript(() => {
+            (window as any).__E2E__ = true;
+        });
+    });
 
-    // Check strict auth UI
-    await expect(page.getByText('Restricted Access')).toBeVisible();
-    await expect(page.getByTestId('admin-password-input')).toBeVisible();
+    test('admin panel - auth and summary', async ({ page }) => {
+        await page.goto('/');
+        await page.getByTestId('nav-admin').click();
+        await expect(page).toHaveURL('/admin');
 
-    // Attempt with wrong password (mocking not strictly needed as real backend handles it, but for E2E we can try)
-    // Note: For local E2E against real worker, we rely on the worker having checks.
-    // We'll trust the happy path for smoke test.
+        // Check strict auth UI
+        await expect(page.getByText('Restricted Access')).toBeVisible();
+        await expect(page.getByTestId('admin-password-input')).toBeVisible();
 
-    // Enter password
-    await page.getByTestId('admin-password-input').fill('eirik123');
-    await page.getByTestId('admin-unlock-button').click();
+        // Attempt with wrong password (mocking not strictly needed as real backend handles it, but for E2E we can try)
+        // Note: For local E2E against real worker, we rely on the worker having checks.
+        // We'll trust the happy path for smoke test.
 
-    // Should see dashboard
-    await expect(page.getByTestId('admin-summary')).toBeVisible();
-    await expect(page.getByText('Total Projects')).toBeVisible();
+        // Enter password
+        await page.getByTestId('admin-password-input').fill('eirik123');
+        await page.getByTestId('admin-unlock-button').click();
+
+        // Should see dashboard
+        await expect(page.getByTestId('admin-summary')).toBeVisible();
+        await expect(page.getByText('Total Projects')).toBeVisible();
+    });
 });

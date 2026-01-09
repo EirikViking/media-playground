@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Users, Gamepad2 } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { MessengerButtons } from '../components/MessengerButtons';
 
 export const AboutKurtEdgar = () => {
     return (
@@ -40,6 +41,11 @@ export const AboutKurtEdgar = () => {
                                 Kurt Edgar Lien is from Stokmarknes and has been active his whole life. He enjoys running in the mountains, simple and honest food, and a cold Isbjørn beer. His taste in music is firmly rooted in 80s hair rock, and while he likes playing video games, he is famously bad at them. Kurt Edgar brings energy, humor, and practicality into any collaboration. He is direct, unpretentious, and action oriented, and often balances more analytical personalities with movement, momentum, and a grounded approach to life.
                             </p>
                         </div>
+                    </div>
+
+
+                    <div className="flex justify-center">
+                        <MessengerButtons />
                     </div>
 
                     <div className="text-center pt-8">

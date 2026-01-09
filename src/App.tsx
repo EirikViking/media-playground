@@ -5,10 +5,12 @@ import { Games } from './pages/Games';
 import { Admin } from './pages/Admin';
 import { AboutEirik } from './pages/AboutEirik';
 import { AboutKurtEdgar } from './pages/AboutKurtEdgar';
+import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 
 function App() {
   return (
     <BrowserRouter>
+      <PwaInstallPrompt />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/studio" element={<Studio />} />

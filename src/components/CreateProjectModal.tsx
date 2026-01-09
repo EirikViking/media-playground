@@ -73,14 +73,18 @@ export const CreateProjectModal = ({ isOpen, onClose, onCreate }: CreateProjectM
                                     placeholder="My Awesome Creation"
                                     autoFocus
                                     required
+                                    minLength={2}
                                 />
+                                {name.trim().length > 0 && name.trim().length < 2 && (
+                                    <p className="text-red-500 text-xs mt-2">Name must be at least 2 characters.</p>
+                                )}
                             </div>
 
-                            <div className="flex justify-end gap-3">
+                            <div className="flex justify-end gap-3 flex-wrap">
                                 <Button type="button" variant="ghost" onClick={onClose}>
                                     Cancel
                                 </Button>
-                                <Button type="submit" disabled={loading || !name.trim()}>
+                                <Button type="submit" disabled={loading || name.trim().length < 2}>
                                     {loading ? 'Creating...' : 'Create Project'}
                                 </Button>
                             </div>

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Sparkles, User } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { MessengerButtons } from '../components/MessengerButtons';
 
 export const AboutEirik = () => {
     return (
@@ -40,6 +41,11 @@ export const AboutEirik = () => {
                                 Eirik is a financially independent technologist, investor, and creative builder, and the creator behind this site. He lives off long term investments in stocks, funds, and crypto, which gives him the freedom to focus on what he does best: inventing, exploring, and building digital things that feel genuinely fun and useful. Known for his ability as a highly intuitive and fast moving vibe coder, Eirik excels at turning loose ideas into working systems with personality. He is full of new and unconventional ideas, constantly experimenting with AI, games, and digital platforms, and always looking for ways to create small moments of digital joy. Originally from Stokmarknes in Northern Norway and now based in Oslo, he combines deep analytical thinking with creativity, curiosity, and a strong desire to make technology feel human rather than heavy.
                             </p>
                         </div>
+                    </div>
+
+
+                    <div className="flex justify-center">
+                        <MessengerButtons />
                     </div>
 
                     <div className="text-center pt-8">

@@ -4,6 +4,12 @@ import { test, expect } from '@playwright/test';
 test.use({ viewport: { width: 1280, height: 720 } });
 
 test.describe('Navigation and Hub', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.addInitScript(() => {
+            (window as any).__E2E__ = true;
+        });
+    });
+
     test('home page displays hub with all sections', async ({ page }) => {
         await page.goto('/');
 
@@ -66,8 +72,8 @@ test.describe('Navigation and Hub', () => {
 
         // Should be on Games page
         await expect(page).toHaveURL('/games');
-        // Page heading is "Arcade"
-        await expect(page.getByRole('heading', { name: /Arcade/i })).toBeVisible();
+        // Page heading is "Game Center"
+        await expect(page.getByRole('heading', { name: /Game Center/i })).toBeVisible();
     });
 
     test('navigate to Studio page', async ({ page }) => {
@@ -78,7 +84,8 @@ test.describe('Navigation and Hub', () => {
 
         // Should be on Studio page
         await expect(page).toHaveURL('/studio');
-        await expect(page.locator('text=Drop media here')).toBeVisible();
+        // Should show Create Project modal
+        await expect(page.getByText('Start New Project')).toBeVisible();
     });
 
     test.skip('header navigation menu works', async ({ page }) => {
