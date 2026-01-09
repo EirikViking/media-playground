@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Users, Gamepad2 } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { MessengerButtons } from '../components/MessengerButtons';
+import { HoverVideo } from '../components/HoverVideo';
 
 export const AboutKurtEdgar = () => {
     return (
@@ -41,6 +42,14 @@ export const AboutKurtEdgar = () => {
                                 Kurt Edgar Lien is from Stokmarknes and has been active his whole life. He enjoys running in the mountains, simple and honest food, and a cold Isbjørn beer. His taste in music is firmly rooted in 80s hair rock, and while he likes playing video games, he is famously bad at them. Kurt Edgar brings energy, humor, and practicality into any collaboration. He is direct, unpretentious, and action oriented, and often balances more analytical personalities with movement, momentum, and a grounded approach to life.
                             </p>
                         </div>
+                    </div>
+
+                    {/* Kurt Video */}
+                    <div className="mx-auto max-w-2xl">
+                        <HoverVideo
+                            src="https://media-playground-api.cromkake.workers.dev/api/assets/original/fd4237ba-f675-4905-b8f4-782b79ec63c8/fb77ab5a-f90f-4831-a41b-ee31d68fb541"
+                            className="aspect-[9/16] md:aspect-video w-full"
+                        />
                     </div>
 
 
