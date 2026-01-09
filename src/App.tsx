@@ -6,6 +6,7 @@ import { Admin } from './pages/Admin';
 import { AboutEirik } from './pages/AboutEirik';
 import { AboutKurtEdgar } from './pages/AboutKurtEdgar';
 import { BeerCalculator } from './pages/BeerCalculator';
+import { AwesomeMusic } from './pages/AwesomeMusic';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
           <Route path="/about/eirik" element={<AboutEirik />} />
           <Route path="/about/kurt-edgar" element={<AboutKurtEdgar />} />
           <Route path="/beer-calculator" element={<BeerCalculator />} />
+          <Route path="/music" element={<AwesomeMusic />} />
         </Routes>
       </div>
     </BrowserRouter>

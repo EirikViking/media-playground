@@ -7,7 +7,8 @@ import {
   Sparkles,
   ArrowRight,
   Palette,
-  Code
+  Code,
+  Music
 } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 
@@ -140,6 +141,15 @@ export const Home = () => {
               featured
               testId="card-studio"
             />
+
+            <SectionCard
+              to="/music"
+              icon={<Music className="w-8 h-8 text-green-500" />}
+              title="Awesome Music"
+              description="Vibe to Eirik's curated playlist"
+              gradient="from-green-500 to-emerald-500"
+              testId="card-music"
+            />
           </motion.div>
 
           <motion.div
@@ -175,12 +185,12 @@ interface SectionCardProps {
 }
 
 const SectionCard = ({ to, icon, title, description, gradient, featured, testId }: SectionCardProps) => (
-  <Link to={to} data-testid={testId}>
+  <Link to={to} data-testid={testId} className="h-full block">
     <motion.div
       whileHover={{ y: -8, scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       className={`
-        relative p-6 rounded-3xl backdrop-blur-md border transition-all h-full
+        relative p-6 rounded-3xl backdrop-blur-md border transition-all h-full flex flex-col items-start text-left
         ${featured
           ? 'bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/30 shadow-xl shadow-purple-500/10'
           : 'bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 hover:border-purple-500/50'
@@ -201,11 +211,11 @@ const SectionCard = ({ to, icon, title, description, gradient, featured, testId 
         {title}
       </h3>
 
-      <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
+      <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4 flex-1">
         {description}
       </p>
 
-      <div className="flex items-center gap-2 text-sm font-semibold">
+      <div className="flex items-center gap-2 text-sm font-semibold mt-auto">
         <span className={`bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
           Explore
         </span>

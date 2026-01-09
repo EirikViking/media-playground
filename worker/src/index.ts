@@ -747,6 +747,26 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         }
     }
 
+    // DELETE /api/admin/db/chaos/:id
+    const adminDelChaosMatch = path.match(/^\/api\/admin\/db\/chaos\/([^/]+)$/);
+    if (method === 'DELETE' && adminDelChaosMatch) {
+        if (!isAdmin) return errorResponse('Unauthorized', 401, origin);
+        const id = adminDelChaosMatch[1];
+        try {
+            // Get chaos item to find R2 key
+            const item = await env.DB.prepare('SELECT output_key FROM chaos_items WHERE id = ?').bind(id).first<{ output_key: string }>();
+            if (item) {
+                await env.BUCKET.delete(item.output_key);
+                await env.DB.prepare('DELETE FROM chaos_items WHERE id = ?').bind(id).run();
+                return jsonResponse({ ok: true }, 200, origin);
+            } else {
+                return errorResponse('Chaos item not found', 404, origin);
+            }
+        } catch (error) {
+            return errorResponse('Failed to delete chaos item', 500, origin);
+        }
+    }
+
     // Health check
     if (method === 'GET' && path === '/api/health') {
         return jsonResponse({
