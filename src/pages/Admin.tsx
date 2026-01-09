@@ -108,7 +108,7 @@ export const Admin = () => {
         }
     };
 
-    const copyLinkToClipboard = async (projectId: string, assetId: string, fileName: string) => {
+    const copyLinkToClipboard = async (projectId: string, assetId: string) => {
         const url = `${API_BASE}/api/assets/original/${projectId}/${assetId}`;
         try {
             await navigator.clipboard.writeText(url);
@@ -321,7 +321,7 @@ export const Admin = () => {
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <button
-                                                        onClick={() => copyLinkToClipboard(m.projectId, m.assetId, m.fileName)}
+                                                        onClick={() => copyLinkToClipboard(m.projectId, m.assetId)}
                                                         className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                                                         title="Copy Link to Asset"
                                                     >
