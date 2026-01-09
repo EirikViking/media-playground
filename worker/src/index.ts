@@ -617,6 +617,67 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         }
     }
 
+    // GET /api/admin/debug/d1 - Inspect D1 tables
+    if (method === 'GET' && path === '/api/admin/debug/d1') {
+        if (!isAdmin) return errorResponse('Unauthorized', 401, origin);
+
+        try {
+            // Get table info from sqlite_master
+            const tables = await env.DB.prepare(
+                "SELECT name, sql FROM sqlite_master WHERE type='table' ORDER BY name"
+            ).all();
+
+            // Get row count for projects table
+            const projectCount = await env.DB.prepare(
+                'SELECT COUNT(*) as count FROM projects'
+            ).first<{ count: number }>();
+
+            // Get sample projects with data length
+            const sampleProjects = await env.DB.prepare(
+                'SELECT id, title, LENGTH(data) as dataLength, created_at, updated_at FROM projects LIMIT 5'
+            ).all();
+
+            return jsonResponse({
+                tables: tables.results,
+                projectCount: projectCount?.count || 0,
+                sampleProjects: sampleProjects.results
+            }, 200, origin);
+        } catch (error) {
+            console.error('Debug D1 error:', error);
+            return errorResponse('Failed to debug D1', 500, origin);
+        }
+    }
+
+    // GET /api/admin/debug/r2 - Inspect R2 bucket contents
+    if (method === 'GET' && path === '/api/admin/debug/r2') {
+        if (!isAdmin) return errorResponse('Unauthorized', 401, origin);
+
+        try {
+            const list = await env.BUCKET.list({ limit: 1000 });
+
+            const summary = {
+                totalObjects: list.objects.length,
+                truncated: list.truncated,
+                totalSize: list.objects.reduce((sum, o) => sum + o.size, 0),
+                sampleKeys: list.objects.slice(0, 20).map(o => ({
+                    key: o.key,
+                    size: o.size,
+                    uploaded: o.uploaded
+                })),
+                keysByType: {
+                    originals: list.objects.filter(o => o.key.endsWith('/original')).length,
+                    thumbs: list.objects.filter(o => o.key.endsWith('/thumb')).length,
+                    other: list.objects.filter(o => !o.key.endsWith('/original') && !o.key.endsWith('/thumb')).length
+                }
+            };
+
+            return jsonResponse(summary, 200, origin);
+        } catch (error) {
+            console.error('Debug R2 error:', error);
+            return errorResponse('Failed to debug R2', 500, origin);
+        }
+    }
+
     // Health check
     if (method === 'GET' && path === '/api/health') {
         return jsonResponse({
