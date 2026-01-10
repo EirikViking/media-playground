@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { UploadProgress } from '../utils/upload';
@@ -36,6 +37,15 @@ export const UploadProgressPanel = ({
 
     const overallProgress = total > 0 ? Math.round((completed / total) * 100) : 0;
     const isDone = !isUploading && completed === total;
+
+    useEffect(() => {
+        if (isDone && errors.length === 0) {
+            const timer = setTimeout(() => {
+                onClose();
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [isDone, errors.length, onClose]);
 
     return (
         <AnimatePresence>

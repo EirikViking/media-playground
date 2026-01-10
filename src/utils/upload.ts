@@ -339,29 +339,29 @@ export async function uploadImage(
  */
 export async function uploadImages(
     projectId: string,
-    files: File[],
+    items: Array<{ id: string; file: File }>,
     onProgress?: (completed: number, total: number, current?: UploadProgress) => void
 ): Promise<{
-    successful: CloudAsset[];
-    failed: Array<{ fileName: string; error: string }>;
+    successful: Array<{ id: string; asset: CloudAsset }>;
+    failed: Array<{ id: string; fileName: string; error: string }>;
 }> {
-    const successful: CloudAsset[] = [];
-    const failed: Array<{ fileName: string; error: string }> = [];
+    const successful: Array<{ id: string; asset: CloudAsset }> = [];
+    const failed: Array<{ id: string; fileName: string; error: string }> = [];
 
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+    for (let i = 0; i < items.length; i++) {
+        const { id, file } = items[i];
 
         const result = await uploadImage(projectId, file, (progress) => {
-            onProgress?.(i, files.length, progress);
+            onProgress?.(i, items.length, progress);
         });
 
         if (result.success) {
-            successful.push(result.asset);
+            successful.push({ id, asset: result.asset });
         } else {
-            failed.push({ fileName: file.name, error: result.error });
+            failed.push({ id, fileName: file.name, error: result.error });
         }
 
-        onProgress?.(i + 1, files.length);
+        onProgress?.(i + 1, items.length);
     }
 
     return { successful, failed };
