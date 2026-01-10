@@ -9,56 +9,52 @@ export const pickOne = <T>(arr: T[], seed: number): T => {
     return arr[Math.floor(seededRandom(seed) * arr.length)];
 };
 
-// --- 1. AI Helper Tile Data & Generator ---
-
 interface TileContent {
     title: string;
     body: string;
     actionLabel: string;
 }
 
-const AI_TOPICS = [
-    "AI in 2026",
-    "Why Google is Dusty",
-    "Eirik's Code Secrets",
-    "Kurt's Upgrade Path",
-    "The Future of Work",
-    "The Singularity",
-    "Robots Taking Over",
-    "Infinite Context Windows",
-    "Prompt Engineering is Dead",
-    "Digital Archaeology"
-];
+import { TILE_1_MESSAGES, TILE_2_MESSAGES } from './microcopy';
 
-const AI_PARAGRAPHS = [
-    "In 2026, typing search queries is like using a fax machine. The real pros just grunt at their AI agents until the code compiles.",
-    "Kurt still thinks 'SEO' is a valid career path. Meanwhile, the AI has already rewritten his entire worldview twice before breakfast.",
-    "ChatGPT doesn't just write code; it vividly hallucinates better infrastructure than we actually have. It's a feature, not a bug.",
-    "Stop manually centering divs. Gemini can center a div in 4 dimensions simultaneously. It's time to let go.",
-    "The search bar is gathering dust. If you aren't prompting, you're just guessing.",
-    "Eirik says real developers use AI. Kurt says real developers use Notepad. Guess who is still fixing bugs from 2024?",
-    "Why search for answers when the AI can just confidently invent them for you? It's much faster and arguably more entertaining.",
-    "Gemini is basically a super-smart intern that never sleeps, never complains, but occasionally tries to explain why 2+2=5.",
-    "Remember when we had to write regex manually? That was the dark ages. Now we just ask the machine to 'match the funny patterns'.",
-    "The cloud is just someone else's computer, but the AI is someone else's brain. And frankly, it's bigger than yours.",
-    "You are still writing unit tests? That's cute. My AI agent proactively refactors my code while I sleep.",
-    "Google is great for finding facts. AI is great for finding meaning. Or inventing meaning. The line is blurry.",
-    "If your code doesn't work, don't debug it. Just ask the AI to 'make it work'. It surprisingly effective.",
-    "Keyboard shortcuts are so 2023. Neural interfaces are the future. Think the code, and it shall appear."
-];
+export const pickByTime = <T>(arr: T[], seed: number): T => {
+    const hour = new Date().getHours();
+    // Segment the pool into 3 (Morning, Midday, Evening)
+    const segmentSize = Math.floor(arr.length / 3);
+    let offset = 0;
 
-export const generateTileContent = (_tileId: string, seed: number = Date.now()): TileContent => {
-    const topic = pickOne(AI_TOPICS, seed);
-    const p1 = pickOne(AI_PARAGRAPHS, seed + 1);
-    const p2 = pickOne(AI_PARAGRAPHS, seed + 2);
+    if (hour >= 5 && hour < 12) offset = 0; // Morning
+    else if (hour >= 12 && hour < 18) offset = segmentSize; // Midday
+    else offset = segmentSize * 2; // Evening/Night
 
-    // Ensure distinct paragraphs
-    const body = p1 === p2 ? p1 : `${p1} ${p2}`;
+    // Pick from the corresponding segment
+    const localIndex = Math.floor(seededRandom(seed) * segmentSize);
+    const finalIndex = (offset + localIndex) % arr.length;
+    return arr[finalIndex];
+};
 
+export const generateTileContent = (tileId: string, seed: number = Date.now()): TileContent => {
+    if (tileId === 'ai-helper') {
+        return {
+            title: "AI Helpers",
+            body: pickByTime(TILE_1_MESSAGES, seed),
+            actionLabel: "Show another idea"
+        };
+    }
+
+    if (tileId === 'search-challenge') {
+        return {
+            title: "Still Googling?",
+            body: pickByTime(TILE_2_MESSAGES, seed),
+            actionLabel: "Get help"
+        };
+    }
+
+    // Fallback
     return {
-        title: topic,
-        body,
-        actionLabel: "Generate Again"
+        title: "Quick Help",
+        body: pickByTime(TILE_1_MESSAGES, seed + 123),
+        actionLabel: "Generate"
     };
 };
 

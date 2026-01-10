@@ -7,22 +7,23 @@ import { generateTileContent } from '../utils/generators';
 interface AiHelperModalProps {
     isOpen: boolean;
     onClose: () => void;
+    mode?: 'ai-helper' | 'search-challenge';
 }
 
-export const AiHelperModal = ({ isOpen, onClose }: AiHelperModalProps) => {
+export const AiHelperModal = ({ isOpen, onClose, mode = 'ai-helper' }: AiHelperModalProps) => {
     const [seed, setSeed] = useState(Date.now());
-    const [content, setContent] = useState(generateTileContent('ai-helper', seed));
+    const [content, setContent] = useState(generateTileContent(mode, seed));
 
     useEffect(() => {
         if (isOpen) {
             handleGenerate();
         }
-    }, [isOpen]);
+    }, [isOpen, mode]);
 
     const handleGenerate = () => {
         const newSeed = Date.now() + Math.random();
         setSeed(newSeed);
-        setContent(generateTileContent('ai-helper', newSeed));
+        setContent(generateTileContent(mode, newSeed));
     };
 
     return (
