@@ -74,6 +74,9 @@ export const BeerCalculator = () => {
     // Animation state
     const [shakeKey, setShakeKey] = useState(0);
 
+    const [easterEggOpen, setEasterEggOpen] = useState(false);
+    const [hasTriggeredEasterEgg, setHasTriggeredEasterEgg] = useState(false);
+
     const prevCount = useRef(count);
     const isTest = typeof navigator !== 'undefined' && navigator.webdriver;
 
@@ -100,9 +103,16 @@ export const BeerCalculator = () => {
     }, [count, voiceEnabled, volume, rate]);
 
     const handleIncrement = () => {
-        setCount(c => c + 1);
+        const next = count + 1;
+        setCount(next);
         setShakeKey(k => k + 1);
         generateNewWisdom();
+
+        if (next >= 15 && !hasTriggeredEasterEgg) {
+            setHasTriggeredEasterEgg(true);
+            setEasterEggOpen(true);
+            if (voiceEnabled) speakMessage("Critical Failure. Kurt Protocol Initiated.", true, volume, 0.5);
+        }
     };
 
     const handleDecrement = () => {
@@ -112,6 +122,7 @@ export const BeerCalculator = () => {
     const handleReset = () => {
         setCount(0);
         setShakeKey(0);
+        setHasTriggeredEasterEgg(false);
     };
 
     const currentMessage = count <= 10 ? MESSAGES[count] : EMERGENCY_MESSAGE;
@@ -408,8 +419,67 @@ export const BeerCalculator = () => {
 
                     </div>
                 </div>
-            </main>
-        </div>
+            </main >
+
+            {/* EASTER EGG MODAL */}
+            <AnimatePresence>
+                {
+                    easterEggOpen && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-6 text-center overflow-hidden"
+                        >
+                            <motion.div
+                                initial={{ scale: 0.1, rotate: -180 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                transition={{ type: "spring", bounce: 0.5 }}
+                                className="max-w-xl w-full"
+                            >
+                                <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 animate-pulse mb-8 font-display">
+                                    KURT MODE ACTIVATED
+                                </h1>
+
+                                <div className="bg-slate-900 border-2 border-green-500/50 p-6 rounded-xl font-mono text-green-400 text-left mb-8 shadow-[0_0_50px_rgba(34,197,94,0.2)]">
+                                    <p>{">"} ALCOHOL_LEVEL: CRITICAL</p>
+                                    <p>{">"} INHIBITIONS: DELETED</p>
+                                    <p>{">"} DANCING_SKILLS: THEORETICAL_MAX (+9000%)</p>
+                                    <p>{">"} TEXTING_EX: PROBABILITY 99.9%</p>
+                                    <div className="mt-4 text-white font-bold animate-bounce">
+                                        {">"} PLEASE DRINK WATER IMMEDIATELY
+                                    </div>
+                                </div>
+
+                                <Button
+                                    variant="primary"
+                                    size="lg"
+                                    className="bg-white text-black hover:bg-slate-200 text-xl px-12 py-6 rounded-full font-black transform hover:scale-105 transition-all shadow-2xl shadow-white/20"
+                                    onClick={() => setEasterEggOpen(false)}
+                                >
+                                    I ACCEPT MY FATE
+                                </Button>
+                            </motion.div>
+
+                            {/* Falling Emojis */}
+                            <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
+                                {[...Array(20)].map((_, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ y: -100, x: Math.random() * 1000 }}
+                                        animate={{ y: 1000 }}
+                                        transition={{ duration: 2 + Math.random() * 3, repeat: Infinity, ease: "linear", delay: Math.random() * 2 }}
+                                        className="absolute text-4xl"
+                                    >
+                                        {['🍺', '🕺', '🚑', '🌮', '🥴'][Math.floor(Math.random() * 5)]}
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )
+                }
+            </AnimatePresence >
+        </div >
     );
 };
 
