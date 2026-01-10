@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Lock, Trash2, AlertTriangle, ArrowLeft, Database, HardDrive, FileImage, Link as LinkIcon, Check } from 'lucide-react';
+import { Shield, Lock, Trash2, AlertTriangle, ArrowLeft, Database, HardDrive, FileImage, Link as LinkIcon, Check, Edit2, X, Save, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { API_BASE } from '../utils/api';
@@ -7,25 +7,52 @@ import { API_BASE } from '../utils/api';
 export const Admin = () => {
     const [password, setPassword] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [activeTab, setActiveTab] = useState<'summary' | 'projects' | 'media'>('summary');
+    const [activeTab, setActiveTab] = useState<'summary' | 'projects' | 'media' | 'community'>('summary');
     const [summary, setSummary] = useState<any>(null);
     const [projects, setProjects] = useState<any[]>([]);
     const [media, setMedia] = useState<any[]>([]);
+    const [chaosItems, setChaosItems] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [copiedAssetId, setCopiedAssetId] = useState<string | null>(null);
+    const [rememberMe, setRememberMe] = useState(false);
 
-    // Auth check wrapper
+    // Editing state
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editTitle, setEditTitle] = useState('');
+
+    // Load auth token on mount
+    useEffect(() => {
+        const token = sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token');
+        if (token) {
+            setIsAuthenticated(true);
+        }
+    }, []);
+
+    const getAuthHeaders = () => {
+        const token = sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token');
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+        };
+        if (token) {
+            headers['x-admin-token'] = token;
+        } else if (password) {
+            headers['x-admin-password'] = password;
+        }
+        return headers;
+    };
+
     const authenticatedFetch = async (path: string, options: RequestInit = {}) => {
         const headers = {
-            'Content-Type': 'application/json',
-            'x-admin-password': password,
+            ...getAuthHeaders(),
             ...options.headers,
         };
         const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
         if (res.status === 401) {
             setIsAuthenticated(false);
-            setError('Wrong password');
+            setError('Session expired or invalid credentials');
+            sessionStorage.removeItem('admin_token');
+            localStorage.removeItem('admin_token');
             throw new Error('Unauthorized');
         }
         return res;
@@ -44,9 +71,18 @@ export const Admin = () => {
             } else if (activeTab === 'media') {
                 const res = await authenticatedFetch('/api/admin/db/media');
                 if (res.ok) setMedia(await res.json());
+            } else if (activeTab === 'community') {
+                const res = await authenticatedFetch('/api/chaos?limit=100'); // Re-using public endpoint, but admin might need a specific one if public is filtered?
+                // Actually, let's use the public one for now, or assume admin access makes it check headers?
+                // The public endpoint /api/chaos returns list.
+                // But wait, the public endpoint doesn't require auth.
+                // However, we can use it to LIST items.
+                // If we need an admin-specific list (e.g. including hidden items), we'd need a new endpoint.
+                // For now, public list is fine.
+                if (res.ok) setChaosItems(await res.json());
             }
         } catch (e) {
-            // Error handled in fetch or ignored if strictly auth error
+            console.error(e);
         } finally {
             setLoading(false);
         }
@@ -60,27 +96,46 @@ export const Admin = () => {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Check auth by fetching summary
         setLoading(true);
         setError(null);
+
         try {
-            const res = await fetch(`${API_BASE}/api/admin/db/summary`, {
-                headers: { 'x-admin-password': password }
+            // Attempt generic login first to get token
+            const res = await fetch(`${API_BASE}/api/admin/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
             });
-            if (res.status === 401) {
-                setError('Wrong password');
-                setIsAuthenticated(false);
-            } else if (res.ok) {
-                setIsAuthenticated(true);
-                setSummary(await res.json());
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.token) {
+                    if (rememberMe) {
+                        localStorage.setItem('admin_token', data.token);
+                    } else {
+                        sessionStorage.setItem('admin_token', data.token);
+                    }
+                    setIsAuthenticated(true);
+                    setPassword(''); // Clear from memory
+                }
             } else {
-                setError('Connection failed');
+                // Fallback for legacy backend or wrong password
+                if (res.status === 401) setError('Wrong password');
+                else setError('Login failed');
             }
         } catch (e) {
             setError('Connection failed');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleLogout = () => {
+        setIsAuthenticated(false);
+        sessionStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_token');
+        setPassword('');
+        setActiveTab('summary');
     };
 
     const handleDelete = async (endpoint: string, confirmMsg?: string, requireInput?: string) => {
@@ -103,6 +158,33 @@ export const Admin = () => {
             }
         } catch (e) {
             setError('Error deleting item');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const startEditing = (id: string, currentTitle: string) => {
+        setEditingId(id);
+        setEditTitle(currentTitle);
+    };
+
+    const saveRename = async (endpointPattern: string) => {
+        if (!editingId) return;
+        setLoading(true);
+        try {
+            const endpoint = endpointPattern.replace(':id', editingId);
+            const res = await authenticatedFetch(endpoint, {
+                method: 'PUT',
+                body: JSON.stringify({ title: editTitle })
+            });
+            if (res.ok) {
+                setEditingId(null);
+                loadData();
+            } else {
+                setError('Rename failed');
+            }
+        } catch (e) {
+            setError('Rename failed');
         } finally {
             setLoading(false);
         }
@@ -133,6 +215,12 @@ export const Admin = () => {
                             Admin Console
                         </h1>
                     </div>
+                    {isAuthenticated && (
+                        <button onClick={handleLogout} className="text-sm text-slate-500 hover:text-red-500 flex items-center gap-2">
+                            <LogOut className="w-4 h-4" />
+                            Log Out
+                        </button>
+                    )}
                 </div>
             </header>
 
@@ -160,6 +248,18 @@ export const Admin = () => {
                                     autoFocus
                                 />
                             </div>
+                            <div className="flex items-center gap-2 mb-6">
+                                <input
+                                    type="checkbox"
+                                    id="rememberMe"
+                                    checked={rememberMe}
+                                    onChange={e => setRememberMe(e.target.checked)}
+                                    className="rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                                />
+                                <label htmlFor="rememberMe" className="text-sm text-slate-600 dark:text-slate-400 select-none cursor-pointer">
+                                    Remember me on this device
+                                </label>
+                            </div>
                             <Button type="submit" className="w-full py-3" data-testid="admin-unlock-button" disabled={loading}>
                                 {loading ? 'Checking...' : 'Unlock Dashboard'}
                             </Button>
@@ -173,25 +273,16 @@ export const Admin = () => {
                 ) : (
                     <div className="space-y-6">
                         {/* Navigation Tabs */}
-                        <div className="flex gap-2 p-1 bg-white dark:bg-slate-800 rounded-xl inline-block shadow-sm">
-                            <button
-                                onClick={() => setActiveTab('summary')}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'summary' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                            >
-                                Summary
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('projects')}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'projects' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                            >
-                                Projects
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('media')}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'media' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                            >
-                                Media
-                            </button>
+                        <div className="flex gap-2 p-1 bg-white dark:bg-slate-800 rounded-xl inline-block shadow-sm overflow-x-auto">
+                            {['summary', 'projects', 'media', 'community'].map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab as any)}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${activeTab === tab ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                >
+                                    {tab}
+                                </button>
+                            ))}
                         </div>
 
                         {error && (
@@ -239,7 +330,6 @@ export const Admin = () => {
                                         </div>
                                     </div>
                                 </div>
-
                                 <div className="md:col-span-3 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/50 p-6 rounded-2xl">
                                     <h3 className="text-lg font-bold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
                                         <AlertTriangle className="w-5 h-5" />
@@ -267,15 +357,40 @@ export const Admin = () => {
                                     <div className="divide-y divide-slate-100 dark:divide-slate-700">
                                         {projects.map((p: any) => (
                                             <div key={p.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors" data-testid="admin-project-row">
-                                                <div>
-                                                    <div className="font-semibold text-slate-900 dark:text-slate-100">{p.title || 'Untitled Project'}</div>
-                                                    <div className="text-xs text-slate-500 flex gap-2">
-                                                        <span>ID: {p.id}</span>
-                                                        <span>•</span>
-                                                        <span>{new Date(p.updated_at).toLocaleString()}</span>
-                                                        <span>•</span>
-                                                        <span>{Math.round((p.dataSize || 0) / 1024)} KB</span>
-                                                    </div>
+                                                <div className="flex-1 mr-4">
+                                                    {editingId === p.id ? (
+                                                        <div className="flex gap-2">
+                                                            <input
+                                                                type="text"
+                                                                value={editTitle}
+                                                                onChange={(e) => setEditTitle(e.target.value)}
+                                                                className="flex-1 px-2 py-1 rounded border border-purple-300 dark:border-purple-700 dark:bg-slate-800"
+                                                                autoFocus
+                                                            />
+                                                            <button onClick={() => saveRename('/api/admin/db/project/:id/rename')} className="p-1 text-green-600 hover:bg-green-100 rounded">
+                                                                <Save className="w-4 h-4" />
+                                                            </button>
+                                                            <button onClick={() => setEditingId(null)} className="p-1 text-red-500 hover:bg-red-100 rounded">
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                                                                {p.title || 'Untitled Project'}
+                                                                <button onClick={() => startEditing(p.id, p.title)} className="text-slate-300 hover:text-purple-500 transition-colors">
+                                                                    <Edit2 className="w-3 h-3" />
+                                                                </button>
+                                                            </div>
+                                                            <div className="text-xs text-slate-500 flex gap-2">
+                                                                <span>ID: {p.id}</span>
+                                                                <span>•</span>
+                                                                <span>{new Date(p.updated_at).toLocaleString()}</span>
+                                                                <span>•</span>
+                                                                <span>{Math.round((p.dataSize || 0) / 1024)} KB</span>
+                                                            </div>
+                                                        </>
+                                                    )}
                                                 </div>
                                                 <button
                                                     onClick={() => handleDelete(`/api/admin/db/project/${p.id}`, `Delete project "${p.title}"?`)}
@@ -284,6 +399,67 @@ export const Admin = () => {
                                                 >
                                                     <Trash2 className="w-5 h-5" />
                                                 </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {!loading && activeTab === 'community' && (
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                                {chaosItems.length === 0 ? (
+                                    <div className="p-8 text-center text-slate-500">No community creations found.</div>
+                                ) : (
+                                    <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                                        {chaosItems.map((c: any) => (
+                                            <div key={c.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
+                                                <div className="flex-1 mr-4">
+                                                    {editingId === c.id ? (
+                                                        <div className="flex gap-2">
+                                                            <input
+                                                                type="text"
+                                                                value={editTitle}
+                                                                onChange={(e) => setEditTitle(e.target.value)}
+                                                                className="flex-1 px-2 py-1 rounded border border-purple-300 dark:border-purple-700 dark:bg-slate-800"
+                                                                autoFocus
+                                                            />
+                                                            <button onClick={() => saveRename('/api/admin/db/chaos/:id/rename')} className="p-1 text-green-600 hover:bg-green-100 rounded">
+                                                                <Save className="w-4 h-4" />
+                                                            </button>
+                                                            <button onClick={() => setEditingId(null)} className="p-1 text-red-500 hover:bg-red-100 rounded">
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                                                                {c.title || 'Untitled'}
+                                                                <button onClick={() => startEditing(c.id, c.title)} className="text-slate-300 hover:text-purple-500 transition-colors">
+                                                                    <Edit2 className="w-3 h-3" />
+                                                                </button>
+                                                            </div>
+                                                            <div className="text-xs text-slate-500 flex gap-2">
+                                                                <span>ID: {c.id}</span>
+                                                                <span>•</span>
+                                                                <span>{new Date(c.created_at).toLocaleString()}</span>
+                                                                <span>•</span>
+                                                                <span>{c.output_type}</span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <a href={`${API_BASE}/api/chaos/${c.id}/content`} target="_blank" className="p-2 text-slate-400 hover:text-blue-500">
+                                                        <LinkIcon className="w-5 h-5" />
+                                                    </a>
+                                                    <button
+                                                        onClick={() => handleDelete(`/api/admin/db/chaos/${c.id}`, `Delete chaos item "${c.title}"?`)}
+                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                    >
+                                                        <Trash2 className="w-5 h-5" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -351,3 +527,4 @@ export const Admin = () => {
         </div>
     );
 };
+

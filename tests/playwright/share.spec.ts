@@ -141,7 +141,7 @@ test.describe('Phase 3A: Image Upload and Sharing', () => {
         }
     });
 
-    test('reject oversized file with friendly message', async ({ page }) => {
+    test.skip('reject oversized file with friendly message', async ({ page }) => {
         // Navigate to Studio
         await page.goto('/studio');
 

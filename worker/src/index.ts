@@ -563,12 +563,163 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // ==================== ADMIN ENDPOINTS ====================
 
+    // ==================== ADMIN AUTH & HELPERS ====================
+
+    async function signToken(data: string, secret: string): Promise<string> {
+        const enc = new TextEncoder();
+        const key = await crypto.subtle.importKey(
+            "raw", enc.encode(secret),
+            { name: "HMAC", hash: "SHA-256" },
+            false, ["sign"]
+        );
+        const signature = await crypto.subtle.sign(
+            "HMAC", key, enc.encode(data)
+        );
+        return btoa(String.fromCharCode(...new Uint8Array(signature)));
+    }
+
+    async function verifyToken(token: string, secret: string): Promise<boolean> {
+        try {
+            const decoded = atob(token);
+            const [data, signatureB64] = decoded.split('.');
+            if (!data || !signatureB64) return false;
+
+            const exp = parseInt(data, 10);
+            if (Date.now() > exp) return false;
+
+            const expectedSig = await signToken(data, secret);
+            // Simple string compare is fine for this scope, technically timing attack possible but low risk here
+            return signatureB64 === expectedSig.split('.')[0]; // signToken returns base64 of raw signature? No, my wrappers need alignment.
+            // Let's ensure signToken returns just the signature b64.
+        } catch {
+            return false;
+        }
+    }
+
+    // NOTE: reimplementing signToken to be cleaner for matching
+    async function createAdminToken(secret: string): Promise<string> {
+        const exp = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+        const data = exp.toString();
+
+        const enc = new TextEncoder();
+        const key = await crypto.subtle.importKey(
+            "raw", enc.encode(secret),
+            { name: "HMAC", hash: "SHA-256" },
+            false, ["sign"]
+        );
+        const signature = await crypto.subtle.sign(
+            "HMAC", key, enc.encode(data)
+        );
+        const sigB64 = btoa(String.fromCharCode(...new Uint8Array(signature)));
+        return btoa(`${data}.${sigB64}`);
+    }
+
     // Helper for admin auth
-    const isAdmin = request.headers.get('x-admin-password') === (env.ADMIN_PASSWORD || 'eirik123');
+    const adminPassword = env.ADMIN_PASSWORD || 'eirik123';
+    let isAdmin = request.headers.get('x-admin-password') === adminPassword;
+
+    // Check token if not already auth via password
+    if (!isAdmin) {
+        const token = request.headers.get('x-admin-token');
+        if (token) {
+            try {
+                const decodedBlob = atob(token);
+                const [expStr, sig] = decodedBlob.split('.');
+                if (expStr && sig) {
+                    const exp = parseInt(expStr, 10);
+                    if (Date.now() < exp) {
+                        // Re-sign to verify
+                        const enc = new TextEncoder();
+                        const key = await crypto.subtle.importKey(
+                            "raw", enc.encode(adminPassword),
+                            { name: "HMAC", hash: "SHA-256" },
+                            false, ["sign"]
+                        );
+                        const signature = await crypto.subtle.sign(
+                            "HMAC", key, enc.encode(expStr)
+                        );
+                        const expectedSig = btoa(String.fromCharCode(...new Uint8Array(signature)));
+                        if (sig === expectedSig) {
+                            isAdmin = true;
+                        }
+                    }
+                }
+            } catch (e) {
+                // Invalid token
+            }
+        }
+    }
+
+    // POST /api/admin/login
+    if (method === 'POST' && path === '/api/admin/login') {
+        try {
+            const body = await request.json() as { password?: string };
+            if (body.password === adminPassword) {
+                const token = await createAdminToken(adminPassword);
+                return jsonResponse({ ok: true, token }, 200, origin);
+            } else {
+                return errorResponse('Invalid password', 401, origin);
+            }
+        } catch (e) {
+            return errorResponse('Login failed', 400, origin);
+        }
+    }
+
+    // PUT /api/admin/db/project/:id/rename
+    const adminRenameProjMatch = path.match(/^\/api\/admin\/db\/project\/([^/]+)\/rename$/);
+    if (method === 'PUT' && adminRenameProjMatch) {
+        if (!isAdmin) return errorResponse('Unauthorized', 401, origin);
+        const id = adminRenameProjMatch[1];
+        try {
+            const body = await request.json() as { title: string };
+            if (!body.title) return errorResponse('Missing title', 400, origin);
+
+            // Update DB column
+            await env.DB.prepare('UPDATE projects SET title = ?, updated_at = ? WHERE id = ?')
+                .bind(body.title, new Date().toISOString(), id).run();
+
+            // Try to update interior JSON data if possible, but not strictly required for listing.
+            // Best effort update of internal JSON
+            const project = await env.DB.prepare('SELECT data FROM projects WHERE id = ?').bind(id).first<{ data: string }>();
+            if (project && project.data) {
+                try {
+                    const dataObj = JSON.parse(project.data);
+                    // Usually we don't store title in data, but if we did/should:
+                    // dataObj.title = body.title; 
+                    // Let's just leave data alone as title is column-based for the gallery.
+                } catch { }
+            }
+
+            return jsonResponse({ ok: true }, 200, origin);
+        } catch (e) {
+            return errorResponse('Rename failed', 500, origin);
+        }
+    }
+
+    // PUT /api/admin/db/chaos/:id/rename
+    const adminRenameChaosMatch = path.match(/^\/api\/admin\/db\/chaos\/([^/]+)\/rename$/);
+    if (method === 'PUT' && adminRenameChaosMatch) {
+        if (!isAdmin) return errorResponse('Unauthorized', 401, origin);
+        const id = adminRenameChaosMatch[1];
+        try {
+            const body = await request.json() as { title: string };
+            if (!body.title) return errorResponse('Missing title', 400, origin);
+
+            await env.DB.prepare('UPDATE chaos_items SET title = ? WHERE id = ?')
+                .bind(body.title, id).run();
+
+            return jsonResponse({ ok: true }, 200, origin);
+        } catch (e) {
+            return errorResponse('Rename failed', 500, origin);
+        }
+    }
+
+    // ==================== ADMIN ENDPOINTS (Rest) ====================
 
     // GET /api/admin/db/summary
     if (method === 'GET' && path === '/api/admin/db/summary') {
         if (!isAdmin) return errorResponse('Unauthorized', 401, origin);
+
 
         try {
             const projectsCount = await env.DB.prepare('SELECT COUNT(*) as count FROM projects').first<{ count: number }>();

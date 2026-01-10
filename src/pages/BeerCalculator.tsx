@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, RotateCcw, Plus, Minus, Settings, Lightbulb, Brain, Radio } from 'lucide-react';
+import { AlertTriangle, RotateCcw, Plus, Minus, Settings, Lightbulb, Brain, Radio, RefreshCw } from 'lucide-react';
 import { Button } from '../components/Button';
 import { BeerRiskMeter } from '../components/BeerRiskMeter';
 import { playBeerTone, speakMessage } from '../utils/audioSystem';
+import { generateKurtWisdom } from '../utils/generators';
 
 interface Message {
     headline: string;
@@ -30,21 +31,6 @@ const EMERGENCY_MESSAGE = {
     serious: "Risk of alcohol poisoning. Unconscious risk.",
     suggestion: "Seek help if unresponsive. Stop immediately."
 };
-
-const KURT_ADVICE = [
-    "Kurt says: 'It's fine, just use a bigger font size.'",
-    "Kurt says: 'Did you try turning it off and on again?'",
-    "Kurt says: 'Maybe we should rewrite the backend in COBOL.'",
-    "Kurt says: 'I think I saw this in a dream once.'",
-    "Kurt says: 'Who needs unit tests when you have valid hopes?'",
-    "Kurt says: 'Let's just hardcode the response.'",
-    "Kurt says: 'I'm sure the production DB is backed up.'",
-    "Kurt says: 'Deploy on Friday? Why not at 5 PM?'",
-    "Kurt says: 'This code is self-documenting if you're smart enough.'",
-    "Kurt says: 'I'll fix the bugs next sprint. Maybe.'",
-    "Kurt says: 'Let's use 10 more npm packages.'",
-    "Kurt says: 'Why use CSS variables when we can use magic numbers?'"
-];
 
 const BEER_FACTS = [
     "Vikings believed a giant goat dispensed unlimited beer in Valhalla.",
@@ -77,6 +63,9 @@ export const BeerCalculator = () => {
     const [count, setCount] = useState(0);
     const [settingsOpen, setSettingsOpen] = useState(false);
 
+    // Wisdom state
+    const [kurtAdvice, setKurtAdvice] = useState(() => generateKurtWisdom(Date.now()));
+
     // Audio Settings
     const [voiceEnabled, setVoiceEnabled] = useState(true);
     const [volume, setVolume] = useState(1);
@@ -87,6 +76,10 @@ export const BeerCalculator = () => {
 
     const prevCount = useRef(count);
     const isTest = typeof navigator !== 'undefined' && navigator.webdriver;
+
+    const generateNewWisdom = () => {
+        setKurtAdvice(generateKurtWisdom(Date.now() + Math.random()));
+    };
 
     useEffect(() => {
         // Trigger effects only on change
@@ -122,12 +115,7 @@ export const BeerCalculator = () => {
 
     const currentMessage = count <= 10 ? MESSAGES[count] : EMERGENCY_MESSAGE;
     const tiltAngle = Math.min(count * 2, 20);
-
-    // Deterministic content
-    const kurtAdvice = KURT_ADVICE[Math.min(count, KURT_ADVICE.length - 1)];
     const beerFact = BEER_FACTS[count % BEER_FACTS.length];
-
-    // Party Radar Value (Arbitrary function of count)
     const radarValue = Math.min(100, Math.max(0, (count * 15) - 10));
 
     return (
@@ -365,10 +353,19 @@ export const BeerCalculator = () => {
 
                         {/* 1. Kurt Edgar Advice Panel */}
                         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm" data-testid="kurt-advice-panel">
-                            <h3 className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200 mb-3">
-                                <Brain className="w-5 h-5 text-purple-500" />
-                                Kurt's Wisdom
-                            </h3>
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
+                                    <Brain className="w-5 h-5 text-purple-500" />
+                                    Kurt's Wisdom
+                                </h3>
+                                <button
+                                    onClick={generateNewWisdom}
+                                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 hover:text-purple-500 transition-colors"
+                                    title="New Wisdom"
+                                >
+                                    <RefreshCw className="w-4 h-4" />
+                                </button>
+                            </div>
                             <div className="p-4 bg-purple-50 dark:bg-slate-800 rounded-xl relative">
                                 <div className="text-3xl absolute -top-2 -left-1 text-purple-200 dark:text-slate-700">"</div>
                                 <p className="text-slate-700 dark:text-slate-300 italic relative z-10 text-sm leading-relaxed">
@@ -414,3 +411,4 @@ export const BeerCalculator = () => {
         </div>
     );
 };
+

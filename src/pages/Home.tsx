@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -13,8 +14,11 @@ import {
   BrainCircuit,
   Bot
 } from 'lucide-react';
+import { AiHelperModal } from '../components/AiHelperModal';
 
 export const Home = () => {
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden relative selection:bg-purple-500/30">
       {/* Decorative blobs */}
@@ -105,7 +109,9 @@ export const Home = () => {
             {/* 6. AI Links (Special Custom Card) */}
             <motion.div
               whileHover={{ y: -8, scale: 1.02 }}
-              className="relative p-6 rounded-3xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col items-start backdrop-blur-md hover:shadow-xl transition-all h-full hover:border-blue-500/50"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setIsAiModalOpen(true)}
+              className="relative p-6 rounded-3xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col items-start backdrop-blur-md hover:shadow-xl transition-all h-full hover:border-blue-500/50 cursor-pointer"
               data-testid="tile-ai-links"
             >
               <div className="mb-4 inline-flex p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
@@ -116,8 +122,8 @@ export const Home = () => {
                 Kurt, stop Googling. Use these to actually solve problems in 2026.
               </p>
               <div className="flex gap-2 mt-auto w-full">
-                <a href="https://chatgpt.com" target="_blank" rel="noopener noreferrer" className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-center rounded-xl font-bold text-sm transition-colors shadow-sm">ChatGPT</a>
-                <a href="https://gemini.google.com" target="_blank" rel="noopener noreferrer" className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-center rounded-xl font-bold text-sm transition-colors shadow-sm">Gemini</a>
+                <div className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-center rounded-xl font-bold text-sm transition-colors shadow-sm">ChatGPT</div>
+                <div className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-center rounded-xl font-bold text-sm transition-colors shadow-sm">Gemini</div>
               </div>
             </motion.div>
 
@@ -161,6 +167,8 @@ export const Home = () => {
       <footer className="relative z-10 p-8 text-center text-slate-500 dark:text-slate-500 text-sm">
         <p>© {new Date().getFullYear()} Kurt Edgar & Eirik's Playground. v{__APP_VERSION__}</p>
       </footer>
+
+      <AiHelperModal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} />
     </div>
   );
 };

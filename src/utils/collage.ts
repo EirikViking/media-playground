@@ -33,48 +33,60 @@ export const generateCollage = async (
 
   ctx.fillRect(0, 0, width, height);
 
-  // Filter for displayable items (images and videos with thumbnails)
-  const visualItems = items.filter(item =>
-    (item.type === 'image' && item.url) ||
-    (item.type === 'video' && item.thumbUrl)
-  );
+  // Helper to draw placeholder
+  const getPlaceholder = (type: string, text: string = '?'): Promise<HTMLImageElement> => {
+    return new Promise((resolve) => {
+      const pCanvas = document.createElement('canvas');
+      pCanvas.width = 400;
+      pCanvas.height = 400;
+      const pCtx = pCanvas.getContext('2d')!;
 
-  if (visualItems.length === 0) {
-    // If we have audio but no visuals, make a cool audio waveform placeholder
-    const hasAudio = items.some(i => i.type === 'audio');
+      // Pastel backgrounds
+      if (type === 'audio') pCtx.fillStyle = '#fbcfe8'; // pink-200
+      else if (type === 'video') pCtx.fillStyle = '#bae6fd'; // sky-200
+      else pCtx.fillStyle = '#e2e8f0'; // slate-200
 
-    ctx.fillStyle = hasAudio ? '#1a1a1a' : '#9ca3af';
-    ctx.fillRect(0, 0, width, height);
+      pCtx.fillRect(0, 0, 400, 400);
 
-    ctx.fillStyle = hasAudio ? '#a855f7' : '#ffffff';
-    ctx.font = 'bold 64px sans-serif';
-    ctx.textAlign = 'center';
+      pCtx.fillStyle = '#475569';
+      pCtx.font = 'bold 80px sans-serif';
+      pCtx.textAlign = 'center';
+      pCtx.textBaseline = 'middle';
+      pCtx.fillText(type === 'audio' ? '♫' : (type === 'video' ? '▶' : text), 200, 200);
 
-    if (hasAudio) {
-      ctx.fillText('♫ Audio Mash', width / 2, height / 2);
-    } else {
-      ctx.fillText('No visual media', width / 2, height / 2);
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.src = pCanvas.toDataURL();
+    });
+  };
+
+  const loadImage = (item: MediaItem): Promise<HTMLImageElement> => {
+    const url = item.type === 'video' ? item.thumbUrl : item.url;
+    if (!url) {
+      return getPlaceholder(item.type);
     }
-    return canvas.toDataURL('image/png');
-  }
 
-  const loadImage = (url: string): Promise<HTMLImageElement> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = 'Anonymous';
       img.onload = () => resolve(img);
       img.onerror = () => {
-        console.warn("Failed to load image for collage:", url);
-        resolve(new Image()); // Return empty image
+        // Fallback to placeholder on error
+        getPlaceholder(item.type).then(resolve);
       };
       img.src = url;
     });
   };
 
-  const images = (await Promise.all(
-    visualItems.slice(0, 9).map(item => loadImage(item.type === 'video' ? item.thumbUrl! : item.url))
-  )).filter(img => img.width > 0);
+  // Prepare images (max 9)
+  const displayItems = items.slice(0, 9);
+  if (displayItems.length === 0) {
+    const img = await getPlaceholder('empty', 'No Media');
+    ctx.drawImage(img, 0, 0, width, height);
+    return canvas.toDataURL('image/png');
+  }
 
+  const images = await Promise.all(displayItems.map(loadImage));
 
   if (style === 'scrapbook') {
     // Random placement
@@ -100,61 +112,83 @@ export const generateCollage = async (
       ctx.restore();
     });
   } else {
-    // Grid Based with filters
-    const cols = Math.ceil(Math.sqrt(images.length));
-    const rows = Math.ceil(images.length / cols);
-    const cellWidth = width / cols;
-    const cellHeight = height / rows;
+    // Gap-free Row Layout
+    const count = images.length;
+    let rowCount = 1;
+    if (count >= 2) rowCount = 2;
+    if (count >= 5) rowCount = 3;
+    if (count >= 9) rowCount = 3;
 
-    images.forEach((img, index) => {
-      const col = index % cols;
-      const row = Math.floor(index / cols);
-      const x = col * cellWidth;
-      const y = row * cellHeight;
+    // Distribute items to rows
+    const rows: HTMLImageElement[][] = Array.from({ length: rowCount }, () => []);
+    images.forEach((img, i) => {
+      rows[i % rowCount].push(img);
+    });
 
-      const scale = Math.max(cellWidth / img.width, cellHeight / img.height);
-      const scaledWidth = img.width * scale;
-      const scaledHeight = img.height * scale;
-      const offsetX = (cellWidth - scaledWidth) / 2;
-      const offsetY = (cellHeight - scaledHeight) / 2;
+    // Draw rows
+    const rowHeight = height / rowCount;
+    let currentY = 0;
 
-      ctx.save();
+    rows.forEach((rowImages, rIndex) => {
+      // Adjust for last row to fill remaining pixel height precisely
+      const thisRowHeight = (rIndex === rowCount - 1) ? (height - currentY) : rowHeight;
+      const colWidth = width / rowImages.length;
 
-      if (style === 'glitch') {
-        ctx.translate(Math.random() * 10 - 5, Math.random() * 10 - 5);
-      }
+      rowImages.forEach((img, cIndex) => {
+        const x = cIndex * colWidth;
+        const y = currentY;
+        const w = (cIndex === rowImages.length - 1) ? (width - x) : colWidth;
+        const h = thisRowHeight;
 
-      ctx.beginPath();
-      ctx.rect(x, y, cellWidth, cellHeight);
-      ctx.clip();
+        // Crop logic (Object-fit: cover)
+        const scale = Math.max(w / img.width, h / img.height);
+        const scaledW = img.width * scale;
+        const scaledH = img.height * scale;
+        const offsetX = (w - scaledW) / 2;
+        const offsetY = (h - scaledH) / 2;
 
-      if (style === 'noir') ctx.filter = 'grayscale(100%) contrast(120%)';
-      if (style === 'sepia') ctx.filter = 'sepia(100%)';
-      if (style === 'pop') ctx.filter = 'saturate(200%) contrast(110%)';
-      if (style === 'dream') ctx.filter = 'blur(1px) brightness(110%)';
-      if (style === 'matrix') ctx.filter = 'hue-rotate(90deg) contrast(150%)';
+        ctx.save();
 
-      ctx.drawImage(img, x + offsetX, y + offsetY, scaledWidth, scaledHeight);
+        if (style === 'glitch') {
+          ctx.translate(Math.random() * 10 - 5, Math.random() * 10 - 5);
+        }
 
-      // Overlays
-      if (style === 'vaporwave') {
-        ctx.globalCompositeOperation = 'screen';
-        ctx.fillStyle = 'rgba(255, 0, 255, 0.2)';
-        ctx.fillRect(x, y, cellWidth, cellHeight);
-      }
-      if (style === 'matrix') {
-        ctx.globalCompositeOperation = 'overlay';
-        ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
-        ctx.fillRect(x, y, cellWidth, cellHeight);
-      }
+        // Clip to cell
+        ctx.beginPath();
+        ctx.rect(x, y, w, h);
+        ctx.clip();
 
-      ctx.restore();
+        // Filters
+        if (style === 'noir') ctx.filter = 'grayscale(100%) contrast(120%)';
+        if (style === 'sepia') ctx.filter = 'sepia(100%)';
+        if (style === 'pop') ctx.filter = 'saturate(200%) contrast(110%)';
+        if (style === 'dream') ctx.filter = 'blur(1px) brightness(110%)';
+        if (style === 'matrix') ctx.filter = 'hue-rotate(90deg) contrast(150%)';
 
-      if (style === 'grid') {
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(x, y, cellWidth, cellHeight);
-      }
+        ctx.drawImage(img, x + offsetX, y + offsetY, scaledW, scaledH);
+
+        // Overlays
+        if (style === 'vaporwave') {
+          ctx.globalCompositeOperation = 'screen';
+          ctx.fillStyle = 'rgba(255, 0, 255, 0.2)';
+          ctx.fillRect(x, y, w, h);
+        }
+        if (style === 'matrix') {
+          ctx.globalCompositeOperation = 'overlay';
+          ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+          ctx.fillRect(x, y, w, h);
+        }
+
+        ctx.restore();
+
+        // Grid lines
+        if (style === 'grid') {
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 4;
+          ctx.strokeRect(x, y, w, h);
+        }
+      });
+      currentY += thisRowHeight;
     });
   }
 
