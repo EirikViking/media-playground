@@ -25,6 +25,9 @@ export const ChaosFeed = ({ refreshTrigger }: { refreshTrigger?: number }) => {
     const [playingProjectId, setPlayingProjectId] = useState<string | null>(null);
     const [loadingProject, setLoadingProject] = useState(false);
 
+    // Error State for specific project load
+    const [emptyProjectError, setEmptyProjectError] = useState<string | null>(null);
+
     // Delete State
     const [deleteCandidate, setDeleteCandidate] = useState<ChaosItem | null>(null);
     const [adminPasswordOpen, setAdminPasswordOpen] = useState(false);
@@ -47,6 +50,8 @@ export const ChaosFeed = ({ refreshTrigger }: { refreshTrigger?: number }) => {
 
     const handleCardClick = async (item: ChaosItem) => {
         setLoadingProject(true);
+        setEmptyProjectError(null);
+
         try {
             // Fetch the original project to get all assets for the Mash
             const res = await api.getProject(item.project_id);
@@ -57,14 +62,16 @@ export const ChaosFeed = ({ refreshTrigger }: { refreshTrigger?: number }) => {
                     setSelectedProjectAssets(assets);
                     setPlayingProjectId(item.project_id);
                 } else {
-                    alert("This project has no assets? Spooky.");
+                    // Graceful handling of no assets without alert
+                    setEmptyProjectError(item.project_id);
                 }
             } else {
-                alert("Could not load original project data. It might have been deleted.");
+                console.error("Could not load original project data", res.error);
+                setEmptyProjectError(item.project_id);
             }
         } catch (e) {
             console.error("Failed to load project", e);
-            alert("Failed to load project details.");
+            setEmptyProjectError(item.project_id);
         } finally {
             setLoadingProject(false);
         }
@@ -124,6 +131,7 @@ export const ChaosFeed = ({ refreshTrigger }: { refreshTrigger?: number }) => {
                     {chaosItems.map((item) => {
                         // The thumbnail is the Chaos Output itself
                         const thumbUrl = `${API_BASE}/api/chaos/${item.id}/content`;
+                        const isError = emptyProjectError === item.project_id;
 
                         return (
                             <motion.div
@@ -137,7 +145,7 @@ export const ChaosFeed = ({ refreshTrigger }: { refreshTrigger?: number }) => {
                                 data-testid={`chaos-card-${item.id}`}
                             >
                                 {/* Thumbnail */}
-                                <div className="aspect-video bg-slate-100 dark:bg-slate-800 relative overflow-hidden">
+                                <div className="aspect-video bg-slate-100 dark:bg-slate-800 relative overflow-hidden" data-testid="shared-media-container">
                                     <img
                                         src={thumbUrl}
                                         alt={item.title}
@@ -155,6 +163,24 @@ export const ChaosFeed = ({ refreshTrigger }: { refreshTrigger?: number }) => {
                                             )}
                                         </div>
                                     </div>
+
+                                    {/* Inline Error State */}
+                                    {isError && (
+                                        <div className="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center p-4 text-center z-20" data-testid="empty-state-message">
+                                            <p className="text-white font-bold text-sm mb-1">Ghost Town 👻</p>
+                                            <p className="text-slate-300 text-xs mb-3">This project has no assets.</p>
+                                            <button
+                                                className="bg-white/10 hover:bg-white/20 text-white text-xs px-3 py-1.5 rounded-full transition-colors"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setEmptyProjectError(null);
+                                                    handleCardClick(item); // Try reload
+                                                }}
+                                            >
+                                                Reload Assets
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Content */}

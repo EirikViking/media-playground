@@ -218,11 +218,19 @@ export const Studio = () => {
     );
 
     // FIX: Construct the new state manually to ensure handleSaveProject sees it
+    // Updated to include proper URL hydration from stashed changes
     const updatedItems = project.items.map(item => {
       // Check success
       const successAsset = result.successful.find(asset => asset.fileName === item.file?.name);
       if (successAsset) {
-        return { ...item, cloudAsset: successAsset, uploadStatus: 'uploaded' as const };
+        return {
+          ...item,
+          cloudAsset: successAsset,
+          uploadStatus: 'uploaded' as const,
+          // Explicitly update URLs to use cloud assets immediately after upload
+          url: getAssetUrl(currentProjectId, successAsset.assetId, 'original'),
+          thumbUrl: getAssetUrl(currentProjectId, successAsset.assetId, 'thumb'),
+        };
       }
       // Check failure
       const failure = result.failed.find(f => f.fileName === item.file?.name);
@@ -233,31 +241,13 @@ export const Studio = () => {
     });
 
     // Update local state (visuals)
-    result.successful.forEach(asset => {
-      const item = project.items.find(i => i.file?.name === asset.fileName);
-      if (item) {
-        updateItem(item.id, {
-          cloudAsset: asset,
-          uploadStatus: 'uploaded',
-        });
-      }
-    });
-
-    result.failed.forEach(failure => {
-      const item = project.items.find(i => i.file?.name === failure.fileName);
-      if (item) {
-        updateItem(item.id, {
-          uploadStatus: 'error',
-          uploadError: failure.error,
-        });
-      }
-    });
+    setProject({ ...project, items: updatedItems });
 
     setUploadErrors(result.failed);
     setIsUploading(false);
 
     // Save with the *correct* updated items
-    handleSaveProject(updatedItems);
+    await handleSaveProject(updatedItems);
     setChaosRefreshTrigger(prev => prev + 1);
   };
 
@@ -296,11 +286,16 @@ export const Studio = () => {
 
       try {
         const parsed = JSON.parse(result.data.data) as ProjectJsonData;
+
+        // Convert cloud assets to MediaItems with better type detection (from stash)
         const items: MediaItem[] = (parsed.assets || []).map((asset: CloudAsset) => {
           let type: MediaItem['type'] = 'image';
-          const ext = asset.fileName.split('.').pop()?.toLowerCase();
-          if (['mp4', 'webm', 'mov'].includes(ext || '')) type = 'video';
-          if (['mp3', 'wav', 'mpeg'].includes(ext || '')) type = 'audio';
+          const lowerName = asset.fileName.toLowerCase();
+          if (lowerName.endsWith('.mp4') || lowerName.endsWith('.mov') || lowerName.endsWith('.webm')) {
+            type = 'video';
+          } else if (lowerName.endsWith('.mp3') || lowerName.endsWith('.wav') || lowerName.endsWith('.ogg')) {
+            type = 'audio';
+          }
 
           return {
             id: asset.assetId,

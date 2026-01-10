@@ -12,6 +12,7 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
   if (items.length === 0) {
     return (
       <motion.div
+        data-testid="empty-media-state"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center py-20 px-6 rounded-3xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm"
@@ -53,7 +54,7 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" data-testid="media-grid-container">
       <AnimatePresence mode="popLayout">
         {items.map((item, index) => (
           <motion.div

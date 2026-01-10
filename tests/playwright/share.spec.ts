@@ -63,6 +63,7 @@ test.describe('Phase 3A: Image Upload and Sharing', () => {
 
         // Step 3b: Wait for project to be created and image to appear in grid
         await expect(page.getByText('Current Name').first()).toBeVisible({ timeout: 10000 }); // Sidebar verifies existence
+        await expect(page.getByTestId('media-grid-container')).toBeVisible({ timeout: 10000 });
         await expect(page.locator('[data-testid="asset-card"]').first()).toBeVisible({ timeout: 10000 });
 
         // Step 5: Click Upload button
@@ -116,6 +117,8 @@ test.describe('Phase 3A: Image Upload and Sharing', () => {
 
         // Step 9: Verify image loads in shared view
         // Wait for project to load
+        await expect(newPage.getByTestId('media-grid-container')).toBeVisible({ timeout: 15000 });
+        await expect(newPage.getByTestId('empty-media-state')).not.toBeVisible();
         await expect(newPage.locator('[data-testid="asset-card"]').first()).toBeVisible({ timeout: 15000 });
 
         // Verify cloud badge is present (indicating R2 image)
