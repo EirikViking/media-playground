@@ -22,7 +22,58 @@ const ensureAudioContext = () => {
     return globalAudioCtx;
 };
 
+// --- Voice Management ---
+let cachedEnglishVoice: SpeechSynthesisVoice | null = null;
+
+const getEnglishVoice = (): SpeechSynthesisVoice | null => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return null;
+
+    if (cachedEnglishVoice) return cachedEnglishVoice;
+
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) return null;
+
+    // Prioritize specific high-quality English voices
+    const preferredNames = ['Google US English', 'Microsoft Zira', 'Samantha'];
+
+    // 1. Try preferred names
+    for (const name of preferredNames) {
+        const found = voices.find(v => v.name.includes(name));
+        if (found) {
+            cachedEnglishVoice = found;
+            return found;
+        }
+    }
+
+    // 2. Try any en-US
+    const usVoice = voices.find(v => v.lang === 'en-US');
+    if (usVoice) {
+        cachedEnglishVoice = usVoice;
+        return usVoice;
+    }
+
+    // 3. Try any English
+    const anyEnglish = voices.find(v => v.lang.startsWith('en'));
+    if (anyEnglish) {
+        cachedEnglishVoice = anyEnglish;
+        return anyEnglish;
+    }
+
+    return null;
+};
+
+// Ensure voices are loaded (Chrome quirk)
+if (typeof window !== 'undefined' && window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = () => {
+        getEnglishVoice(); // Pre-cache
+    };
+}
+
+
 export const playBeerTone = (count: number) => {
+    // TEST SAFETY: Disable audio in Playwright/Automation
+    if (typeof navigator !== 'undefined' && navigator.webdriver) return;
+
     const ctx = ensureAudioContext();
     if (!ctx) return;
 
@@ -74,20 +125,28 @@ export const playBeerTone = (count: number) => {
 };
 
 export const speakMessage = (text: string, enabled: boolean, volume: number = 1, rate: number = 1) => {
+    // TEST SAFETY: Disable audio in Playwright/Automation
+    if (typeof navigator !== 'undefined' && navigator.webdriver) return;
+
     if (typeof window === 'undefined' || !window.speechSynthesis || !enabled) return;
 
     // Cancel previous
     window.speechSynthesis.cancel();
 
+    const voice = getEnglishVoice();
+
+    // STRICT REQUIREMENT: If no English voice, disable speech entirely.
+    if (!voice) {
+        console.warn("AudioSystem: No English voice found. Speech disabled.");
+        return;
+    }
+
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.volume = volume;
     utterance.rate = rate; // 0.1 to 10
     utterance.pitch = 1;
-
-    // Try to find a good voice? Optional.
-    // const voices = window.speechSynthesis.getVoices();
-    // const preferred = voices.find(v => v.lang === 'en-US' && v.name.includes('Google'));
-    // if (preferred) utterance.voice = preferred;
+    utterance.voice = voice;
+    utterance.lang = 'en-US'; // Force param
 
     window.speechSynthesis.speak(utterance);
 };

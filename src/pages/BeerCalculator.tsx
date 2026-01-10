@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, RotateCcw, Plus, Minus, Settings } from 'lucide-react';
+import { AlertTriangle, RotateCcw, Plus, Minus, Settings, Lightbulb, Brain, Radio } from 'lucide-react';
 import { Button } from '../components/Button';
 import { BeerRiskMeter } from '../components/BeerRiskMeter';
 import { playBeerTone, speakMessage } from '../utils/audioSystem';
@@ -31,6 +31,34 @@ const EMERGENCY_MESSAGE = {
     suggestion: "Seek help if unresponsive. Stop immediately."
 };
 
+const KURT_ADVICE = [
+    "Kurt says: 'It's fine, just use a bigger font size.'",
+    "Kurt says: 'Did you try turning it off and on again?'",
+    "Kurt says: 'Maybe we should rewrite the backend in COBOL.'",
+    "Kurt says: 'I think I saw this in a dream once.'",
+    "Kurt says: 'Who needs unit tests when you have valid hopes?'",
+    "Kurt says: 'Let's just hardcode the response.'",
+    "Kurt says: 'I'm sure the production DB is backed up.'",
+    "Kurt says: 'Deploy on Friday? Why not at 5 PM?'",
+    "Kurt says: 'This code is self-documenting if you're smart enough.'",
+    "Kurt says: 'I'll fix the bugs next sprint. Maybe.'",
+    "Kurt says: 'Let's use 10 more npm packages.'",
+    "Kurt says: 'Why use CSS variables when we can use magic numbers?'"
+];
+
+const BEER_FACTS = [
+    "Vikings believed a giant goat dispensed unlimited beer in Valhalla.",
+    "The strongest beer in the world is 67.5% ABV. Ouch.",
+    "Cenosillicaphobia is the fear of an empty beer glass.",
+    "Beer was used as currency in ancient Egypt. Better than crypto.",
+    "The moon has a crater named 'Beer'. Seriously.",
+    "In 1814, a beer tsunami killed 8 people in London.",
+    "Light is what makes beer go 'skunky', not heat.",
+    "George Washington dispensed beer to his troops.",
+    "The first professional brewers were women (Brewsters).",
+    "Thailand has a temple made of 1 million beer bottles."
+];
+
 const getVoiceLine = (count: number) => {
     if (count === 0) return "Counter reset. Back to zero.";
     if (count === 1) return "First sip. Enjoy responsibly.";
@@ -58,6 +86,7 @@ export const BeerCalculator = () => {
     const [shakeKey, setShakeKey] = useState(0);
 
     const prevCount = useRef(count);
+    const isTest = typeof navigator !== 'undefined' && navigator.webdriver;
 
     useEffect(() => {
         // Trigger effects only on change
@@ -93,6 +122,13 @@ export const BeerCalculator = () => {
 
     const currentMessage = count <= 10 ? MESSAGES[count] : EMERGENCY_MESSAGE;
     const tiltAngle = Math.min(count * 2, 20);
+
+    // Deterministic content
+    const kurtAdvice = KURT_ADVICE[Math.min(count, KURT_ADVICE.length - 1)];
+    const beerFact = BEER_FACTS[count % BEER_FACTS.length];
+
+    // Party Radar Value (Arbitrary function of count)
+    const radarValue = Math.min(100, Math.max(0, (count * 15) - 10));
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
@@ -151,170 +187,229 @@ export const BeerCalculator = () => {
                 )}
             </AnimatePresence>
 
-            <main className="flex-1 flex flex-col items-center justify-start pt-8 px-6 pb-12">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="max-w-md w-full space-y-8"
-                >
-                    {/* Main Card */}
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-xl border border-slate-200 dark:border-slate-800 space-y-6 relative overflow-hidden">
+            <main className="flex-1 flex flex-col items-center justify-start pt-8 px-6 pb-12 w-full max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 w-full max-w-5xl">
 
-                        <button
-                            onClick={() => setSettingsOpen(!settingsOpen)}
-                            className={`absolute top-4 right-4 p-2 rounded-full transition-colors z-20 ${settingsOpen ? 'bg-purple-100 text-purple-600' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                            aria-label="Audio Settings"
+                    {/* LEFT COLUMN: Main Calculator */}
+                    <div className="flex flex-col items-center space-y-8">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="w-full space-y-8"
                         >
-                            <Settings className="w-5 h-5" />
-                        </button>
+                            {/* Main Card */}
+                            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-xl border border-slate-200 dark:border-slate-800 space-y-6 relative overflow-hidden">
 
-                        {/* Beer Can Display */}
-                        <div className="flex justify-center mb-2 h-[180px] items-end relative z-10">
-                            {/* Wrapper for shake animation */}
-                            <div
-                                key={shakeKey}
-                                className={`${shakeKey > 0 ? (count >= 8 ? "animate-shake-strong" : "animate-shake-gentle") : ""}`}
-                            >
-                                {/* Frosted Glass Shimmer Effect (CSS) */}
-                                <div className="relative group">
-                                    {/* Bubbles if count > 0 */}
-                                    {count > 0 && (
-                                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-full h-8 flex justify-center gap-2 pointer-events-none opacity-50">
-                                            {[...Array(3)].map((_, i) => (
-                                                <motion.div
-                                                    key={i}
-                                                    className="w-2 h-2 bg-white/50 rounded-full"
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: [0, 1, 0], y: -20, x: (i - 1) * 5 }}
-                                                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.3 }}
-                                                />
-                                            ))}
+                                <button
+                                    onClick={() => setSettingsOpen(!settingsOpen)}
+                                    className={`absolute top-4 right-4 p-2 rounded-full transition-colors z-20 ${settingsOpen ? 'bg-purple-100 text-purple-600' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                    aria-label="Audio Settings"
+                                >
+                                    <Settings className="w-5 h-5" />
+                                </button>
+
+                                {/* Beer Can Display */}
+                                <div className="flex justify-center mb-2 h-[180px] items-end relative z-10">
+                                    {/* Wrapper for shake animation */}
+                                    <div
+                                        key={shakeKey}
+                                        className={`${!isTest && shakeKey > 0 ? (count >= 8 ? "animate-shake-strong" : "animate-shake-gentle") : ""}`}
+                                    >
+                                        {/* Frosted Glass Shimmer Effect (CSS) */}
+                                        <div className="relative group">
+                                            {/* Bubbles if count > 0 */}
+                                            {count > 0 && !isTest && (
+                                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-full h-8 flex justify-center gap-2 pointer-events-none opacity-50">
+                                                    {[...Array(3)].map((_, i) => (
+                                                        <motion.div
+                                                            key={i}
+                                                            className="w-2 h-2 bg-white/50 rounded-full"
+                                                            initial={{ opacity: 0, y: 10 }}
+                                                            animate={{ opacity: [0, 1, 0], y: -20, x: (i - 1) * 5 }}
+                                                            transition={{ duration: 1, repeat: Infinity, delay: i * 0.3 }}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            <img
+                                                src="/beervan.png"
+                                                alt="Isbjørn Lite beer can"
+                                                className="w-[110px] md:w-[150px] drop-shadow-2xl transition-transform duration-500 ease-out object-contain origin-bottom"
+                                                style={{
+                                                    transform: `rotate(${isTest ? 0 : tiltAngle}deg)`
+                                                }}
+                                            />
+                                            {/* Shimmer overlay */}
+                                            {!isTest && <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 skew-x-12 translate-x-[-150%] animate-shimmer pointer-events-none rounded-lg mix-blend-overlay" />}
                                         </div>
-                                    )}
-
-                                    <img
-                                        src="/beervan.png"
-                                        alt="Isbjørn Lite beer can"
-                                        className="w-[110px] md:w-[150px] drop-shadow-2xl transition-transform duration-500 ease-out object-contain origin-bottom"
-                                        style={{
-                                            transform: `rotate(${tiltAngle}deg)`
-                                        }}
-                                    />
-                                    {/* Shimmer overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 skew-x-12 translate-x-[-150%] animate-shimmer pointer-events-none rounded-lg mix-blend-overlay" />
+                                    </div>
                                 </div>
+
+                                {/* Counter Display */}
+                                <div className="flex flex-col items-center justify-center space-y-2 relative z-10">
+                                    <h2 className="text-sm uppercase tracking-wider text-slate-500 font-bold">How many?</h2>
+                                    <motion.span
+                                        key={count}
+                                        initial={{ scale: 0.8, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        className={`text-7xl font-black font-display tracking-tighter ${count >= 8 ? 'text-red-600 drop-shadow-md' :
+                                            count >= 4 ? 'text-orange-500' : 'text-slate-900 dark:text-white'
+                                            }`}
+                                    >
+                                        {count}
+                                    </motion.span>
+                                </div>
+
+                                {/* Controls */}
+                                <div className="grid grid-cols-2 gap-4 relative z-10">
+                                    <Button
+                                        variant="secondary"
+                                        size="lg"
+                                        onClick={handleDecrement}
+                                        disabled={count === 0}
+                                        aria-label="Decrease beer count"
+                                    >
+                                        <Minus className="w-5 h-5 mr-2" />
+                                        Less
+                                    </Button>
+                                    <Button
+                                        variant="primary"
+                                        size="lg"
+                                        onClick={handleIncrement}
+                                        aria-label="Increase beer count"
+                                        className={!isTest && count >= 7 ? 'animate-pulse hover:animate-none shadow-orange-500/20' : ''}
+                                    >
+                                        <Plus className="w-5 h-5 mr-2" />
+                                        One More
+                                    </Button>
+                                </div>
+
+                                <div className="flex justify-center relative z-10">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleReset}
+                                        aria-label="Reset count to zero"
+                                        className="text-slate-400 hover:text-slate-600"
+                                    >
+                                        <RotateCcw className="w-4 h-4 mr-1" />
+                                        Reset Counter
+                                    </Button>
+                                </div>
+
+                                {/* Risk Meter */}
+                                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 relative z-10">
+                                    <BeerRiskMeter count={count} />
+                                </div>
+
+                                {/* Message System */}
+                                <div
+                                    className={`rounded-xl p-5 text-center transition-colors duration-300 relative z-10 border ${count >= 8
+                                        ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30'
+                                        : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800'
+                                        }`}
+                                    data-testid="beer-status-area"
+                                >
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={count}
+                                            initial={{ opacity: 0, y: 5 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -5 }}
+                                            className="space-y-2"
+                                        >
+                                            <h3 className={`font-display font-bold text-lg ${count >= 8 ? 'text-red-700 dark:text-red-400' : 'text-slate-900 dark:text-white'
+                                                }`}>
+                                                {currentMessage.headline}
+                                            </h3>
+                                            <p className="text-slate-700 dark:text-slate-300 font-medium leading-tight">
+                                                {currentMessage.serious}
+                                            </p>
+                                            <p className="text-slate-500 dark:text-slate-400 text-sm italic pt-1">
+                                                💡 {currentMessage.suggestion}
+                                            </p>
+                                        </motion.div>
+                                    </AnimatePresence>
+                                </div>
+                            </div>
+
+                            {/* Red Zone Warning */}
+                            <AnimatePresence>
+                                {count >= 8 && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="bg-red-600 text-white shadow-lg shadow-red-500/30 rounded-2xl p-4 flex items-start gap-3"
+                                    >
+                                        <AlertTriangle className="w-6 h-6 text-white flex-shrink-0 mt-0.5 animate-bounce" />
+                                        <div>
+                                            <h3 className="font-bold text-white">Red Zone Warning</h3>
+                                            <p className="text-red-100 text-sm mt-1">
+                                                Consider stopping, hydrate, and take a break. Your body is under stress.
+                                            </p>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <p className="text-center text-xs text-slate-400 dark:text-slate-600 max-w-xs mx-auto">
+                                Educational only. Not medical advice. Please drink responsibly.
+                            </p>
+                        </motion.div>
+                    </div>
+
+                    {/* RIGHT COLUMN: Fun Components */}
+                    <div className="space-y-6">
+
+                        {/* 1. Kurt Edgar Advice Panel */}
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm" data-testid="kurt-advice-panel">
+                            <h3 className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200 mb-3">
+                                <Brain className="w-5 h-5 text-purple-500" />
+                                Kurt's Wisdom
+                            </h3>
+                            <div className="p-4 bg-purple-50 dark:bg-slate-800 rounded-xl relative">
+                                <div className="text-3xl absolute -top-2 -left-1 text-purple-200 dark:text-slate-700">"</div>
+                                <p className="text-slate-700 dark:text-slate-300 italic relative z-10 text-sm leading-relaxed">
+                                    {kurtAdvice}
+                                </p>
                             </div>
                         </div>
 
-                        {/* Counter Display */}
-                        <div className="flex flex-col items-center justify-center space-y-2 relative z-10">
-                            <h2 className="text-sm uppercase tracking-wider text-slate-500 font-bold">How many?</h2>
-                            <motion.span
-                                key={count}
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                className={`text-7xl font-black font-display tracking-tighter ${count >= 8 ? 'text-red-600 drop-shadow-md' :
-                                    count >= 4 ? 'text-orange-500' : 'text-slate-900 dark:text-white'
-                                    }`}
-                            >
-                                {count}
-                            </motion.span>
+                        {/* 2. Beer Facts */}
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm" data-testid="beer-facts">
+                            <h3 className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200 mb-3">
+                                <Lightbulb className="w-5 h-5 text-yellow-500" />
+                                Useless Fact
+                            </h3>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">
+                                {beerFact}
+                            </p>
                         </div>
 
-                        {/* Controls */}
-                        <div className="grid grid-cols-2 gap-4 relative z-10">
-                            <Button
-                                variant="secondary"
-                                size="lg"
-                                onClick={handleDecrement}
-                                disabled={count === 0}
-                                aria-label="Decrease beer count"
-                            >
-                                <Minus className="w-5 h-5 mr-2" />
-                                Less
-                            </Button>
-                            <Button
-                                variant="primary"
-                                size="lg"
-                                onClick={handleIncrement}
-                                aria-label="Increase beer count"
-                                className={count >= 7 ? 'animate-pulse hover:animate-none shadow-orange-500/20' : ''}
-                            >
-                                <Plus className="w-5 h-5 mr-2" />
-                                One More
-                            </Button>
-                        </div>
-
-                        <div className="flex justify-center relative z-10">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleReset}
-                                aria-label="Reset count to zero"
-                                className="text-slate-400 hover:text-slate-600"
-                            >
-                                <RotateCcw className="w-4 h-4 mr-1" />
-                                Reset Counter
-                            </Button>
-                        </div>
-
-                        {/* Risk Meter */}
-                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 relative z-10">
-                            <BeerRiskMeter count={count} />
-                        </div>
-
-                        {/* Message System */}
-                        <div className={`rounded-xl p-5 text-center transition-colors duration-300 relative z-10 border ${count >= 8
-                            ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30'
-                            : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800'
-                            }`}>
-                            <AnimatePresence mode="wait">
+                        {/* 3. Stokmarknes Party Radar */}
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm" data-testid="party-radar">
+                            <h3 className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200 mb-3">
+                                <Radio className="w-5 h-5 text-pink-500" />
+                                Party Radar
+                            </h3>
+                            <div className="w-full h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                 <motion.div
-                                    key={count}
-                                    initial={{ opacity: 0, y: 5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -5 }}
-                                    className="space-y-2"
-                                >
-                                    <h3 className={`font-display font-bold text-lg ${count >= 8 ? 'text-red-700 dark:text-red-400' : 'text-slate-900 dark:text-white'
-                                        }`}>
-                                        {currentMessage.headline}
-                                    </h3>
-                                    <p className="text-slate-700 dark:text-slate-300 font-medium leading-tight">
-                                        {currentMessage.serious}
-                                    </p>
-                                    <p className="text-slate-500 dark:text-slate-400 text-sm italic pt-1">
-                                        💡 {currentMessage.suggestion}
-                                    </p>
-                                </motion.div>
-                            </AnimatePresence>
+                                    className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${radarValue}%` }}
+                                    transition={{ duration: 0.5 }}
+                                />
+                            </div>
+                            <div className="flex justify-between mt-1 text-xs text-slate-500">
+                                <span>Dead</span>
+                                <span>Legendary</span>
+                            </div>
                         </div>
+
                     </div>
-
-                    {/* Red Zone Warning */}
-                    <AnimatePresence>
-                        {count >= 8 && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="bg-red-600 text-white shadow-lg shadow-red-500/30 rounded-2xl p-4 flex items-start gap-3"
-                            >
-                                <AlertTriangle className="w-6 h-6 text-white flex-shrink-0 mt-0.5 animate-bounce" />
-                                <div>
-                                    <h3 className="font-bold text-white">Red Zone Warning</h3>
-                                    <p className="text-red-100 text-sm mt-1">
-                                        Consider stopping, hydrate, and take a break. Your body is under stress.
-                                    </p>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    <p className="text-center text-xs text-slate-400 dark:text-slate-600 max-w-xs mx-auto">
-                        Educational only. Not medical advice. Please drink responsibly.
-                    </p>
-                </motion.div>
+                </div>
             </main>
         </div>
     );
