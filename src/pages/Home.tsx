@@ -15,9 +15,20 @@ import {
   Bot
 } from 'lucide-react';
 import { AiHelperModal } from '../components/AiHelperModal';
+import { generateTileContent } from '../utils/generators';
+import { useMemo } from 'react';
 
 export const Home = () => {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiModalMode, setAiModalMode] = useState<'ai-helper' | 'search-challenge'>('ai-helper');
+
+  const aiHelperContent = useMemo(() => generateTileContent('ai-helper'), []);
+  const searchChallenge = useMemo(() => generateTileContent('search-challenge'), []);
+
+  const openAiModal = (mode: 'ai-helper' | 'search-challenge') => {
+    setAiModalMode(mode);
+    setIsAiModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden relative selection:bg-purple-500/30">
@@ -110,16 +121,18 @@ export const Home = () => {
             <motion.div
               whileHover={{ y: -8, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setIsAiModalOpen(true)}
+              onClick={() => openAiModal('ai-helper')}
               className="relative p-6 rounded-3xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col items-start backdrop-blur-md hover:shadow-xl transition-all h-full hover:border-blue-500/50 cursor-pointer"
               data-testid="tile-ai-links"
             >
               <div className="mb-4 inline-flex p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                 <Bot className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold mb-2 font-display text-slate-900 dark:text-white">AI Helpers</h3>
+              <h3 className="text-xl font-bold mb-2 font-display text-slate-900 dark:text-white">
+                {aiHelperContent.title}
+              </h3>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm mb-4 flex-1">
-                Kurt, stop Googling. Use these to actually solve problems in 2026.
+                {aiHelperContent.body}
               </p>
               <div className="flex gap-2 mt-auto w-full">
                 <div className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-center rounded-xl font-bold text-sm transition-colors shadow-sm">ChatGPT</div>
@@ -131,20 +144,22 @@ export const Home = () => {
             <motion.div
               whileHover={{ y: -8, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setIsAiModalOpen(true)}
+              onClick={() => openAiModal('search-challenge')}
               className="relative p-6 rounded-3xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col items-start backdrop-blur-md hover:shadow-xl transition-all h-full hover:border-red-500/50 cursor-pointer"
               data-testid="tile-roast-google"
             >
               <div className="mb-4 inline-flex p-3 rounded-2xl bg-white dark:bg-slate-800 shadow-sm">
                 <Search className="w-8 h-8 text-red-500" />
               </div>
-              <h3 className="text-xl font-bold mb-2 font-display text-slate-900 dark:text-white">Still Googling?</h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4 flex-1">
-                It's 2026. The search bar is dusty. Let the AI do the thinking for you.
+              <h3 className="text-xl font-bold mb-2 font-display text-slate-900 dark:text-white">
+                {searchChallenge.title}
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm mb-4 flex-1">
+                {searchChallenge.body}
               </p>
               <div className="flex items-center gap-2 text-sm font-semibold mt-auto">
                 <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
-                  Get Help
+                  {searchChallenge.actionLabel}
                 </span>
                 <ArrowRight className="w-4 h-4 text-slate-400" />
               </div>
@@ -181,7 +196,11 @@ export const Home = () => {
         <p>© {new Date().getFullYear()} Kurt Edgar & Eirik's Playground. v{__APP_VERSION__}</p>
       </footer>
 
-      <AiHelperModal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} />
+      <AiHelperModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        mode={aiModalMode}
+      />
     </div>
   );
 };
