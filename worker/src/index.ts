@@ -565,7 +565,9 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
     // ==================== ADMIN AUTH & HELPERS ====================
 
-    async function signToken(data: string, secret: string): Promise<string> {
+    // ==================== ADMIN AUTH & HELPERS ====================
+
+    async function signData(data: string, secret: string): Promise<string> {
         const enc = new TextEncoder();
         const key = await crypto.subtle.importKey(
             "raw", enc.encode(secret),
@@ -578,40 +580,27 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         return btoa(String.fromCharCode(...new Uint8Array(signature)));
     }
 
+    async function createAdminToken(secret: string): Promise<string> {
+        const exp = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+        const data = exp.toString();
+        const sigB64 = await signData(data, secret);
+        return btoa(`${data}.${sigB64}`);
+    }
+
     async function verifyToken(token: string, secret: string): Promise<boolean> {
         try {
             const decoded = atob(token);
-            const [data, signatureB64] = decoded.split('.');
-            if (!data || !signatureB64) return false;
+            const [data, sig] = decoded.split('.');
+            if (!data || !sig) return false;
 
             const exp = parseInt(data, 10);
             if (Date.now() > exp) return false;
 
-            const expectedSig = await signToken(data, secret);
-            // Simple string compare is fine for this scope, technically timing attack possible but low risk here
-            return signatureB64 === expectedSig.split('.')[0]; // signToken returns base64 of raw signature? No, my wrappers need alignment.
-            // Let's ensure signToken returns just the signature b64.
+            const expectedSig = await signData(data, secret);
+            return sig === expectedSig;
         } catch {
             return false;
         }
-    }
-
-    // NOTE: reimplementing signToken to be cleaner for matching
-    async function createAdminToken(secret: string): Promise<string> {
-        const exp = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
-        const data = exp.toString();
-
-        const enc = new TextEncoder();
-        const key = await crypto.subtle.importKey(
-            "raw", enc.encode(secret),
-            { name: "HMAC", hash: "SHA-256" },
-            false, ["sign"]
-        );
-        const signature = await crypto.subtle.sign(
-            "HMAC", key, enc.encode(data)
-        );
-        const sigB64 = btoa(String.fromCharCode(...new Uint8Array(signature)));
-        return btoa(`${data}.${sigB64}`);
     }
 
     // Helper for admin auth
@@ -622,31 +611,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     if (!isAdmin) {
         const token = request.headers.get('x-admin-token');
         if (token) {
-            try {
-                const decodedBlob = atob(token);
-                const [expStr, sig] = decodedBlob.split('.');
-                if (expStr && sig) {
-                    const exp = parseInt(expStr, 10);
-                    if (Date.now() < exp) {
-                        // Re-sign to verify
-                        const enc = new TextEncoder();
-                        const key = await crypto.subtle.importKey(
-                            "raw", enc.encode(adminPassword),
-                            { name: "HMAC", hash: "SHA-256" },
-                            false, ["sign"]
-                        );
-                        const signature = await crypto.subtle.sign(
-                            "HMAC", key, enc.encode(expStr)
-                        );
-                        const expectedSig = btoa(String.fromCharCode(...new Uint8Array(signature)));
-                        if (sig === expectedSig) {
-                            isAdmin = true;
-                        }
-                    }
-                }
-            } catch (e) {
-                // Invalid token
-            }
+            isAdmin = await verifyToken(token, adminPassword);
         }
     }
 

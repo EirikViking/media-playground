@@ -6,7 +6,10 @@ import { API_BASE } from '../utils/api';
 
 export const Admin = () => {
     const [password, setPassword] = useState('');
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    // Initialize auth state from storage to avoid flash of login content
+    const [isAuthenticated, setIsAuthenticated] = useState(() => {
+        return !!(sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token'));
+    });
     const [activeTab, setActiveTab] = useState<'summary' | 'projects' | 'media' | 'community'>('summary');
     const [summary, setSummary] = useState<any>(null);
     const [projects, setProjects] = useState<any[]>([]);
@@ -20,14 +23,6 @@ export const Admin = () => {
     // Editing state
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
-
-    // Load auth token on mount
-    useEffect(() => {
-        const token = sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token');
-        if (token) {
-            setIsAuthenticated(true);
-        }
-    }, []);
 
     const getAuthHeaders = () => {
         const token = sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token');
