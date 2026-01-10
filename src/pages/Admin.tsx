@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Lock, Trash2, AlertTriangle, ArrowLeft, Database, HardDrive, FileImage, Link as LinkIcon, Check, Edit2, X, Save, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
-import { API_BASE } from '../utils/api';
+import { API_BASE, api } from '../utils/api';
 import { getAdminToken, setAdminToken, clearAdminToken, getAuthHeaders } from '../utils/adminAuth';
 
 export const Admin = () => {
@@ -65,11 +65,14 @@ export const Admin = () => {
                 const res = await authenticatedFetch('/api/admin/db/media');
                 if (res.ok) setMedia(await res.json());
             } else if (activeTab === 'community') {
-                const res = await authenticatedFetch('/api/chaos?limit=1000');
-                if (res.ok) {
-                    const data = await res.json();
-                    console.log('Admin: Fetched chaos items', data);
-                    setChaosItems(data);
+                const res = await api.listChaos(1000);
+                if (res.data) {
+                    console.log('Admin: Fetched chaos items', res.data);
+                    // Ensure we handle both direct array and wrapped array
+                    const items = Array.isArray(res.data) ? res.data : (res.data as any).results || [];
+                    setChaosItems(items);
+                } else if (res.error) {
+                    setError('Failed to load community items: ' + res.error);
                 }
             }
         } catch (e) {
