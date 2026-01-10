@@ -10,6 +10,11 @@ test.describe('Admin Actions', () => {
     });
 
     test('community project delete flow UI', async ({ page }) => {
+        await page.addInitScript(() => {
+            localStorage.clear();
+            sessionStorage.clear();
+        });
+
         // Mock using regex to match any host and query params
         await page.route(/\/api\/projects\/public/, async route => {
             console.log('Intercepted projects request');

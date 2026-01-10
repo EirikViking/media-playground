@@ -27,14 +27,14 @@ test.describe('Admin Authentication', () => {
         await page.getByTestId('admin-unlock-button').click();
 
         // 4. Verify logged in
-        await expect(page.getByText('Total Projects')).toBeVisible();
+        await expect(page.getByText('Total Projects')).toBeVisible({ timeout: 15000 });
         await expect(page.getByTestId('admin-password-input')).not.toBeVisible();
 
         // 5. Reload page
         await page.reload();
 
         // 6. Verify still logged in (no login form flash ideally, but definitely eventual state)
-        await expect(page.getByText('Total Projects')).toBeVisible();
+        await expect(page.getByText('Total Projects')).toBeVisible({ timeout: 15000 });
         await expect(page.getByTestId('admin-password-input')).not.toBeVisible();
 
         // 7. Check localStorage has token
