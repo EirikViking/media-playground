@@ -34,7 +34,9 @@ export const AboutKurtEdgar = () => {
                         <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-slate-800 p-8 md:p-12 relative">
                             <div className="absolute top-0 left-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl -ml-16 -mt-16"></div>
                             <p className="text-xl leading-relaxed text-slate-700 dark:text-slate-300 font-light relative z-10">
-                                Kurt Edgar Lien is from Stokmarknes and has been active his whole life. He enjoys running in the mountains, simple and honest food, and a cold Isbjørn beer. His taste in music is firmly rooted in 80s hair rock, and while he likes playing video games, he is famously bad at them. Kurt Edgar brings energy, humor, and practicality into any collaboration. He is direct, unpretentious, and action oriented, and often balances more analytical personalities with movement, momentum, and a grounded approach to life.
+                                Kurt Edgar Lien is from Stokmarknes and lives in Melbu. He runs in the mountains, eats food that makes no excuses for itself, and considers a cold Isbjørn beer a perfectly complete reward system. His music taste is permanently stuck in the 80s hair rock era, and while he insists on playing video games, the results suggest that enthusiasm consistently outruns skill.
+                                <br /><br />
+                                On this project, Kurt Edgar is very much a passenger. He observes from the side with genuine admiration as Eirik handles vision, ideas, and execution, while Kurt contributes moral support in the form of beer consumption and a deep commitment to kjøttdeig.
                             </p>
                         </div>
                     </div>

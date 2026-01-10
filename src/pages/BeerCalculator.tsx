@@ -102,6 +102,7 @@ export const BeerCalculator = () => {
     const handleIncrement = () => {
         setCount(c => c + 1);
         setShakeKey(k => k + 1);
+        generateNewWisdom();
     };
 
     const handleDecrement = () => {
@@ -368,7 +369,7 @@ export const BeerCalculator = () => {
                             </div>
                             <div className="p-4 bg-purple-50 dark:bg-slate-800 rounded-xl relative">
                                 <div className="text-3xl absolute -top-2 -left-1 text-purple-200 dark:text-slate-700">"</div>
-                                <p className="text-slate-700 dark:text-slate-300 italic relative z-10 text-sm leading-relaxed">
+                                <p className="text-slate-700 dark:text-slate-300 italic relative z-10 text-sm leading-relaxed" data-testid="kurt-advice-text">
                                     {kurtAdvice}
                                 </p>
                             </div>

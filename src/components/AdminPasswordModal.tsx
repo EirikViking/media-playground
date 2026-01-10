@@ -8,9 +8,10 @@ interface AdminPasswordModalProps {
     onClose: () => void;
     onConfirm: (password: string) => void;
     title?: string;
+    isAuthenticated?: boolean;
 }
 
-export const AdminPasswordModal = ({ isOpen, onClose, onConfirm, title = "Admin Verification" }: AdminPasswordModalProps) => {
+export const AdminPasswordModal = ({ isOpen, onClose, onConfirm, title = "Admin Verification", isAuthenticated = false }: AdminPasswordModalProps) => {
     const [password, setPassword] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -51,27 +52,38 @@ export const AdminPasswordModal = ({ isOpen, onClose, onConfirm, title = "Admin 
                     </div>
                     <h3 className="font-bold text-lg text-slate-900 dark:text-white">{title}</h3>
                     <p className="text-sm text-slate-500">
-                        This action allows permanent deletion. Please verify your identity.
+                        {isAuthenticated
+                            ? "You are logged in as admin. Confirm to permanently delete this item."
+                            : "This action allows permanent deletion. Please verify your identity."
+                        }
                     </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter Admin Password"
-                        className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-purple-500 outline-none"
-                        autoFocus
-                        data-testid="admin-password-input"
-                    />
+                    {!isAuthenticated && (
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Enter Admin Password"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-purple-500 outline-none"
+                            autoFocus
+                            data-testid="admin-password-input"
+                        />
+                    )}
 
                     <div className="flex gap-2">
                         <Button variant="ghost" className="flex-1" onClick={onClose} type="button">
                             Cancel
                         </Button>
-                        <Button variant="danger" className="flex-1" type="submit" disabled={!password} data-testid="admin-confirm-delete-btn">
-                            Verify & Delete
+                        <Button
+                            variant="danger"
+                            className="flex-1"
+                            type="submit"
+                            disabled={!isAuthenticated && !password}
+                            data-testid="admin-confirm-delete-btn"
+                        >
+                            {isAuthenticated ? "Confirm Delete" : "Verify & Delete"}
                         </Button>
                     </div>
                 </form>

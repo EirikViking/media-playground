@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api, API_BASE } from '../utils/api';
+import { getAdminToken, getAuthHeaders } from '../utils/adminAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Play, Trash2 } from 'lucide-react';
 import { CloudAsset, ProjectJsonData } from '../types';
@@ -87,11 +88,12 @@ export const ChaosFeed = ({ refreshTrigger }: { refreshTrigger?: number }) => {
         if (!deleteCandidate) return;
 
         try {
+            const token = getAdminToken();
+            const headers = token ? getAuthHeaders() : { 'x-admin-password': password };
+
             const res = await fetch(`${API_BASE}/api/admin/db/chaos/${deleteCandidate.id}`, {
                 method: 'DELETE',
-                headers: {
-                    'x-admin-password': password
-                }
+                headers: headers as any
             });
 
             if (res.ok) {
@@ -99,7 +101,7 @@ export const ChaosFeed = ({ refreshTrigger }: { refreshTrigger?: number }) => {
                 setDeleteCandidate(null);
                 setAdminPasswordOpen(false);
             } else {
-                alert("Delete failed. Incorrect password?");
+                alert("Delete failed. Incorrect password or token.");
             }
         } catch (e) {
             console.error("Delete error", e);
@@ -226,6 +228,7 @@ export const ChaosFeed = ({ refreshTrigger }: { refreshTrigger?: number }) => {
                 onClose={() => setAdminPasswordOpen(false)}
                 onConfirm={handleConfirmDelete}
                 title={`Delete "${deleteCandidate?.title}"?`}
+                isAuthenticated={!!getAdminToken()}
             />
         </div>
     );

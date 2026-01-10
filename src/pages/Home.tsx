@@ -128,18 +128,31 @@ export const Home = () => {
             </motion.div>
 
             {/* 7. Roach Kurt - Search */}
-            <SectionCard
-              to="/about/kurt-edgar"
-              icon={<Search className="w-8 h-8 text-red-500" />}
-              title="Still Googling?"
-              description="It's 2026. The search bar is dusty. Let the AI do the thinking for you."
-              gradient="from-red-500 to-orange-500"
-              testId="tile-roast-google"
-            />
+            <motion.div
+              whileHover={{ y: -8, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setIsAiModalOpen(true)}
+              className="relative p-6 rounded-3xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col items-start backdrop-blur-md hover:shadow-xl transition-all h-full hover:border-red-500/50 cursor-pointer"
+              data-testid="tile-roast-google"
+            >
+              <div className="mb-4 inline-flex p-3 rounded-2xl bg-white dark:bg-slate-800 shadow-sm">
+                <Search className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold mb-2 font-display text-slate-900 dark:text-white">Still Googling?</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4 flex-1">
+                It's 2026. The search bar is dusty. Let the AI do the thinking for you.
+              </p>
+              <div className="flex items-center gap-2 text-sm font-semibold mt-auto">
+                <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+                  Get Help
+                </span>
+                <ArrowRight className="w-4 h-4 text-slate-400" />
+              </div>
+            </motion.div>
 
             {/* 8. Roach Kurt - Manual Labor */}
             <SectionCard
-              to="/about/kurt-edgar"
+              to="/beers"
               icon={<BrainCircuit className="w-8 h-8 text-indigo-500" />}
               title="Manual Mode?"
               description="Writing code by hand? Cute. Let's upgrade that workflow."

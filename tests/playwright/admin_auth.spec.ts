@@ -50,7 +50,19 @@ test.describe('Admin Authentication', () => {
         await expect(page.getByText('Total Projects')).toBeVisible();
 
         await page.reload();
-        await expect(page.getByText('Total Projects')).toBeVisible();
+        // Wait longer for data load, or check for error
+        try {
+            await expect(page.getByText('Total Projects')).toBeVisible({ timeout: 10000 });
+        } catch (e) {
+            // If failed, check if we see login form or error
+            if (await page.getByTestId('admin-password-input').isVisible()) {
+                throw new Error('Logged out after reload (SessionStorage lost)');
+            }
+            if (await page.getByText('Session expired').isVisible()) {
+                throw new Error('Session expired (401) after reload');
+            }
+            throw e;
+        }
 
         // Check sessionStorage
         const token = await page.evaluate(() => sessionStorage.getItem('admin_token'));

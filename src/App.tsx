@@ -48,7 +48,7 @@ function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/about/eirik" element={<AboutEirik />} />
             <Route path="/about/kurt-edgar" element={<AboutKurtEdgar />} />
-            <Route path="/beer-calculator" element={<BeerCalculator />} />
+            <Route path="/beers" element={<BeerCalculator />} />
             <Route path="/music" element={<AwesomeMusic />} />
           </Route>
         </Routes>

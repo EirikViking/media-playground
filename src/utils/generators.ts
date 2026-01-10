@@ -55,11 +55,13 @@ export const generateTileContent = (_tileId: string, seed: number = Date.now()):
 
 // Allowed topics only
 const KURT_TOPICS = [
-    "Minced meat on bread", "Burger King", "Peppes Pizza", "Beer", "Isbjørn beer",
+    "Minced meat on bread", "Burger King", "Peppes Pizza",
+    "Beer", "Isbjørn beer", "Cold Isbjørn", "Beer", "Isbjørn beer",
     "Bon Jovi", "Living on a Prayer", "Eirik's wisdom", "Eirik is cool",
     "Stokmarknes", "Nordland fylke", "Samer i Finnmark", "Melbu",
     "Innvandrere", "Frp", "Sylvi Listhaug", "Islam", "Muslim",
-    "Helldiver 2", "AoE", "Hair gel"
+    "Helldiver 2", "AoE", "Hair gel",
+    "Beer", "Isbjørn beer"
 ];
 
 const KURT_TEMPLATES = [

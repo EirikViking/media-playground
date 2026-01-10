@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api, ProjectSummary, API_BASE } from '../utils/api';
+import { getAdminToken, getAuthHeaders } from '../utils/adminAuth';
 import { Loader2, Folder, Clock, Users, Trash2 } from 'lucide-react';
 import { AdminPasswordModal } from './AdminPasswordModal';
 
@@ -38,12 +39,13 @@ export const ProjectsGallery = ({ onSelect, currentProjectId }: ProjectsGalleryP
         if (!deleteCandidate) return;
 
         try {
+            const token = getAdminToken();
+            const headers = token ? getAuthHeaders() : { 'x-admin-password': password };
+
             // Use Admin endpoint for project deletion to ensure password check
             const res = await fetch(`${API_BASE}/api/admin/db/project/${deleteCandidate.id}`, {
                 method: 'DELETE',
-                headers: {
-                    'x-admin-password': password
-                }
+                headers: headers as any
             });
 
             if (res.ok) {
@@ -51,7 +53,7 @@ export const ProjectsGallery = ({ onSelect, currentProjectId }: ProjectsGalleryP
                 setDeleteCandidate(null);
                 setAdminPasswordOpen(false);
             } else {
-                alert("Delete failed. Incorrect password?");
+                alert("Delete failed. Incorrect password or token.");
             }
         } catch (e) {
             console.error("Delete error", e);
@@ -124,6 +126,7 @@ export const ProjectsGallery = ({ onSelect, currentProjectId }: ProjectsGalleryP
                 onClose={() => setAdminPasswordOpen(false)}
                 onConfirm={handleConfirmDelete}
                 title={`Delete "${deleteCandidate?.title || 'Unknown'}"?`}
+                isAuthenticated={!!getAdminToken()}
             />
         </div>
     );

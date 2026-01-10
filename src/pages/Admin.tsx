@@ -3,13 +3,12 @@ import { Shield, Lock, Trash2, AlertTriangle, ArrowLeft, Database, HardDrive, Fi
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { API_BASE } from '../utils/api';
+import { getAdminToken, setAdminToken, clearAdminToken, getAuthHeaders } from '../utils/adminAuth';
 
 export const Admin = () => {
     const [password, setPassword] = useState('');
-    // Initialize auth state from storage to avoid flash of login content
-    const [isAuthenticated, setIsAuthenticated] = useState(() => {
-        return !!(sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token'));
-    });
+    // Initialize auth state from storage
+    const [isAuthenticated, setIsAuthenticated] = useState(() => !!getAdminToken());
     const [activeTab, setActiveTab] = useState<'summary' | 'projects' | 'media' | 'community'>('summary');
     const [summary, setSummary] = useState<any>(null);
     const [projects, setProjects] = useState<any[]>([]);
@@ -24,18 +23,18 @@ export const Admin = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
 
-    const getAuthHeaders = () => {
-        const token = sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token');
-        const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-        };
-        if (token) {
-            headers['x-admin-token'] = token;
-        } else if (password) {
-            headers['x-admin-password'] = password;
-        }
-        return headers;
-    };
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        body: string;
+        onConfirm: () => void;
+    }>({
+        isOpen: false,
+        title: '',
+        body: '',
+        onConfirm: () => { }
+    });
 
     const authenticatedFetch = async (path: string, options: RequestInit = {}) => {
         const headers = {
@@ -46,8 +45,7 @@ export const Admin = () => {
         if (res.status === 401) {
             setIsAuthenticated(false);
             setError('Session expired or invalid credentials');
-            sessionStorage.removeItem('admin_token');
-            localStorage.removeItem('admin_token');
+            clearAdminToken();
             throw new Error('Unauthorized');
         }
         return res;
@@ -67,13 +65,7 @@ export const Admin = () => {
                 const res = await authenticatedFetch('/api/admin/db/media');
                 if (res.ok) setMedia(await res.json());
             } else if (activeTab === 'community') {
-                const res = await authenticatedFetch('/api/chaos?limit=100'); // Re-using public endpoint, but admin might need a specific one if public is filtered?
-                // Actually, let's use the public one for now, or assume admin access makes it check headers?
-                // The public endpoint /api/chaos returns list.
-                // But wait, the public endpoint doesn't require auth.
-                // However, we can use it to LIST items.
-                // If we need an admin-specific list (e.g. including hidden items), we'd need a new endpoint.
-                // For now, public list is fine.
+                const res = await authenticatedFetch('/api/chaos?limit=100');
                 if (res.ok) setChaosItems(await res.json());
             }
         } catch (e) {
@@ -95,7 +87,6 @@ export const Admin = () => {
         setError(null);
 
         try {
-            // Attempt generic login first to get token
             const res = await fetch(`${API_BASE}/api/admin/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -105,16 +96,11 @@ export const Admin = () => {
             if (res.ok) {
                 const data = await res.json();
                 if (data.token) {
-                    if (rememberMe) {
-                        localStorage.setItem('admin_token', data.token);
-                    } else {
-                        sessionStorage.setItem('admin_token', data.token);
-                    }
+                    setAdminToken(data.token, rememberMe);
                     setIsAuthenticated(true);
-                    setPassword(''); // Clear from memory
+                    setPassword('');
                 }
             } else {
-                // Fallback for legacy backend or wrong password
                 if (res.status === 401) setError('Wrong password');
                 else setError('Login failed');
             }
@@ -127,35 +113,45 @@ export const Admin = () => {
 
     const handleLogout = () => {
         setIsAuthenticated(false);
-        sessionStorage.removeItem('admin_token');
-        localStorage.removeItem('admin_token');
+        clearAdminToken();
         setPassword('');
         setActiveTab('summary');
     };
 
-    const handleDelete = async (endpoint: string, confirmMsg?: string, requireInput?: string) => {
-        if (requireInput) {
-            const input = prompt(confirmMsg || `Type "${requireInput}" to confirm:`);
-            if (input !== requireInput) return;
-        } else if (confirmMsg) {
-            if (!confirm(confirmMsg)) return;
+    const handleDelete = async (endpoint: string, itemName: string, isReset = false) => {
+        const confirmAction = async () => {
+            setConfirmModal(prev => ({ ...prev, isOpen: false }));
+            setLoading(true);
+            setError(null);
+            try {
+                const res = await authenticatedFetch(endpoint, { method: 'DELETE' });
+                if (res.ok) {
+                    loadData();
+                } else {
+                    const text = await res.text();
+                    setError(`Delete failed: ${text}`);
+                }
+            } catch (e) {
+                setError('Error deleting item');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (isReset) {
+            const input = prompt('Start full reset sequence. All data will be lost. Type "RESET" to confirm:');
+            if (input === 'RESET') {
+                confirmAction();
+            }
+            return;
         }
 
-        setLoading(true);
-        setError(null);
-        try {
-            const res = await authenticatedFetch(endpoint, { method: 'DELETE' });
-            if (res.ok) {
-                loadData();
-            } else {
-                const text = await res.text();
-                setError(`Delete failed: ${text}`);
-            }
-        } catch (e) {
-            setError('Error deleting item');
-        } finally {
-            setLoading(false);
-        }
+        setConfirmModal({
+            isOpen: true,
+            title: `Delete "${itemName}"?`,
+            body: 'This action permanently deletes the item.',
+            onConfirm: confirmAction
+        });
     };
 
     const startEditing = (id: string, currentTitle: string) => {
@@ -335,7 +331,7 @@ export const Admin = () => {
                                     </p>
                                     <Button
                                         data-testid="admin-reset-button"
-                                        onClick={() => handleDelete('/api/admin/db/reset', 'Start full reset sequence. All data will be lost.', 'RESET')}
+                                        onClick={() => handleDelete('/api/admin/db/reset', 'Full Database Reset', true)}
                                         className="bg-red-600 hover:bg-red-700 text-white"
                                     >
                                         Wipe Database & Storage
@@ -388,7 +384,7 @@ export const Admin = () => {
                                                     )}
                                                 </div>
                                                 <button
-                                                    onClick={() => handleDelete(`/api/admin/db/project/${p.id}`, `Delete project "${p.title}"?`)}
+                                                    onClick={() => handleDelete(`/api/admin/db/project/${p.id}`, p.title || 'Untitled Project')}
                                                     className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                                     title="Delete Project"
                                                 >
@@ -449,7 +445,7 @@ export const Admin = () => {
                                                         <LinkIcon className="w-5 h-5" />
                                                     </a>
                                                     <button
-                                                        onClick={() => handleDelete(`/api/admin/db/chaos/${c.id}`, `Delete chaos item "${c.title}"?`)}
+                                                        onClick={() => handleDelete(`/api/admin/db/chaos/${c.id}`, c.title || 'Untitled')}
                                                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                                     >
                                                         <Trash2 className="w-5 h-5" />
@@ -503,7 +499,7 @@ export const Admin = () => {
                                                         )}
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDelete(`/api/admin/db/media/${m.projectId}/${m.assetId}`, `Delete asset "${m.fileName}"?`)}
+                                                        onClick={() => handleDelete(`/api/admin/db/media/${m.projectId}/${m.assetId}`, m.fileName)}
                                                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                                         title="Delete Asset"
                                                     >
@@ -516,6 +512,30 @@ export const Admin = () => {
                                 )}
                             </div>
                         )}
+                    </div>
+                )}
+                {/* Confirmation Modal */}
+                {confirmModal.isOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-700">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{confirmModal.title}</h3>
+                            <p className="text-slate-600 dark:text-slate-400 mb-6">{confirmModal.body}</p>
+                            <div className="flex justify-end gap-3">
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="primary"
+                                    className="bg-red-600 hover:bg-red-700 text-white"
+                                    onClick={confirmModal.onConfirm}
+                                >
+                                    Delete
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </main>
