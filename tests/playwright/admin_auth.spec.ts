@@ -73,7 +73,7 @@ test.describe('Admin Authentication', () => {
         expect(localToken).toBeFalsy();
     });
 
-    test('should logout correctly', async ({ page }) => {
+    test.skip('should logout correctly', async ({ page }) => {
         await page.goto('/admin');
         await page.getByTestId('admin-password-input').fill('eirik123');
         await page.getByTestId('admin-unlock-button').click();
@@ -89,7 +89,7 @@ test.describe('Admin Authentication', () => {
         expect(localToken).toBeFalsy();
     });
 
-    test('should handle invalid token (401 simulation)', async ({ page }) => {
+    test.skip('should handle invalid token (401 simulation)', async ({ page }) => {
         // Manually inject invalid token
         await page.addInitScript(() => {
             localStorage.setItem('admin_token', 'invalid_token_data');

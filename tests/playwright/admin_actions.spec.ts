@@ -16,7 +16,7 @@ test.describe('Admin Actions', () => {
         });
 
         // Mock using regex to match any host and query params
-        await page.route(/\/api\/projects\/public/, async route => {
+        await page.route(/\/api\/projects/, async route => {
             console.log('Intercepted projects request');
             const json = {
                 data: [
@@ -45,8 +45,11 @@ test.describe('Admin Actions', () => {
         const deleteBtn = page.getByTestId('delete-project-test-project-123');
         await expect(deleteBtn).toBeVisible();
 
-        // Click delete
-        await deleteBtn.click();
+        // Hover to show button
+        await page.getByText('Test Project').hover();
+
+        // Click delete (force because it might be hidden by opacity)
+        await deleteBtn.click({ force: true });
 
         // Expect Modal
         await expect(page.getByTestId('admin-password-modal')).toBeVisible();
