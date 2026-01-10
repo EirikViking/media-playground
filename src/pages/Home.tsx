@@ -8,7 +8,10 @@ import {
   ArrowRight,
   Palette,
   Code,
-  Music
+  Music,
+  Search,
+  BrainCircuit,
+  Bot
 } from 'lucide-react';
 
 export const Home = () => {
@@ -21,7 +24,7 @@ export const Home = () => {
         <div className="absolute -bottom-[20%] right-[20%] w-[600px] h-[600px] bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '12s' }} />
       </div>
 
-      <main className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-6">
+      <main className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-6" data-testid="home-tiles-container">
         <div className="max-w-6xl w-full text-center space-y-12">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -48,6 +51,7 @@ export const Home = () => {
             transition={{ delay: 0.3, duration: 0.8 }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16"
           >
+            {/* 1. About Eirik */}
             <SectionCard
               to="/about/eirik"
               icon={<User className="w-8 h-8 text-blue-500" />}
@@ -57,6 +61,7 @@ export const Home = () => {
               testId="card-about-eirik"
             />
 
+            {/* 2. About Kurt */}
             <SectionCard
               to="/about/kurt-edgar"
               icon={<Users className="w-8 h-8 text-pink-500" />}
@@ -66,6 +71,7 @@ export const Home = () => {
               testId="card-about-kurt"
             />
 
+            {/* 3. Gaming */}
             <SectionCard
               to="/games"
               icon={<Gamepad2 className="w-8 h-8 text-purple-500" />}
@@ -75,6 +81,7 @@ export const Home = () => {
               testId="card-gaming"
             />
 
+            {/* 4. The Studio */}
             <SectionCard
               to="/studio"
               icon={<Sparkles className="w-8 h-8 text-yellow-500" />}
@@ -85,6 +92,7 @@ export const Home = () => {
               testId="card-studio"
             />
 
+            {/* 5. Music */}
             <SectionCard
               to="/music"
               icon={<Music className="w-8 h-8 text-green-500" />}
@@ -93,6 +101,46 @@ export const Home = () => {
               gradient="from-green-500 to-emerald-500"
               testId="card-music"
             />
+
+            {/* 6. AI Links (Special Custom Card) */}
+            <motion.div
+              whileHover={{ y: -8, scale: 1.02 }}
+              className="relative p-6 rounded-3xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col items-start backdrop-blur-md hover:shadow-xl transition-all h-full hover:border-blue-500/50"
+              data-testid="tile-ai-links"
+            >
+              <div className="mb-4 inline-flex p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                <Bot className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold mb-2 font-display text-slate-900 dark:text-white">AI Helpers</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm mb-4 flex-1">
+                Kurt, stop Googling. Use these to actually solve problems in 2026.
+              </p>
+              <div className="flex gap-2 mt-auto w-full">
+                <a href="https://chatgpt.com" target="_blank" rel="noopener noreferrer" className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-center rounded-xl font-bold text-sm transition-colors shadow-sm">ChatGPT</a>
+                <a href="https://gemini.google.com" target="_blank" rel="noopener noreferrer" className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-center rounded-xl font-bold text-sm transition-colors shadow-sm">Gemini</a>
+              </div>
+            </motion.div>
+
+            {/* 7. Roach Kurt - Search */}
+            <SectionCard
+              to="/about/kurt-edgar"
+              icon={<Search className="w-8 h-8 text-red-500" />}
+              title="Still Googling?"
+              description="It's 2026. The search bar is dusty. Let the AI do the thinking for you."
+              gradient="from-red-500 to-orange-500"
+              testId="tile-roast-google"
+            />
+
+            {/* 8. Roach Kurt - Manual Labor */}
+            <SectionCard
+              to="/about/kurt-edgar"
+              icon={<BrainCircuit className="w-8 h-8 text-indigo-500" />}
+              title="Manual Mode?"
+              description="Writing code by hand? Cute. Let's upgrade that workflow."
+              gradient="from-indigo-500 to-cyan-500"
+              testId="tile-roast-manual"
+            />
+
           </motion.div>
 
           <motion.div
@@ -113,7 +161,6 @@ export const Home = () => {
       <footer className="relative z-10 p-8 text-center text-slate-500 dark:text-slate-500 text-sm">
         <p>© {new Date().getFullYear()} Kurt Edgar & Eirik's Playground. v{__APP_VERSION__}</p>
       </footer>
-// ... existing code ...
     </div>
   );
 };
