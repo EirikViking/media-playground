@@ -42,12 +42,12 @@ test.describe('Navigation and Hub', () => {
         await expect(page.getByTestId('tile-roast-manual')).toBeVisible();
 
         // Check AI links exist
-        await expect(page.getByRole('link', { name: 'ChatGPT' })).toBeVisible();
-        await expect(page.getByRole('link', { name: 'Gemini' })).toBeVisible();
+        await expect(page.getByText('ChatGPT')).toBeVisible();
+        await expect(page.getByText('Gemini')).toBeVisible();
     });
 
 
-    test.skip('navigate to About Eirik page', async ({ page }) => {
+    test('navigate to About Eirik page', async ({ page }) => {
         await page.goto('/');
         await page.getByTestId('app-ready').waitFor();
 
@@ -62,7 +62,7 @@ test.describe('Navigation and Hub', () => {
         await expect(page).toHaveURL('/');
     });
 
-    test.skip('navigate to About Kurt Edgar page', async ({ page }) => {
+    test('navigate to About Kurt Edgar page', async ({ page }) => {
         await page.goto('/');
         await page.getByTestId('app-ready').waitFor();
 
@@ -70,13 +70,13 @@ test.describe('Navigation and Hub', () => {
 
         await expect(page).toHaveURL('/about/kurt-edgar');
         await expect(page.getByRole('heading', { name: /About Kurt Edgar/i })).toBeVisible();
-        await expect(page.getByText(/active his whole life/i)).toBeVisible();
+        await expect(page.getByText(/from Stokmarknes/i)).toBeVisible();
 
         await page.getByTestId('nav-home').click();
         await expect(page).toHaveURL('/');
     });
 
-    test.skip('navigate to Gaming page', async ({ page }) => {
+    test('navigate to Gaming page', async ({ page }) => {
         await page.goto('/');
         await page.getByTestId('app-ready').waitFor();
 
@@ -86,7 +86,7 @@ test.describe('Navigation and Hub', () => {
         await expect(page.getByRole('heading', { name: /Game Center/i })).toBeVisible();
     });
 
-    test.skip('navigate to Studio page', async ({ page }) => {
+    test('navigate to Studio page', async ({ page }) => {
         await page.goto('/');
         await page.getByTestId('app-ready').waitFor();
 
@@ -100,7 +100,7 @@ test.describe('Navigation and Hub', () => {
         await expect(page.getByTestId('studio-explanation')).toBeVisible();
     });
 
-    test.skip('header navigation menu works', async ({ page }) => {
+    test('header navigation menu works', async ({ page }) => {
         await page.goto('/');
         await page.getByTestId('app-ready').waitFor();
 
