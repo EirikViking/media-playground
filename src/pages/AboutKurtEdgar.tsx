@@ -31,13 +31,20 @@ export const AboutKurtEdgar = () => {
                     </div>
 
                     <div className="prose prose-lg dark:prose-invert max-w-none">
-                        <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-slate-800 p-8 md:p-12 relative">
+                        <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-slate-800 p-8 md:p-12 relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl -ml-16 -mt-16"></div>
-                            <p className="text-xl leading-relaxed text-slate-700 dark:text-slate-300 font-light relative z-10">
-                                Kurt Edgar Lien is from Stokmarknes and lives in Melbu. He runs in the mountains, eats food that makes no excuses for itself, and considers a cold Isbjørn beer a perfectly complete reward system. His music taste is permanently stuck in the 80s hair rock era, and while he insists on playing video games, the results suggest that enthusiasm consistently outruns skill.
-                                <br /><br />
-                                On this project, Kurt Edgar is very much a passenger. He observes from the side with genuine admiration as Eirik handles vision, ideas, and execution, while Kurt contributes moral support in the form of beer consumption and a deep commitment to kjøttdeig.
-                            </p>
+
+                            <div className="text-xl leading-relaxed text-slate-700 dark:text-slate-300 font-light relative z-10 space-y-6">
+                                <p>
+                                    <span className="font-semibold text-slate-900 dark:text-white">Kurt Edgar Lien</span> is from Stokmarknes and lives in Melbu. He runs in the mountains (mostly to escape responsibilities), eats food that makes no excuses for itself, and considers a cold <span className="text-blue-500 font-medium">Isbjørn beer</span> a perfectly complete reward system.
+                                </p>
+                                <p>
+                                    His music taste is permanently stuck in the 80s hair rock era, and while he insists on playing video games, the results suggest that <span className="italic">enthusiasm consistently outruns skill.</span>
+                                </p>
+                                <p className="border-l-4 border-pink-500/30 pl-4 italic text-slate-600 dark:text-slate-400">
+                                    "On this project, Kurt Edgar is very much a passenger. He observes from the side with genuine admiration as Eirik handles vision, ideas, and execution, while Kurt contributes moral support in the form of beer consumption and a deep commitment to kjøttdeig."
+                                </p>
+                            </div>
                         </div>
                     </div>
 

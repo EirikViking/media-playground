@@ -49,9 +49,21 @@ export const AboutEirik = () => {
                     <div className="prose prose-lg dark:prose-invert max-w-none">
                         <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-slate-800 p-8 md:p-12 relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                            <p className="text-xl leading-relaxed text-slate-700 dark:text-slate-300 font-light relative z-10">
-                                Eirik is a financially independent technologist, investor, and creative builder, and the creator behind this site. He lives off long term investments in stocks, funds, and crypto, which gives him the freedom to focus on what he does best: inventing, exploring, and building digital things that feel genuinely fun and useful. Known for his ability as a highly intuitive and fast moving vibe coder, Eirik excels at turning loose ideas into working systems with personality. He is full of new and unconventional ideas, constantly experimenting with AI, games, and digital platforms, and always looking for ways to create small moments of digital joy. Originally from Stokmarknes in Northern Norway and now based in Oslo, he combines deep analytical thinking with creativity, curiosity, and a strong desire to make technology feel human rather than heavy.
-                            </p>
+
+                            <div className="text-xl leading-relaxed text-slate-700 dark:text-slate-300 font-light relative z-10 space-y-6">
+                                <p>
+                                    <span className="font-semibold text-slate-900 dark:text-white">Eirik</span> is a financially independent technologist, investor, and creative builder. He lives off long-term investments in stocks, funds, and crypto, giving him the ultimate cheat code: <span className="italic text-purple-600 dark:text-purple-400">Freedom.</span>
+                                </p>
+                                <p>
+                                    This freedom allows him to focus entirely on what he does best: inventing, exploring, and building digital things that feel genuinely fun and useful. Known for his ability as a highly intuitive and fast-moving <span className="font-semibold text-blue-500">vibe coder</span>, Eirik excels at turning loose ideas into working systems with efficiency and personality.
+                                </p>
+                                <p>
+                                    He is full of new and unconventional ideas, constantly experimenting with AI, games, and digital platforms, and always looking for ways to create small moments of digital joy.
+                                </p>
+                                <p>
+                                    Originally from <span className="font-semibold">Stokmarknes</span> in Northern Norway and now based in Oslo, he combines deep analytical thinking with creativity, curiosity, and a strong desire to make technology feel human rather than heavy.
+                                </p>
+                            </div>
                         </div>
                     </div>
 

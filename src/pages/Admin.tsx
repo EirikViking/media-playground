@@ -66,10 +66,14 @@ export const Admin = () => {
                 if (res.ok) setMedia(await res.json());
             } else if (activeTab === 'community') {
                 const res = await authenticatedFetch('/api/chaos?limit=1000');
-                if (res.ok) setChaosItems(await res.json());
+                if (res.ok) {
+                    const data = await res.json();
+                    console.log('Admin: Fetched chaos items', data);
+                    setChaosItems(data);
+                }
             }
         } catch (e) {
-            console.error(e);
+            console.error('Admin: Load data error', e);
         } finally {
             setLoading(false);
         }

@@ -9,7 +9,7 @@ test.describe('Admin Actions', () => {
         });
     });
 
-    test.skip('community project delete flow UI', async ({ page }) => {
+    test('community project delete flow UI', async ({ page }) => {
         await page.addInitScript(() => {
             localStorage.clear();
             sessionStorage.clear();
@@ -18,21 +18,24 @@ test.describe('Admin Actions', () => {
         // Mock using regex to match any host and query params
         await page.route(/\/api\/projects/, async route => {
             console.log('Intercepted projects request');
-            const json = {
-                data: [
-                    {
-                        id: 'test-project-123',
-                        title: 'Test Project',
-                        data: '{}',
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    }
-                ]
-            };
+            const json = [
+                {
+                    id: 'test-project-123',
+                    title: 'Test Project',
+                    data: '{}',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                }
+            ];
             await route.fulfill({ json });
         });
 
-        await page.goto('/studio');
+        await page.goto('/');
+        await page.waitForSelector('[data-testid="app-ready"]');
+
+        // Navigate via UI to avoid strict 404s on some preview servers
+        await page.getByTestId('card-studio').click();
+        await expect(page).toHaveURL('/studio');
         await page.waitForSelector('[data-testid="app-ready"]');
 
         // Check if we can see the "Recent Projects" section.     

@@ -109,14 +109,20 @@ export const Studio = () => {
   const handleProjectCreated = async (name: string) => {
     const res = await api.createProject(name);
     if (res.data) {
-      setCurrentProjectId(res.data.id);
+      const newId = res.data.id;
+      setCurrentProjectId(newId);
       setProjectTitle(name);
-      setSearchParams({ project: res.data.id });
 
-      createNewProject();
-      setProject(p => ({ ...p, name }));
+      setProject({
+        id: crypto.randomUUID(),
+        name,
+        items: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
 
       setIsCreateModalOpen(false);
+      setSearchParams({ project: newId });
 
       if (pendingFiles.length > 0) {
         processFiles(pendingFiles);
@@ -151,9 +157,8 @@ export const Studio = () => {
     await api.updateProject(currentProjectId, projectTitle, JSON.stringify(data));
   };
 
-  // Helper: Perform the actual upload process
   const performUpload = async (filesToUpload: { id: string; file: File }[]) => {
-    if (!currentProjectId) return false;
+    if (!currentProjectId) return { success: false, items: project.items };
 
     setIsUploading(true);
     setUploadCompleted(0);
@@ -167,7 +172,7 @@ export const Studio = () => {
     try {
       const result = await uploadImages(
         currentProjectId,
-        filesToUpload.map(f => f.file),
+        filesToUpload, // Now passing {id, file} array directly
         (completed, total, current) => {
           setUploadCompleted(completed);
           setUploadTotal(total);
@@ -175,21 +180,21 @@ export const Studio = () => {
         }
       );
 
-      // Determine updated items based on results
+      // Determine updated items based on results using ID matching (Robust)
       const updatedItems = project.items.map(item => {
-        const successAsset = result.successful.find(asset => asset.fileName === item.file?.name);
-        if (successAsset) {
+        const successEntry = result.successful.find(s => s.id === item.id);
+        if (successEntry) {
           return {
             ...item,
-            cloudAsset: successAsset,
+            cloudAsset: successEntry.asset,
             uploadStatus: 'uploaded' as const,
-            url: getAssetUrl(currentProjectId, successAsset.assetId, 'original'),
-            thumbUrl: getAssetUrl(currentProjectId, successAsset.assetId, 'thumb'),
+            url: getAssetUrl(currentProjectId, successEntry.asset.assetId, 'original'),
+            thumbUrl: getAssetUrl(currentProjectId, successEntry.asset.assetId, 'thumb'),
           };
         }
-        const failure = result.failed.find(f => f.fileName === item.file?.name);
-        if (failure) {
-          return { ...item, uploadStatus: 'error' as const, uploadError: failure.error };
+        const failureEntry = result.failed.find(f => f.id === item.id);
+        if (failureEntry) {
+          return { ...item, uploadStatus: 'error' as const, uploadError: failureEntry.error };
         }
         return item;
       });
@@ -200,10 +205,10 @@ export const Studio = () => {
       await handleSaveProject(updatedItems);
       setChaosRefreshTrigger(prev => prev + 1);
 
-      return result.failed.length === 0;
+      return { success: result.failed.length === 0, items: updatedItems };
     } catch (e) {
       console.error("Upload process error", e);
-      return false;
+      return { success: false, items: project.items };
     } finally {
       setIsUploading(false);
     }
@@ -226,6 +231,8 @@ export const Studio = () => {
   const handleChaosPublish = async (blob: Blob) => {
     if (!currentProjectId) return;
 
+    let itemsToSave = project.items;
+
     // 1. Auto-Upload Pending Items first
     if (pendingUploads.length > 0) {
       const filesToUpload = pendingUploads.filter(item => item.file).map(item => ({ id: item.id, file: item.file! }));
@@ -233,11 +240,13 @@ export const Studio = () => {
       // Check limits before trying
       const existingCount = project.items.filter(i => i.cloudAsset).length;
       if (existingCount + filesToUpload.length <= UPLOAD_LIMITS.maxAssetsPerProject) {
-        const success = await performUpload(filesToUpload);
-        if (!success) {
-          if (!confirm("Some assets failed to upload. Publish anyway?")) {
-            return;
-          }
+        const result = await performUpload(filesToUpload);
+        itemsToSave = result.items;
+
+        if (!result.success) {
+          // ABORT: Do not publish if assets failed
+          alert("Upload failed for some assets. Publishing canceled to prevent empty projects.");
+          return;
         }
       } else {
         alert(`Cannot auto-upload: Maximum ${UPLOAD_LIMITS.maxAssetsPerProject} assets exceeded. Please manage assets manually.`);
@@ -254,8 +263,8 @@ export const Studio = () => {
         throw new Error(res.error);
       }
 
-      // 3. Save Project Trigger
-      await handleSaveProject();
+      // 3. Save Project Trigger (Using latest items to avoid Ghost Town)
+      await handleSaveProject(itemsToSave);
 
       // 4. Refresh Community Feed
       setChaosRefreshTrigger(prev => prev + 1);
@@ -502,8 +511,11 @@ export const Studio = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button onClick={handleNewProject} variant="ghost" size="sm" className="w-full text-red-500 hover:text-red-600 border border-slate-200 dark:border-slate-700">
+                <div className="flex flex-col gap-2">
+                  <Button onClick={() => setIsCreateModalOpen(true)} variant="primary" size="sm" className="w-full">
+                    Start New Project
+                  </Button>
+                  <Button onClick={handleNewProject} variant="ghost" size="sm" className="w-full text-red-500 hover:text-red-400 border border-slate-200 dark:border-slate-800 justify-center">
                     <Trash2 className="w-4 h-4 mr-2" /> Start Over
                   </Button>
                 </div>

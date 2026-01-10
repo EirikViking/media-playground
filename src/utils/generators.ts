@@ -22,7 +22,12 @@ const AI_TOPICS = [
     "Why Google is Dusty",
     "Eirik's Code Secrets",
     "Kurt's Upgrade Path",
-    "The Future of Work"
+    "The Future of Work",
+    "The Singularity",
+    "Robots Taking Over",
+    "Infinite Context Windows",
+    "Prompt Engineering is Dead",
+    "Digital Archaeology"
 ];
 
 const AI_PARAGRAPHS = [
@@ -33,7 +38,13 @@ const AI_PARAGRAPHS = [
     "The search bar is gathering dust. If you aren't prompting, you're just guessing.",
     "Eirik says real developers use AI. Kurt says real developers use Notepad. Guess who is still fixing bugs from 2024?",
     "Why search for answers when the AI can just confidently invent them for you? It's much faster and arguably more entertaining.",
-    "Gemini is basically a super-smart intern that never sleeps, never complains, but occasionally tries to explain why 2+2=5."
+    "Gemini is basically a super-smart intern that never sleeps, never complains, but occasionally tries to explain why 2+2=5.",
+    "Remember when we had to write regex manually? That was the dark ages. Now we just ask the machine to 'match the funny patterns'.",
+    "The cloud is just someone else's computer, but the AI is someone else's brain. And frankly, it's bigger than yours.",
+    "You are still writing unit tests? That's cute. My AI agent proactively refactors my code while I sleep.",
+    "Google is great for finding facts. AI is great for finding meaning. Or inventing meaning. The line is blurry.",
+    "If your code doesn't work, don't debug it. Just ask the AI to 'make it work'. It surprisingly effective.",
+    "Keyboard shortcuts are so 2023. Neural interfaces are the future. Think the code, and it shall appear."
 ];
 
 export const generateTileContent = (_tileId: string, seed: number = Date.now()): TileContent => {

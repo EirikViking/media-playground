@@ -70,7 +70,7 @@ export const CreateProjectModal = ({ isOpen, onClose, onCreate }: CreateProjectM
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-purple-500 outline-none transition-all"
-                                    placeholder="My Awesome Creation"
+                                    placeholder="My Awesome Project"
                                     autoFocus
                                     required
                                     minLength={2}
