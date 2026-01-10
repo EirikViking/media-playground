@@ -22,7 +22,7 @@ export const AboutEirik = () => {
                         >
                             <div className="absolute inset-0 bg-blue-500 blur-2xl opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
                             <img
-                                src="/eirik-pixel.png"
+                                src="/eirik-pixel.jpg"
                                 alt="Eirik Pixel Art"
                                 className="w-64 h-64 md:w-80 md:h-80 rounded-3xl object-cover shadow-2xl rotate-3 group-hover:rotate-0 transition-transform relative z-10 border-4 border-white dark:border-slate-800"
                             />
