@@ -4,6 +4,7 @@
  */
 
 import { CloudAsset } from '../types';
+import { getAuthHeaders } from './adminAuth';
 
 // API base URL configuration
 // In dev: localhost worker
@@ -269,6 +270,47 @@ class ApiClient {
      */
     getAssetUrl(projectId: string, assetId: string, kind: 'original' | 'thumb'): string {
         return `${this.baseUrl}/api/assets/${kind}/${projectId}/${assetId}`;
+    }
+
+    // ==================== ADMIN ASSET METHODS ====================
+
+    async listAdminAssets(prefix = '', limit = 100, cursor?: string): Promise<{ data?: { items: any[], cursor: string | null }; error?: string }> {
+        const query = new URLSearchParams({
+            prefix,
+            limit: limit.toString(),
+            ...(cursor ? { cursor } : {})
+        });
+        return this.request<{ items: any[], cursor: string | null }>(`/api/admin/assets?${query.toString()}`, {
+            headers: getAuthHeaders()
+        });
+    }
+
+    async deleteAdminR2Asset(key: string): Promise<{ data?: { ok: boolean }; error?: string }> {
+        const query = new URLSearchParams({ key });
+        return this.request<{ ok: boolean }>(`/api/admin/assets?${query.toString()}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+    }
+
+    // ==================== ADMIN DB METHODS ====================
+
+    async getAdminSummary(): Promise<{ data?: any; error?: string }> {
+        return this.request<any>('/api/admin/db/summary', {
+            headers: getAuthHeaders()
+        });
+    }
+
+    async listAdminProjects(): Promise<{ data?: any[]; error?: string }> {
+        return this.request<any[]>('/api/admin/db/projects', {
+            headers: getAuthHeaders()
+        });
+    }
+
+    async listAdminMedia(): Promise<{ data?: any[]; error?: string }> {
+        return this.request<any[]>('/api/admin/db/media', {
+            headers: getAuthHeaders()
+        });
     }
 }
 

@@ -79,7 +79,7 @@ function corsHeaders(origin: string | null): HeadersInit {
     return {
         'Access-Control-Allow-Origin': allowOrigin,
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, x-admin-password',
+        'Access-Control-Allow-Headers': 'Content-Type, x-admin-password, x-admin-token',
         'Access-Control-Max-Age': '86400',
     };
 }
@@ -880,6 +880,51 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             }
         } catch (error) {
             return errorResponse('Failed to delete chaos item', 500, origin);
+        }
+    }
+
+    // ==================== ADMIN R2 ASSETS ====================
+
+    // GET /api/admin/assets - List all R2 objects
+    if (method === 'GET' && path === '/api/admin/assets') {
+        if (!isAdmin) return errorResponse('Unauthorized', 401, origin);
+        try {
+            const url = new URL(request.url);
+            const prefix = url.searchParams.get('prefix') || '';
+            const limit = parseInt(url.searchParams.get('limit') || '500', 10);
+            const cursor = url.searchParams.get('cursor') || undefined;
+
+            const list = await env.BUCKET.list({ prefix, limit, cursor });
+
+            return jsonResponse({
+                items: list.objects.map(o => ({
+                    key: o.key,
+                    size: o.size,
+                    etag: o.etag,
+                    uploaded: o.uploaded.toISOString(),
+                    contentType: o.httpMetadata?.contentType
+                })),
+                cursor: list.truncated ? (list as any).cursor : null
+            }, 200, origin);
+        } catch (error) {
+            console.error('List R2 assets error:', error);
+            return errorResponse('Failed to list R2 assets', 500, origin);
+        }
+    }
+
+    // DELETE /api/admin/assets - Delete R2 object by key
+    if (method === 'DELETE' && path === '/api/admin/assets') {
+        if (!isAdmin) return errorResponse('Unauthorized', 401, origin);
+        try {
+            const url = new URL(request.url);
+            const key = url.searchParams.get('key');
+            if (!key) return errorResponse('Missing key parameter', 400, origin);
+
+            await env.BUCKET.delete(key);
+            return jsonResponse({ ok: true }, 200, origin);
+        } catch (error) {
+            console.error('Delete R2 asset error:', error);
+            return errorResponse('Failed to delete asset from R2', 500, origin);
         }
     }
 

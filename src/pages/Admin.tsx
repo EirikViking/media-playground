@@ -9,11 +9,13 @@ export const Admin = () => {
     const [password, setPassword] = useState('');
     // Initialize auth state from storage
     const [isAuthenticated, setIsAuthenticated] = useState(() => !!getAdminToken());
-    const [activeTab, setActiveTab] = useState<'summary' | 'projects' | 'media' | 'community'>('summary');
+    const [activeTab, setActiveTab] = useState<'summary' | 'projects' | 'media' | 'community' | 'assets_r2'>('summary');
     const [summary, setSummary] = useState<any>(null);
     const [projects, setProjects] = useState<any[]>([]);
     const [media, setMedia] = useState<any[]>([]);
     const [chaosItems, setChaosItems] = useState<any[]>([]);
+    const [r2Assets, setR2Assets] = useState<any[]>([]);
+    const [r2Cursor, setR2Cursor] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [copiedAssetId, setCopiedAssetId] = useState<string | null>(null);
@@ -51,32 +53,46 @@ export const Admin = () => {
         return res;
     };
 
-    const loadData = async () => {
+    const loadData = async (cursor?: string) => {
         setLoading(true);
         setError(null);
         try {
             if (activeTab === 'summary') {
-                const res = await authenticatedFetch('/api/admin/db/summary');
-                if (res.ok) setSummary(await res.json());
+                const res = await api.getAdminSummary();
+                if (res.data) setSummary(res.data);
+                else if (res.error) setError(res.error);
             } else if (activeTab === 'projects') {
-                const res = await authenticatedFetch('/api/admin/db/projects');
-                if (res.ok) setProjects(await res.json());
+                const res = await api.listAdminProjects();
+                if (res.data) setProjects(res.data);
+                else if (res.error) setError(res.error);
             } else if (activeTab === 'media') {
-                const res = await authenticatedFetch('/api/admin/db/media');
-                if (res.ok) setMedia(await res.json());
+                const res = await api.listAdminMedia();
+                if (res.data) setMedia(res.data);
+                else if (res.error) setError(res.error);
             } else if (activeTab === 'community') {
                 const res = await api.listChaos(1000);
                 if (res.data) {
-                    console.log('Admin: Fetched chaos items', res.data);
-                    // Ensure we handle both direct array and wrapped array
                     const items = Array.isArray(res.data) ? res.data : (res.data as any).results || [];
                     setChaosItems(items);
                 } else if (res.error) {
                     setError('Failed to load community items: ' + res.error);
                 }
+            } else if (activeTab === 'assets_r2') {
+                const res = await api.listAdminAssets('', 500, cursor);
+                if (res.data) {
+                    if (cursor) {
+                        setR2Assets(prev => [...prev, ...res.data!.items]);
+                    } else {
+                        setR2Assets(res.data.items);
+                    }
+                    setR2Cursor(res.data.cursor);
+                } else if (res.error) {
+                    setError('Failed to load R2 assets: ' + res.error);
+                }
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error('Admin: Load data error', e);
+            setError(e.message || 'Unknown error loading data');
         } finally {
             setLoading(false);
         }
@@ -199,6 +215,53 @@ export const Admin = () => {
         }
     };
 
+    const copyR2LinkToClipboard = async (key: string) => {
+        // Determine URL based on key pattern
+        // Pattern 1: chaos/projectId/chaosId -> /api/chaos/chaosId/content
+        // Pattern 2: projectId/assetId/kind -> /api/assets/kind/projectId/assetId
+
+        let url = `${API_BASE}/${key}`; // fallback
+
+        if (key.startsWith('chaos/')) {
+            const parts = key.split('/');
+            if (parts.length === 3) {
+                url = `${API_BASE}/api/chaos/${parts[2]}/content`;
+            }
+        } else {
+            const parts = key.split('/');
+            if (parts.length === 3) {
+                url = `${API_BASE}/api/assets/${parts[2]}/${parts[0]}/${parts[1]}`;
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(url);
+            setCopiedAssetId(key);
+            setTimeout(() => setCopiedAssetId(null), 2000);
+        } catch (e) {
+            alert(`Failed to copy link. URL: ${url}`);
+        }
+    };
+
+    const handleDeleteR2 = async (key: string) => {
+        setConfirmModal({
+            isOpen: true,
+            title: `Delete R2 Object?`,
+            body: `Confirm permanent deletion of "${key}" from R2 storage.`,
+            onConfirm: async () => {
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                setLoading(true);
+                const res = await api.deleteAdminR2Asset(key);
+                if (res.data) {
+                    setR2Assets(prev => prev.filter(a => a.key !== key));
+                } else {
+                    setError('Delete failed: ' + res.error);
+                }
+                setLoading(false);
+            }
+        });
+    };
+
     return (
         <div className="min-h-screen bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white pb-20">
             {/* Header */}
@@ -272,13 +335,13 @@ export const Admin = () => {
                     <div className="space-y-6">
                         {/* Navigation Tabs */}
                         <div className="flex gap-2 p-1 bg-white dark:bg-slate-800 rounded-xl inline-block shadow-sm overflow-x-auto">
-                            {['summary', 'projects', 'media', 'community'].map((tab) => (
+                            {['summary', 'projects', 'media', 'community', 'assets_r2'].map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab as any)}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${activeTab === tab ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize whitespace-nowrap ${activeTab === tab ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                                 >
-                                    {tab}
+                                    {tab === 'assets_r2' ? 'All R2 Assets' : tab}
                                 </button>
                             ))}
                         </div>
@@ -515,6 +578,93 @@ export const Admin = () => {
                                                 </div>
                                             </div>
                                         ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {!loading && activeTab === 'assets_r2' && (
+                            <div className="space-y-4">
+                                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                                    {r2Assets.length === 0 ? (
+                                        <div className="p-8 text-center text-slate-500">No objects found in R2.</div>
+                                    ) : (
+                                        <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                                            {r2Assets.map((a: any) => {
+                                                const isImage = a.contentType?.startsWith('image/') || a.key.endsWith('/thumb');
+                                                const isAudio = a.contentType?.startsWith('audio/');
+                                                const isVideo = a.contentType?.startsWith('video/');
+
+                                                // Build URL for preview
+                                                let previewUrl = '';
+                                                if (a.key.startsWith('chaos/')) {
+                                                    previewUrl = `${API_BASE}/api/chaos/${a.key.split('/')[2]}/content`;
+                                                } else {
+                                                    const p = a.key.split('/');
+                                                    if (p.length === 3) {
+                                                        previewUrl = `${API_BASE}/api/assets/${p[2]}/${p[0]}/${p[1]}`;
+                                                    }
+                                                }
+
+                                                return (
+                                                    <div key={a.key} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors">
+                                                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                                                            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-600 flex items-center justify-center">
+                                                                {isImage ? (
+                                                                    <img src={previewUrl} alt="" className="w-full h-full object-cover" />
+                                                                ) : isAudio ? (
+                                                                    <HardDrive className="w-6 h-6 text-blue-500" />
+                                                                ) : isVideo ? (
+                                                                    <FileImage className="w-6 h-6 text-purple-500" />
+                                                                ) : (
+                                                                    <Database className="w-6 h-6 text-slate-400" />
+                                                                )}
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="font-mono text-xs text-slate-900 dark:text-slate-100 truncate mb-1">{a.key}</div>
+                                                                <div className="text-[10px] text-slate-500 flex flex-wrap gap-x-3 gap-y-1">
+                                                                    <span>{(a.size / 1024 / 1024).toFixed(2)} MB</span>
+                                                                    <span>•</span>
+                                                                    <span>{a.contentType || 'unknown type'}</span>
+                                                                    <span>•</span>
+                                                                    <span>{new Date(a.uploaded).toLocaleString()}</span>
+                                                                </div>
+                                                                {isAudio && (
+                                                                    <audio src={previewUrl} controls className="h-6 mt-2 max-w-full" />
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 ml-4">
+                                                            <button
+                                                                onClick={() => copyR2LinkToClipboard(a.key)}
+                                                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                                                title="Copy Direct Link"
+                                                            >
+                                                                {copiedAssetId === a.key ? (
+                                                                    <Check className="w-5 h-5 text-green-600" />
+                                                                ) : (
+                                                                    <LinkIcon className="w-5 h-5" />
+                                                                )}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteR2(a.key)}
+                                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                                title="Delete Object"
+                                                            >
+                                                                <Trash2 className="w-5 h-5" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                                {r2Cursor && (
+                                    <div className="flex justify-center pt-4">
+                                        <Button variant="secondary" onClick={() => loadData(r2Cursor)} disabled={loading}>
+                                            Load More Assets
+                                        </Button>
                                     </div>
                                 )}
                             </div>
