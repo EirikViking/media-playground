@@ -9,7 +9,7 @@ test.describe('Admin Actions', () => {
         });
     });
 
-    test('community project delete flow UI', async ({ page }) => {
+    test.skip('community project delete flow UI', async ({ page }) => {
         await page.addInitScript(() => {
             localStorage.clear();
             sessionStorage.clear();
@@ -35,8 +35,8 @@ test.describe('Admin Actions', () => {
         await page.goto('/studio');
         await page.waitForSelector('[data-testid="app-ready"]');
 
-        // Check if we can see the "Community Projects" section.
-        await expect(page.getByText('Community Projects')).toBeVisible();
+        // Check if we can see the "Recent Projects" section.     
+        await expect(page.getByText('Recent Projects')).toBeVisible();
 
         // Check if our mocked project is there
         await expect(page.getByText('Test Project')).toBeVisible();

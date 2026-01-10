@@ -65,7 +65,7 @@ export const Admin = () => {
                 const res = await authenticatedFetch('/api/admin/db/media');
                 if (res.ok) setMedia(await res.json());
             } else if (activeTab === 'community') {
-                const res = await authenticatedFetch('/api/chaos?limit=100');
+                const res = await authenticatedFetch('/api/chaos?limit=1000');
                 if (res.ok) setChaosItems(await res.json());
             }
         } catch (e) {

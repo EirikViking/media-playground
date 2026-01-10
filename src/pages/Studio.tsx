@@ -127,29 +127,142 @@ export const Studio = () => {
     }
   };
 
-  // UPDATED: Publish logic now uses api.publishChaos
+  const pendingUploads = project.items.filter(
+    item => item.file && item.uploadStatus !== 'uploaded'
+  );
+
+  // FIX: Accept items override to handle race condition where state isn't updated yet
+  const handleSaveProject = async (itemsOverride?: MediaItem[]) => {
+    if (!currentProjectId) return;
+
+    const currentItems = itemsOverride || project.items;
+
+    // Collect all assets (uploaded)
+    const assets = currentItems
+      .filter(item => item.cloudAsset)
+      .map(item => item.cloudAsset!);
+
+    const data: ProjectJsonData = {
+      version: 2,
+      assets,
+      layout: {},
+    };
+
+    await api.updateProject(currentProjectId, projectTitle, JSON.stringify(data));
+  };
+
+  // Helper: Perform the actual upload process
+  const performUpload = async (filesToUpload: { id: string; file: File }[]) => {
+    if (!currentProjectId) return false;
+
+    setIsUploading(true);
+    setUploadCompleted(0);
+    setUploadTotal(filesToUpload.length);
+    setUploadErrors([]);
+
+    filesToUpload.forEach(({ id }) => {
+      updateItem(id, { uploadStatus: 'uploading' });
+    });
+
+    try {
+      const result = await uploadImages(
+        currentProjectId,
+        filesToUpload.map(f => f.file),
+        (completed, total, current) => {
+          setUploadCompleted(completed);
+          setUploadTotal(total);
+          setUploadCurrent(current);
+        }
+      );
+
+      // Determine updated items based on results
+      const updatedItems = project.items.map(item => {
+        const successAsset = result.successful.find(asset => asset.fileName === item.file?.name);
+        if (successAsset) {
+          return {
+            ...item,
+            cloudAsset: successAsset,
+            uploadStatus: 'uploaded' as const,
+            url: getAssetUrl(currentProjectId, successAsset.assetId, 'original'),
+            thumbUrl: getAssetUrl(currentProjectId, successAsset.assetId, 'thumb'),
+          };
+        }
+        const failure = result.failed.find(f => f.fileName === item.file?.name);
+        if (failure) {
+          return { ...item, uploadStatus: 'error' as const, uploadError: failure.error };
+        }
+        return item;
+      });
+
+      // Update state and save
+      setProject(p => ({ ...p, items: updatedItems }));
+      setUploadErrors(result.failed);
+      await handleSaveProject(updatedItems);
+      setChaosRefreshTrigger(prev => prev + 1);
+
+      return result.failed.length === 0;
+    } catch (e) {
+      console.error("Upload process error", e);
+      return false;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleUploadImages = async () => {
+    if (!currentProjectId) return;
+    const filesToUpload = pendingUploads.filter(item => item.file).map(item => ({ id: item.id, file: item.file! }));
+    if (filesToUpload.length === 0) return;
+
+    if (project.items.filter(i => i.cloudAsset).length + filesToUpload.length > UPLOAD_LIMITS.maxAssetsPerProject) {
+      alert(`Maximum ${UPLOAD_LIMITS.maxAssetsPerProject} images per project.`);
+      return;
+    }
+
+    await performUpload(filesToUpload);
+  };
+
+  // UPDATED: Publish logic now uses api.publishChaos AND ensures uploads
   const handleChaosPublish = async (blob: Blob) => {
     if (!currentProjectId) return;
 
+    // 1. Auto-Upload Pending Items first
+    if (pendingUploads.length > 0) {
+      const filesToUpload = pendingUploads.filter(item => item.file).map(item => ({ id: item.id, file: item.file! }));
+
+      // Check limits before trying
+      const existingCount = project.items.filter(i => i.cloudAsset).length;
+      if (existingCount + filesToUpload.length <= UPLOAD_LIMITS.maxAssetsPerProject) {
+        const success = await performUpload(filesToUpload);
+        if (!success) {
+          if (!confirm("Some assets failed to upload. Publish anyway?")) {
+            return;
+          }
+        }
+      } else {
+        alert(`Cannot auto-upload: Maximum ${UPLOAD_LIMITS.maxAssetsPerProject} assets exceeded. Please manage assets manually.`);
+        return;
+      }
+    }
+
     setIsUploading(true);
     try {
-      // 1. Publish to Community Feed (Chaos Table)
+      // 2. Publish to Community Feed (Chaos Table)
       const res = await api.publishChaos(currentProjectId, projectTitle, blob);
 
       if (res.error) {
         throw new Error(res.error);
       }
 
-      // 2. Save Project Trigger (ensure latest state is available for viewers)
+      // 3. Save Project Trigger
       await handleSaveProject();
 
-      // 3. Refresh Community Feed
+      // 4. Refresh Community Feed
       setChaosRefreshTrigger(prev => prev + 1);
 
     } catch (e: any) {
       console.error("Publish failed", e);
       alert("Failed to publish to community: " + (e.message || "Unknown error"));
-      // Re-throw to let CollageCreator know it failed
       throw e;
     } finally {
       setIsUploading(false);
@@ -177,98 +290,6 @@ export const Studio = () => {
       setProjectTitle('Untitled Project');
       setSearchParams({});
     }
-  };
-
-  const pendingUploads = project.items.filter(
-    item => item.file && item.uploadStatus !== 'uploaded'
-  );
-
-  const handleUploadImages = async () => {
-    if (!currentProjectId) return;
-
-    const filesToUpload = pendingUploads
-      .filter(item => item.file)
-      .map(item => ({ id: item.id, file: item.file! }));
-
-    if (filesToUpload.length === 0) return;
-
-    const existingAssets = project.items.filter(i => i.cloudAsset).length;
-    if (existingAssets + filesToUpload.length > UPLOAD_LIMITS.maxAssetsPerProject) {
-      alert(`Maximum ${UPLOAD_LIMITS.maxAssetsPerProject} images per project.`);
-      return;
-    }
-
-    setIsUploading(true);
-    setUploadCompleted(0);
-    setUploadTotal(filesToUpload.length);
-    setUploadErrors([]);
-
-    filesToUpload.forEach(({ id }) => {
-      updateItem(id, { uploadStatus: 'uploading' });
-    });
-
-    const result = await uploadImages(
-      currentProjectId,
-      filesToUpload.map(f => f.file),
-      (completed, total, current) => {
-        setUploadCompleted(completed);
-        setUploadTotal(total);
-        setUploadCurrent(current);
-      }
-    );
-
-    // FIX: Construct the new state manually to ensure handleSaveProject sees it
-    // Updated to include proper URL hydration from stashed changes
-    const updatedItems = project.items.map(item => {
-      // Check success
-      const successAsset = result.successful.find(asset => asset.fileName === item.file?.name);
-      if (successAsset) {
-        return {
-          ...item,
-          cloudAsset: successAsset,
-          uploadStatus: 'uploaded' as const,
-          // Explicitly update URLs to use cloud assets immediately after upload
-          url: getAssetUrl(currentProjectId, successAsset.assetId, 'original'),
-          thumbUrl: getAssetUrl(currentProjectId, successAsset.assetId, 'thumb'),
-        };
-      }
-      // Check failure
-      const failure = result.failed.find(f => f.fileName === item.file?.name);
-      if (failure) {
-        return { ...item, uploadStatus: 'error' as const, uploadError: failure.error };
-      }
-      return item;
-    });
-
-    // Update local state (visuals)
-    setProject({ ...project, items: updatedItems });
-
-    setUploadErrors(result.failed);
-    setIsUploading(false);
-
-    // Save with the *correct* updated items
-    await handleSaveProject(updatedItems);
-    setChaosRefreshTrigger(prev => prev + 1);
-  };
-
-  // FIX: Accept items override to handle race condition where state isn't updated yet
-  const handleSaveProject = async (itemsOverride?: MediaItem[]) => {
-    if (!currentProjectId) return;
-
-    const currentItems = itemsOverride || project.items;
-
-    // Collect all assets (uploaded)
-    const assets = currentItems
-      .filter(item => item.cloudAsset)
-      .map(item => item.cloudAsset!);
-
-    const data: ProjectJsonData = {
-      version: 2,
-      assets,
-      layout: {},
-    };
-
-    await api.updateProject(currentProjectId, projectTitle, JSON.stringify(data));
   };
 
   const handleLoadProject = async (projectId: string) => {

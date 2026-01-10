@@ -154,8 +154,8 @@ export const Home = () => {
             <SectionCard
               to="/beers"
               icon={<BrainCircuit className="w-8 h-8 text-indigo-500" />}
-              title="Manual Mode?"
-              description="Writing code by hand? Cute. Let's upgrade that workflow."
+              title="Beer Calculator"
+              description="Test your sobriety. Or lack thereof. Kurt Edgar approved."
               gradient="from-indigo-500 to-cyan-500"
               testId="tile-roast-manual"
             />
@@ -170,7 +170,7 @@ export const Home = () => {
           >
             <p className="text-slate-500 dark:text-slate-500 text-sm flex items-center justify-center gap-2">
               <Palette className="w-4 h-4" />
-              Built with passion by Kurt Edgar and Eirik
+              Built with passion by Eirik
               <Code className="w-4 h-4" />
             </p>
           </motion.div>

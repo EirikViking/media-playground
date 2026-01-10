@@ -20,7 +20,7 @@ export const Navigation = () => {
                 <nav className="hidden md:flex items-center gap-6">
                     <NavLink to="/about/eirik" testId="nav-about-eirik">About Eirik</NavLink>
                     <NavLink to="/about/kurt-edgar" testId="nav-about-kurt">About Kurt Edgar</NavLink>
-                    <NavLink to="/beer-calculator" testId="nav-beer-calc">Beer Calculator</NavLink>
+                    <NavLink to="/beers" testId="nav-beer-calc">Beer Calculator</NavLink>
                     <NavLink to="/games" testId="nav-gaming">Gaming</NavLink>
                     <NavLink to="/studio" testId="nav-studio">The Studio</NavLink>
                     <NavLink to="/music" testId="nav-music">Music Library</NavLink>
@@ -70,7 +70,7 @@ export const Navigation = () => {
                         <nav className="flex flex-col gap-6 text-lg font-medium">
                             <MobileNavLink to="/about/eirik" onClick={() => setMobileMenuOpen(false)}>About Eirik</MobileNavLink>
                             <MobileNavLink to="/about/kurt-edgar" onClick={() => setMobileMenuOpen(false)}>About Kurt Edgar</MobileNavLink>
-                            <MobileNavLink to="/beer-calculator" onClick={() => setMobileMenuOpen(false)}>Beer Calculator</MobileNavLink>
+                            <MobileNavLink to="/beers" onClick={() => setMobileMenuOpen(false)}>Beer Calculator</MobileNavLink>
                             <MobileNavLink to="/games" onClick={() => setMobileMenuOpen(false)}>Gaming</MobileNavLink>
                             <MobileNavLink to="/studio" onClick={() => setMobileMenuOpen(false)}>The Studio</MobileNavLink>
                             <MobileNavLink to="/music" onClick={() => setMobileMenuOpen(false)}>Music Library</MobileNavLink>
