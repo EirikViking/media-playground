@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { Gamepad2, Users, ExternalLink } from 'lucide-react';
+import { Gamepad2, Users, ExternalLink, Rocket } from 'lucide-react';
 import { Button } from '../components/Button';
+import { useNavigate } from 'react-router-dom';
 
 const ROAST_GAME_URL = 'https://c303a75a.roast-rage-redux2.pages.dev/';
 
@@ -11,10 +12,21 @@ interface Game {
     image: string;
     steamAppId?: string;
     isFeatured?: boolean;
+    isInternal?: boolean;
+    internalPath?: string;
     tags: string[];
 }
 
 const GAMES: Game[] = [
+    {
+        id: 'burt-game',
+        title: 'Burt fra Stokmarknes',
+        description: 'En norsk helt flyr gjennom verdensrommet. Beskyt nordlyset mot invasjon i denne klassiske arcade shooteren.',
+        image: 'https://images.unsplash.com/photo-1614732414444-096e5f1122d5?auto=format&fit=crop&q=80&w=2340',
+        isInternal: true,
+        internalPath: '/play/burt',
+        tags: ['Arcade', 'Space Shooter', 'Stokmarknes']
+    },
     {
         id: 'roast-rage-redux-2',
         title: 'Roast Rage Redux 2',
@@ -42,7 +54,9 @@ const GAMES: Game[] = [
 ];
 
 export const Games = () => {
+    const navigate = useNavigate();
     const featuredGame = GAMES.find(g => g.isFeatured);
+    const webGames = GAMES.filter(g => !g.isFeatured && (g.isInternal || !g.steamAppId));
     const steamGames = GAMES.filter(g => !g.isFeatured && g.steamAppId);
 
     const launchSteamGame = (appId: string) => {
@@ -115,6 +129,67 @@ export const Games = () => {
                             <p className="hidden md:block">Use WASD or Arrow Keys to move. Click to shoot. Have fun!</p>
                         </div>
                     </motion.section>
+                )}
+
+                {/* Web Games Section */}
+                {webGames.length > 0 && (
+                    <section className="max-w-5xl mx-auto mb-16">
+                        <h3 className="text-2xl font-bold flex items-center gap-3 mb-8 text-slate-800 dark:text-white">
+                            <Rocket className="w-6 h-6 text-cyan-500" />
+                            Play Now
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {webGames.map((game, index) => (
+                                <motion.div
+                                    key={game.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.1 }}
+                                    className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 dark:hover:border-cyan-500/50 transition-all hover:shadow-xl group cursor-pointer"
+                                    onClick={() => game.isInternal && game.internalPath && navigate(game.internalPath)}
+                                >
+                                    <div className="h-48 overflow-hidden relative">
+                                        <img
+                                            src={game.image}
+                                            alt={game.title}
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent flex items-end p-4">
+                                            <div className="flex gap-2">
+                                                {game.tags.map(tag => (
+                                                    <span key={tag} className="px-2 py-0.5 bg-black/60 text-white text-[10px] uppercase font-bold tracking-wider rounded backdrop-blur-sm">
+                                                        {tag}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-6">
+                                        <h4 className="text-xl font-bold mb-2 font-display">{game.title}</h4>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 leading-relaxed">
+                                            {game.description}
+                                        </p>
+
+                                        <Button
+                                            variant="primary"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (game.isInternal && game.internalPath) {
+                                                    navigate(game.internalPath);
+                                                }
+                                            }}
+                                            className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white border-transparent"
+                                        >
+                                            <Rocket className="w-5 h-5 mr-2" />
+                                            Spill nå
+                                        </Button>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </section>
                 )}
 
                 {/* Steam Games Section */}
