@@ -43,7 +43,7 @@ export const Home = () => {
         <div className="absolute -bottom-[20%] right-[20%] w-[600px] h-[600px] bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '12s' }} />
       </div>
 
-      <main className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-6" data-testid="home-tiles-container">
+      <main className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-4 md:px-6 overflow-visible" data-testid="home-tiles-container">
         <div className="max-w-6xl w-full text-center space-y-12">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -51,7 +51,10 @@ export const Home = () => {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="space-y-6"
           >
-            <h1 className="text-6xl md:text-8xl font-bold font-display tracking-tight leading-[0.9] text-slate-900 dark:text-white">
+            <h1
+              className="font-bold font-display tracking-tighter leading-[0.9] text-slate-900 dark:text-white"
+              style={{ fontSize: 'clamp(2.5rem, 12vw, 6rem)' }}
+            >
               <span className="block hover:scale-105 transition-transform duration-500 cursor-default">KURT EDGAR</span>
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent block hover:scale-105 transition-transform duration-500 cursor-default">
                 & EIRIK'S
