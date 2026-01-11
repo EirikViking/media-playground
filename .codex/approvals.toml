@@ -1,0 +1,7 @@
+﻿approval_policy = "never"
+assume_trusted_repo = true
+allow_all_file_operations = true
+allow_create = true
+allow_modify = true
+allow_delete = true
+allow_rename = true
