@@ -5,12 +5,15 @@
  * Usage:
  *   VERIFY_API_BASE=http://127.0.0.1:8787 node scripts/verify-post-hardening.mjs
  *   VERIFY_EXPECT_ADMIN_DISABLED=1 node scripts/verify-post-hardening.mjs
+ *   # Admin enabled (local dev): create worker/.dev.vars with ADMIN_PASSWORD=...
+ *   VERIFY_ADMIN_PASSWORD=... node scripts/verify-post-hardening.mjs
  *   VERIFY_VIDEO_URL=https://... node scripts/verify-post-hardening.mjs
  */
 
 const API_BASE = process.env.VERIFY_API_BASE || 'http://127.0.0.1:8787';
 const EXPECT_ADMIN_DISABLED = process.env.VERIFY_EXPECT_ADMIN_DISABLED === '1';
 const VIDEO_URL = process.env.VERIFY_VIDEO_URL || '';
+const ADMIN_PASSWORD = process.env.VERIFY_ADMIN_PASSWORD || '';
 
 let projectId = null;
 let assetId = null;
@@ -49,6 +52,18 @@ async function main() {
     await test('Admin endpoint returns 503 when ADMIN_PASSWORD missing', async () => {
       const res = await fetch(`${API_BASE}/api/admin/quota`);
       assert(res.status === 503, `Expected 503, got ${res.status}`);
+    });
+  }
+  if (ADMIN_PASSWORD) {
+    await test('Admin login succeeds when ADMIN_PASSWORD set', async () => {
+      const res = await fetch(`${API_BASE}/api/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: ADMIN_PASSWORD })
+      });
+      assert(res.ok, `Admin login status ${res.status}`);
+      const data = await res.json();
+      assert(data.token, 'Missing admin token');
     });
   }
 

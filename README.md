@@ -85,6 +85,12 @@ npm run db:migrate:local
 npm run dev
 ```
 
+Admin endpoints are disabled unless the Worker has `ADMIN_PASSWORD` configured. For local dev, create `worker/.dev.vars` (gitignored) with:
+
+```text
+ADMIN_PASSWORD=your-password
+```
+
 ## Backend Setup (First Time)
 
 See `worker/SETUP_CHECKLIST.md` for step-by-step instructions, or run:
