@@ -446,11 +446,12 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             }
 
             const formData = await request.formData();
-            const file = formData.get('file') as File;
-            const projectId = formData.get('projectId') as string;
-            const title = formData.get('title') as string || 'Untitled Chaos';
+            const file = formData.get('file');
+            const projectId = formData.get('projectId');
+            const titleValue = formData.get('title');
+            const title = typeof titleValue === 'string' && titleValue.trim().length > 0 ? titleValue : 'Untitled Chaos';
 
-            if (!file || !projectId) {
+            if (!(file instanceof File) || typeof projectId !== 'string') {
                 return errorResponse('Missing file or projectId', 400, origin);
             }
             const idError = getInvalidIdError(projectId, 'projectId');
