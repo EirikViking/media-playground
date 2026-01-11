@@ -25,6 +25,7 @@ export const Admin = () => {
     const [loading, setLoading] = useState(false);
     const [copiedAssetId, setCopiedAssetId] = useState<string | null>(null);
     const [rememberMe, setRememberMe] = useState(false);
+    const [adminConfigured, setAdminConfigured] = useState<boolean | null>(null);
 
     // Editing state
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -54,6 +55,12 @@ export const Admin = () => {
             setError('Session expired or invalid credentials');
             clearAdminToken();
             throw new Error('Unauthorized');
+        }
+        if (res.status === 503) {
+            setIsAuthenticated(false);
+            setError('Admin is not configured on the backend. Set ADMIN_PASSWORD and redeploy the Worker.');
+            clearAdminToken();
+            throw new Error('Admin not configured');
         }
         return res;
     };
@@ -113,6 +120,16 @@ export const Admin = () => {
     }, [isAuthenticated, activeTab]);
 
     useEffect(() => {
+        api.healthCheck().then(res => {
+            if (res.ok) {
+                setAdminConfigured(res.adminConfigured ?? null);
+            }
+        }).catch(() => {
+            setAdminConfigured(null);
+        });
+    }, []);
+
+    useEffect(() => {
         updateLocalState({ lastAdminTab: activeTab });
     }, [activeTab]);
 
@@ -136,8 +153,14 @@ export const Admin = () => {
                     setPassword('');
                 }
             } else {
-                if (res.status === 401) setError('Wrong password');
-                else setError('Login failed');
+                if (res.status === 503) {
+                    setError('Admin is not configured on the backend. Set ADMIN_PASSWORD and redeploy the Worker.');
+                } else if (res.status === 401) {
+                    setError('Wrong password');
+                } else {
+                    const text = await res.text();
+                    setError(text || 'Login failed');
+                }
             }
         } catch (e) {
             setError('Connection failed');
@@ -307,6 +330,11 @@ export const Admin = () => {
                             <h2 className="text-2xl font-bold mb-2">Restricted Access</h2>
                             <p className="text-slate-500">Please enter the admin password to continue.</p>
                         </div>
+                        {adminConfigured === false && (
+                            <div className="mb-6 p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded-lg text-sm text-center">
+                                Admin is not configured. Set `ADMIN_PASSWORD` on the Worker and redeploy.
+                            </div>
+                        )}
 
                         <form onSubmit={handleLogin}>
                             <div className="mb-6">
