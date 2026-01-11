@@ -43,16 +43,16 @@ export const Home = () => {
         <div className="absolute -bottom-[20%] right-[20%] w-[600px] h-[600px] bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '12s' }} />
       </div>
 
-      <main className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-4 md:px-6 overflow-visible" data-testid="home-tiles-container">
-        <div className="max-w-6xl w-full text-center space-y-12">
+      <main className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-200px)] lg:min-h-[calc(100vh-160px)] px-4 md:px-6 overflow-visible lg:pt-8 lg:pb-12" data-testid="home-tiles-container">
+        <div className="max-w-6xl w-full text-center space-y-12 lg:space-y-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="space-y-6"
+            className="space-y-6 lg:space-y-4"
           >
             <h1
-              className="font-bold font-display tracking-tighter leading-[0.9] text-slate-900 dark:text-white"
+              className="font-bold font-display tracking-tighter leading-[0.9] text-slate-900 dark:text-white lg:max-w-4xl lg:mx-auto"
               style={{ fontSize: 'clamp(2.5rem, 12vw, 6rem)' }}
             >
               <span className="block hover:scale-105 transition-transform duration-500 cursor-default">KURT EDGAR</span>
@@ -62,7 +62,7 @@ export const Home = () => {
               <span className="block hover:scale-105 transition-transform duration-500 cursor-default">PLAYGROUND</span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto font-light leading-relaxed" data-testid="hero-text">
+            <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto font-light leading-relaxed lg:text-xl" data-testid="hero-text">
               This is where Eirik builds bold ideas, and Kurt Edgar bravely clicks everything he’s not supposed to, usually with an Isbjørn beer in hand.
             </p>
           </motion.div>
@@ -90,7 +90,7 @@ export const Home = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.8 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16 lg:mt-10"
         >
           {/* 1. About Eirik */}
           <SectionCard
