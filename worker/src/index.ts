@@ -125,6 +125,38 @@ function createSizeLimitedStream(body: ReadableStream<Uint8Array>, maxBytes: num
     };
 }
 
+async function deleteObjectsByPrefix(env: Env, prefix: string): Promise<boolean> {
+    let truncated = true;
+    let cursor: string | undefined;
+    let deleted = false;
+
+    while (truncated) {
+        const list = await env.BUCKET.list({ prefix, cursor });
+        truncated = list.truncated;
+        cursor = (list as any).cursor;
+
+        if (list.objects.length > 0) {
+            await env.BUCKET.delete(list.objects.map(o => o.key));
+            deleted = true;
+        }
+    }
+
+    return deleted;
+}
+
+async function deleteAssetObjects(env: Env, projectId: string, assetId: string, asset: AssetMetadata) {
+    if (keysMatch(projectId, assetId, asset.originalKey, asset.thumbKey)) {
+        await env.BUCKET.delete([asset.originalKey, asset.thumbKey]);
+        return;
+    }
+
+    const prefix = `${projectId}/${assetId}/`;
+    const deleted = await deleteObjectsByPrefix(env, prefix);
+    if (!deleted) {
+        console.warn('No objects found for asset prefix', { projectId, assetId });
+    }
+}
+
 // Helper to get project data JSON
 async function getProjectData(env: Env, projectId: string): Promise<ProjectJsonData | null> {
     const project = await env.DB.prepare(
@@ -393,15 +425,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             }
 
             const asset = projectData.assets![assetIndex];
-            if (!keysMatch(projectId, assetId, asset.originalKey, asset.thumbKey)) {
-                return errorResponse('Invalid asset keys', 400, origin);
-            }
-
-            // Delete from R2
-            await Promise.all([
-                env.BUCKET.delete(asset.originalKey),
-                env.BUCKET.delete(asset.thumbKey),
-            ]);
+            await deleteAssetObjects(env, projectId, assetId, asset);
 
             // Remove from project data
             projectData.assets!.splice(assetIndex, 1);
@@ -661,16 +685,9 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             const projectData = await getProjectData(env, id);
             if (projectData?.assets?.length) {
                 for (const asset of projectData.assets) {
-                    if (!asset.assetId || !keysMatch(id, asset.assetId, asset.originalKey, asset.thumbKey)) {
-                        return errorResponse('Invalid asset keys', 400, origin);
-                    }
+                    if (!asset.assetId) continue;
+                    await deleteAssetObjects(env, id, asset.assetId, asset);
                 }
-                // Delete all assets from R2
-                const deletePromises = projectData.assets.flatMap(asset => [
-                    env.BUCKET.delete(asset.originalKey),
-                    env.BUCKET.delete(asset.thumbKey),
-                ]);
-                await Promise.all(deletePromises);
             }
 
             // Delete from D1
@@ -963,15 +980,9 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             const projectData = await getProjectData(env, id);
             if (projectData?.assets?.length) {
                 for (const asset of projectData.assets) {
-                    if (!asset.assetId || !keysMatch(id, asset.assetId, asset.originalKey, asset.thumbKey)) {
-                        return errorResponse('Invalid asset keys', 400, origin);
-                    }
+                    if (!asset.assetId) continue;
+                    await deleteAssetObjects(env, id, asset.assetId, asset);
                 }
-                const deletePromises = projectData.assets.flatMap(asset => [
-                    env.BUCKET.delete(asset.originalKey),
-                    env.BUCKET.delete(asset.thumbKey),
-                ]);
-                await Promise.all(deletePromises);
             }
             await env.DB.prepare('DELETE FROM projects WHERE id = ?').bind(id).run();
             return jsonResponse({ ok: true }, 200, origin);
@@ -992,11 +1003,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             if (idError) {
                 return errorResponse(idError, 400, origin);
             }
-            // Delete from R2
-            await Promise.all([
-                env.BUCKET.delete(`${projectId}/${assetId}/original`),
-                env.BUCKET.delete(`${projectId}/${assetId}/thumb`)
-            ]);
+            // Delete from R2 by prefix to cover legacy keys
+            await deleteObjectsByPrefix(env, `${projectId}/${assetId}/`);
 
             // Try to clean from D1 if exists
             const project = await env.DB.prepare('SELECT data FROM projects WHERE id = ?').bind(projectId).first<{ data: string }>();
