@@ -454,14 +454,15 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             if (!file || typeof file === 'string' || typeof projectId !== 'string') {
                 return errorResponse('Missing file or projectId', 400, origin);
             }
+            const uploadFile = file as File;
             const idError = getInvalidIdError(projectId, 'projectId');
             if (idError) {
                 return errorResponse(idError, 400, origin);
             }
-            if (!ALLOWED_TYPES.includes(file.type)) {
+            if (!ALLOWED_TYPES.includes(uploadFile.type)) {
                 return errorResponse(`Invalid content type. Allowed: ${ALLOWED_TYPES.join(', ')}`, 400, origin);
             }
-            if (file.size > MAX_FILE_SIZE) {
+            if (uploadFile.size > MAX_FILE_SIZE) {
                 return errorResponse(`File too large. Maximum: ${MAX_FILE_SIZE / 1024 / 1024}MB`, 413, origin);
             }
 
@@ -469,9 +470,9 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             const key = `chaos/${projectId}/${chaosId}`;
 
             // Upload to R2
-            await env.BUCKET.put(key, await file.arrayBuffer(), {
+            await env.BUCKET.put(key, await uploadFile.arrayBuffer(), {
                 httpMetadata: {
-                    contentType: file.type,
+                    contentType: uploadFile.type,
                     cacheControl: 'public, max-age=31536000, immutable',
                 },
             });
@@ -480,7 +481,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             const now = new Date().toISOString();
             await env.DB.prepare(
                 'INSERT INTO chaos_items (id, project_id, title, created_at, output_key, output_type, output_size) VALUES (?, ?, ?, ?, ?, ?, ?)'
-            ).bind(chaosId, projectId, title, now, key, file.type, file.size).run();
+            ).bind(chaosId, projectId, title, now, key, uploadFile.type, uploadFile.size).run();
 
             // Return success with public URL (constructed client side or returned here)
             // We'll return the ID and let client construct URL via /api/chaos/:id/content or similar if needed, 
