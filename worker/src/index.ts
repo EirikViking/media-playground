@@ -451,7 +451,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             const titleValue = formData.get('title');
             const title = typeof titleValue === 'string' && titleValue.trim().length > 0 ? titleValue : 'Untitled Chaos';
 
-            if (!(file instanceof File) || typeof projectId !== 'string') {
+            if (!file || typeof file === 'string' || typeof projectId !== 'string') {
                 return errorResponse('Missing file or projectId', 400, origin);
             }
             const idError = getInvalidIdError(projectId, 'projectId');
