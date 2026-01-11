@@ -355,8 +355,8 @@ export const Studio = () => {
       try {
         const parsed = JSON.parse(result.data.data) as ProjectJsonData;
 
-        // Convert cloud assets to MediaItems with better type detection (from stash)
-        const items: MediaItem[] = (parsed.assets || []).map((asset: CloudAsset) => {
+        // Convert cloud assets to MediaItems with better type detection
+        const itemsFromAssets: MediaItem[] = (parsed.assets || []).map((asset: CloudAsset) => {
           let type: MediaItem['type'] = 'image';
           const lowerName = asset.fileName.toLowerCase();
           if (lowerName.endsWith('.mp4') || lowerName.endsWith('.mov') || lowerName.endsWith('.webm')) {
@@ -378,6 +378,50 @@ export const Studio = () => {
             uploadStatus: 'uploaded' as const,
           };
         });
+
+        let items = itemsFromAssets;
+
+        if (items.length === 0 && Array.isArray(parsed.mediaItems) && parsed.mediaItems.length > 0) {
+          const legacyItems = parsed.mediaItems as Array<Record<string, any>>;
+          items = legacyItems.map((item, index) => {
+            const cloudAsset = item.cloudAsset && item.cloudAsset.assetId ? item.cloudAsset as CloudAsset : undefined;
+            const fileName = typeof item.fileName === 'string' ? item.fileName : (typeof item.title === 'string' ? item.title : 'Untitled');
+            const contentType = typeof item.contentType === 'string' ? item.contentType : (cloudAsset?.contentType || '');
+
+            let type: MediaItem['type'] = item.type;
+            if (type !== 'image' && type !== 'video' && type !== 'audio') {
+              if (contentType.startsWith('video/')) type = 'video';
+              else if (contentType.startsWith('audio/')) type = 'audio';
+              else if (fileName.toLowerCase().endsWith('.mp4') || fileName.toLowerCase().endsWith('.webm')) type = 'video';
+              else if (fileName.toLowerCase().endsWith('.mp3') || fileName.toLowerCase().endsWith('.wav') || fileName.toLowerCase().endsWith('.ogg')) type = 'audio';
+              else type = 'image';
+            }
+
+            const url = cloudAsset
+              ? getAssetUrl(projectId, cloudAsset.assetId, 'original')
+              : (item.url || item.dataUrl || '');
+            const thumbUrl = cloudAsset
+              ? getAssetUrl(projectId, cloudAsset.assetId, 'thumb')
+              : (item.thumbUrl || item.thumbDataUrl);
+            const createdAt = typeof item.createdAt === 'number'
+              ? item.createdAt
+              : (item.createdAt ? new Date(item.createdAt).getTime() : Date.now());
+
+            return {
+              id: typeof item.id === 'string' ? item.id : (cloudAsset?.assetId || `${projectId}-legacy-${index}`),
+              type,
+              url,
+              thumbUrl,
+              title: typeof item.title === 'string' ? item.title : fileName,
+              tags: Array.isArray(item.tags) ? item.tags : [],
+              notes: typeof item.notes === 'string' ? item.notes : '',
+              createdAt,
+              cloudAsset,
+              uploadStatus: cloudAsset ? 'uploaded' : (item.uploadStatus || 'pending'),
+              uploadError: typeof item.uploadError === 'string' ? item.uploadError : undefined,
+            };
+          }).filter(item => item.url);
+        }
 
         setProject({
           id: project.id,

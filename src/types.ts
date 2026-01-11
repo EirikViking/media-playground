@@ -52,6 +52,7 @@ export interface Project {
 export interface ProjectJsonData {
   version: number;
   assets?: CloudAsset[];
+  mediaItems?: MediaItem[];
   layout?: Record<string, unknown>;
 }
 
