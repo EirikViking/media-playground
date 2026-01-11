@@ -89,25 +89,25 @@ export const BurtGame = () => {
                     <div className="flex items-start justify-between gap-4">
                         <div>
                             <h1 className="text-4xl md:text-6xl font-bold font-display bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 bg-clip-text text-transparent mb-3">
-                                Burt fra Stokmarknes
+                                Burt from Stokmarknes
                             </h1>
                             <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl">
-                                En norsk helt flyr gjennom verdensrommet. Beskyt nordlyset mot invasjon. Klassisk arcade action med Vesteråls vibe.
+                                A Norwegian hero flies through outer space. Defend the northern lights against invasion. Classic arcade action with Vesterålen vibes.
                             </p>
                         </div>
                         <button
                             onClick={() => navigate('/games')}
                             className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-                            aria-label="Tilbake til spill"
+                            aria-label="Back to games"
                         >
                             <X className="w-5 h-5" />
-                            <span className="hidden md:inline">Lukk</span>
+                            <span className="hidden md:inline">Close</span>
                         </button>
                     </div>
 
                     {/* Tags */}
                     <div className="flex flex-wrap gap-2">
-                        {['Arcade', 'Space Shooter', 'Stokmarknes', 'Galaga-inspirert'].map(tag => (
+                        {['Arcade', 'Space Shooter', 'Stokmarknes', 'Galaga-inspired'].map(tag => (
                             <span key={tag} className="px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-full">
                                 {tag}
                             </span>
@@ -134,14 +134,14 @@ export const BurtGame = () => {
                             <button
                                 onClick={openInNewTab}
                                 className="p-2 bg-slate-800/80 hover:bg-slate-700 text-white rounded-lg transition-colors backdrop-blur-sm"
-                                aria-label="Åpne i ny fane"
+                                aria-label="Open in new tab"
                             >
                                 <ExternalLink className="w-4 h-4" />
                             </button>
                             <button
                                 onClick={toggleFullscreen}
                                 className="p-2 bg-slate-800/80 hover:bg-slate-700 text-white rounded-lg transition-colors backdrop-blur-sm"
-                                aria-label={isFullscreen ? 'Avslutt fullskjerm' : 'Fullskjerm'}
+                                aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
                             >
                                 {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
                             </button>
@@ -152,7 +152,7 @@ export const BurtGame = () => {
                     {isLoading && !hasLoadError && (
                         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900">
                             <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
-                            <p className="text-slate-400">Laster spillet...</p>
+                            <p className="text-slate-400">Loading game...</p>
                         </div>
                     )}
 
@@ -161,17 +161,17 @@ export const BurtGame = () => {
                         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900 p-8">
                             <div className="max-w-md text-center space-y-4">
                                 <p className="text-xl text-slate-300">
-                                    Spillet lastet ikke inn her inne.
+                                    Game didn't load here.
                                 </p>
                                 <p className="text-slate-400">
-                                    Åpne det i ny fane for best opplevelse.
+                                    Open it in a new tab for the best experience.
                                 </p>
                                 <button
                                     onClick={openInNewTab}
                                     className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
                                 >
                                     <ExternalLink className="w-5 h-5" />
-                                    Åpne i ny fane
+                                    Open in new tab
                                 </button>
                             </div>
                         </div>
@@ -201,13 +201,13 @@ export const BurtGame = () => {
                 >
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                         <p className="text-sm text-blue-900 dark:text-blue-200">
-                            <span className="font-semibold">Tips:</span> Bruk piltaster for å bevege deg og space for å skyte
+                            <span className="font-semibold">Tips:</span> Use arrow keys to move and space to shoot
                         </p>
                         <button
                             onClick={openInNewTab}
                             className="text-sm text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 font-medium underline underline-offset-2"
                         >
-                            Åpne i ny fane →
+                            Open in new tab →
                         </button>
                     </div>
                 </motion.div>

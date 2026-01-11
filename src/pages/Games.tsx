@@ -20,8 +20,8 @@ interface Game {
 const GAMES: Game[] = [
     {
         id: 'burt-game',
-        title: 'Burt fra Stokmarknes',
-        description: 'En norsk helt flyr gjennom verdensrommet. Beskyt nordlyset mot invasjon i denne klassiske arcade shooteren.',
+        title: 'Burt from Stokmarknes',
+        description: 'A Norwegian hero flies through outer space. Defend the northern lights against invasion in this classic arcade shooter.',
         image: 'https://images.unsplash.com/photo-1614732414444-096e5f1122d5?auto=format&fit=crop&q=80&w=2340',
         isInternal: true,
         internalPath: '/play/burt',
@@ -133,13 +133,13 @@ export const Games = () => {
 
                 {/* Web Games Section */}
                 {webGames.length > 0 && (
-                    <section className="max-w-5xl mx-auto mb-16">
-                        <h3 className="text-2xl font-bold flex items-center gap-3 mb-8 text-slate-800 dark:text-white">
+                    <section className="mx-auto mb-16">
+                        <h3 className="text-2xl font-bold flex items-center gap-3 mb-8 text-slate-800 dark:text-white max-w-5xl mx-auto">
                             <Rocket className="w-6 h-6 text-cyan-500" />
                             Play Now
                         </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 gap-8 max-w-5xl mx-auto">
                             {webGames.map((game, index) => (
                                 <motion.div
                                     key={game.id}
@@ -183,7 +183,7 @@ export const Games = () => {
                                             className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white border-transparent"
                                         >
                                             <Rocket className="w-5 h-5 mr-2" />
-                                            Spill nå
+                                            Play Now
                                         </Button>
                                     </div>
                                 </motion.div>
