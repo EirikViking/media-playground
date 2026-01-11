@@ -26,6 +26,8 @@ dist-ssr
 # Wrangler
 .wrangler
 .dev.vars
+worker-dev.out
+worker-dev.err
 
 # Playwright
 playwright-report

@@ -3,22 +3,29 @@
  * Falls back gracefully if backend is unavailable
  */
 
-import { CloudAsset } from '../types';
+import { CloudAsset, AssetCommitPayload } from '../types';
 import { getAuthHeaders } from './adminAuth';
 
 // API base URL configuration
 // In dev: localhost worker
-// In production: deployed Cloudflare Worker
+// In production: worker base unless VITE_API_BASE or runtime override is provided
 const VITE_API_BASE = import.meta.env.VITE_API_BASE;
-let defaultBase = 'https://media-playground-api.cromkake.workers.dev';
+const FALLBACK_WORKER_BASE = 'https://media-playground-api.cromkake.workers.dev';
 
-if (import.meta.env.DEV) {
-    defaultBase = 'http://127.0.0.1:8787';
-} else if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+const runtimeBase = typeof window !== 'undefined'
+    ? (window as unknown as { __API_BASE__?: string }).__API_BASE__
+    : undefined;
+
+const isLocalhost = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+let defaultBase = FALLBACK_WORKER_BASE;
+
+if (import.meta.env.DEV || isLocalhost) {
     defaultBase = 'http://127.0.0.1:8787';
 }
 
-const API_BASE = VITE_API_BASE || defaultBase;
+const API_BASE = VITE_API_BASE || runtimeBase || defaultBase;
 
 console.log('[API] Environment:', import.meta.env.DEV ? 'development' : 'production');
 console.log('[API] VITE_API_BASE:', VITE_API_BASE);
@@ -216,7 +223,6 @@ class ApiClient {
                 method: 'PUT',
                 headers: {
                     'Content-Type': file.type,
-                    'Content-Length': file.size.toString(),
                 },
                 body: file,
             });
@@ -255,7 +261,7 @@ class ApiClient {
      */
     async commitAsset(
         projectId: string,
-        asset: CloudAsset
+        asset: AssetCommitPayload
     ): Promise<{ data?: { ok: boolean; asset: CloudAsset }; error?: string }> {
         return this.request<{ ok: boolean; asset: CloudAsset }>(
             `/api/projects/${projectId}/assets/commit`,

@@ -11,6 +11,16 @@ export interface CloudAsset {
   createdAt: string;
 }
 
+export interface AssetCommitPayload {
+  assetId: string;
+  contentType: string;
+  byteSize: number;
+  width: number;
+  height: number;
+  fileName: string;
+  createdAt: string;
+}
+
 // Local media item (pre-upload or local-only)
 export interface MediaItem {
   id: string;
@@ -42,6 +52,7 @@ export interface Project {
 export interface ProjectJsonData {
   version: number;
   assets?: CloudAsset[];
+  mediaItems?: MediaItem[];
   layout?: Record<string, unknown>;
 }
 
