@@ -222,7 +222,7 @@ export const Studio = () => {
       const saveOk = await handleSaveProject(updatedItems);
       const combinedErrors = [...result.failed];
       if (!saveOk) {
-        combinedErrors.push({ fileName: 'Project save', error: 'Failed to save project metadata.' });
+        combinedErrors.push({ id: 'project-save', fileName: 'Project save', error: 'Failed to save project metadata.' });
       }
       setUploadErrors(combinedErrors);
       setChaosRefreshTrigger(prev => prev + 1);
