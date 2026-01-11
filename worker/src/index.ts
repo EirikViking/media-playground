@@ -102,29 +102,6 @@ function errorResponse(message: string, status = 400, origin: string | null = nu
     return jsonResponse({ error: message }, status, origin);
 }
 
-function createSizeLimitedStream(body: ReadableStream<Uint8Array>, maxBytes: number) {
-    let bytes = 0;
-    let exceeded = false;
-
-    const stream = body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
-        transform(chunk, controller) {
-            bytes += chunk.byteLength;
-            if (bytes > maxBytes) {
-                exceeded = true;
-                controller.error(new Error('File too large'));
-                return;
-            }
-            controller.enqueue(chunk);
-        }
-    }));
-
-    return {
-        stream,
-        getBytes: () => bytes,
-        exceeded: () => exceeded,
-    };
-}
-
 function parseRangeHeader(rangeHeader: string, size: number) {
     if (!rangeHeader.startsWith('bytes=')) {
         return null;
@@ -278,14 +255,15 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
             const contentType = request.headers.get('Content-Type') || 'application/octet-stream';
             const lengthHeader = request.headers.get('Content-Length');
-            if (lengthHeader) {
-                const parsedLength = Number(lengthHeader);
-                if (!Number.isFinite(parsedLength) || parsedLength < 0) {
-                    return errorResponse('Invalid Content-Length header', 400, origin);
-                }
-                if (parsedLength > MAX_FILE_SIZE) {
-                    return errorResponse(`File too large. Maximum: ${MAX_FILE_SIZE / 1024 / 1024}MB`, 413, origin);
-                }
+            if (!lengthHeader) {
+                return errorResponse('Content-Length header required', 411, origin);
+            }
+            const parsedLength = Number(lengthHeader);
+            if (!Number.isFinite(parsedLength) || parsedLength < 0) {
+                return errorResponse('Invalid Content-Length header', 400, origin);
+            }
+            if (parsedLength > MAX_FILE_SIZE) {
+                return errorResponse(`File too large. Maximum: ${MAX_FILE_SIZE / 1024 / 1024}MB`, 413, origin);
             }
 
             // Validate content type for originals
@@ -313,29 +291,21 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             const key = kind === 'original' ? keys.originalKey : keys.thumbKey;
 
             // Upload to R2
-            if (!request.body) {
-                return errorResponse('Missing request body', 400, origin);
+            const body = await request.arrayBuffer();
+            if (body.byteLength > MAX_FILE_SIZE) {
+                return errorResponse(`File too large. Maximum: ${MAX_FILE_SIZE / 1024 / 1024}MB`, 413, origin);
             }
-
-            const limited = createSizeLimitedStream(request.body, MAX_FILE_SIZE);
-            try {
-                await env.BUCKET.put(key, limited.stream, {
-                    httpMetadata: {
-                        contentType: contentType,
-                        cacheControl: 'public, max-age=31536000, immutable',
-                    },
-                });
-            } catch (error) {
-                if (limited.exceeded()) {
-                    return errorResponse(`File too large. Maximum: ${MAX_FILE_SIZE / 1024 / 1024}MB`, 413, origin);
-                }
-                throw error;
-            }
+            await env.BUCKET.put(key, body, {
+                httpMetadata: {
+                    contentType: contentType,
+                    cacheControl: 'public, max-age=31536000, immutable',
+                },
+            });
 
             return jsonResponse({
                 ok: true,
                 key,
-                byteSize: limited.getBytes(),
+                byteSize: body.byteLength,
             }, 200, origin);
         } catch (error) {
             console.error('Upload error:', error);

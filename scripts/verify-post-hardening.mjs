@@ -77,7 +77,7 @@ async function main() {
     const payload = createDummyBytes(256);
     const res = await fetch(`${API_BASE}/api/upload/${projectId}/${assetId}/original`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'audio/wav' },
+      headers: { 'Content-Type': 'audio/wav', 'Content-Length': String(payload.length) },
       body: payload
     });
     assert(res.ok, `Upload status ${res.status}`);
