@@ -86,12 +86,10 @@ export const ProjectsGallery = ({ onSelect, currentProjectId }: ProjectsGalleryP
                 </button>
             </div>
 
-            {error && (
-                <div className="text-xs text-red-500 text-center">{error}</div>
-            )}
-
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                {projects.length === 0 ? (
+                {error ? (
+                    <p className="text-sm text-red-500 text-center py-4">{error}</p>
+                ) : projects.length === 0 ? (
                     <p className="text-sm text-slate-500 text-center py-4">No public projects yet.</p>
                 ) : (
                     projects.map((p) => (
