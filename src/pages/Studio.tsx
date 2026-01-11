@@ -151,7 +151,7 @@ export const Studio = () => {
 
   // FIX: Accept items override to handle race condition where state isn't updated yet
   const handleSaveProject = async (itemsOverride?: MediaItem[]) => {
-    if (!currentProjectId) return;
+    if (!currentProjectId) return false;
 
     const currentItems = itemsOverride || project.items;
 
@@ -166,7 +166,13 @@ export const Studio = () => {
       layout: {},
     };
 
-    await api.updateProject(currentProjectId, projectTitle, JSON.stringify(data));
+    const res = await api.updateProject(currentProjectId, projectTitle, JSON.stringify(data));
+    if (res.error) {
+      alert('Failed to save project: ' + res.error);
+      return false;
+    }
+
+    return true;
   };
 
   const performUpload = async (filesToUpload: { id: string; file: File }[]) => {
@@ -213,19 +219,21 @@ export const Studio = () => {
 
       // Update state and save
       setProject(p => ({ ...p, items: updatedItems }));
-      setUploadErrors(result.failed);
-      setProject(p => ({ ...p, items: updatedItems }));
-      setUploadErrors(result.failed);
-      await handleSaveProject(updatedItems);
+      const saveOk = await handleSaveProject(updatedItems);
+      const combinedErrors = [...result.failed];
+      if (!saveOk) {
+        combinedErrors.push({ id: 'project-save', fileName: 'Project save', error: 'Failed to save project metadata.' });
+      }
+      setUploadErrors(combinedErrors);
       setChaosRefreshTrigger(prev => prev + 1);
 
-      if (result.failed.length === 0) {
+      if (combinedErrors.length === 0) {
         updateLocalState({ lastUploadAt: new Date().toISOString() });
         setShowSuccessMessage(true);
         setTimeout(() => setShowSuccessMessage(false), 5000);
       }
 
-      return { success: result.failed.length === 0, items: updatedItems };
+      return { success: combinedErrors.length === 0, items: updatedItems };
     } catch (e) {
       console.error("Upload process error", e);
       return { success: false, items: project.items };
@@ -290,7 +298,11 @@ export const Studio = () => {
       }
 
       // 3. Save Project Trigger (Using latest items to avoid Ghost Town)
-      await handleSaveProject(itemsToSave);
+      const saved = await handleSaveProject(itemsToSave);
+      if (!saved) {
+        alert('Publish succeeded, but saving project metadata failed.');
+        return;
+      }
 
       // 4. Refresh Community Feed
       setChaosRefreshTrigger(prev => prev + 1);

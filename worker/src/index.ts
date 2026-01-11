@@ -1,4 +1,5 @@
 import { getQuotaInfo, getQuotaStatus } from './quota';
+import { buildAssetKeys, getInvalidIdError, keysMatch } from './assetKeys';
 
 /**
  * Media Playground API - Cloudflare Worker with D1 + R2
@@ -101,6 +102,61 @@ function errorResponse(message: string, status = 400, origin: string | null = nu
     return jsonResponse({ error: message }, status, origin);
 }
 
+function createSizeLimitedStream(body: ReadableStream<Uint8Array>, maxBytes: number) {
+    let bytes = 0;
+    let exceeded = false;
+
+    const stream = body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+        transform(chunk, controller) {
+            bytes += chunk.byteLength;
+            if (bytes > maxBytes) {
+                exceeded = true;
+                controller.error(new Error('File too large'));
+                return;
+            }
+            controller.enqueue(chunk);
+        }
+    }));
+
+    return {
+        stream,
+        getBytes: () => bytes,
+        exceeded: () => exceeded,
+    };
+}
+
+async function deleteObjectsByPrefix(env: Env, prefix: string): Promise<boolean> {
+    let truncated = true;
+    let cursor: string | undefined;
+    let deleted = false;
+
+    while (truncated) {
+        const list = await env.BUCKET.list({ prefix, cursor });
+        truncated = list.truncated;
+        cursor = (list as any).cursor;
+
+        if (list.objects.length > 0) {
+            await env.BUCKET.delete(list.objects.map(o => o.key));
+            deleted = true;
+        }
+    }
+
+    return deleted;
+}
+
+async function deleteAssetObjects(env: Env, projectId: string, assetId: string, asset: AssetMetadata) {
+    if (keysMatch(projectId, assetId, asset.originalKey, asset.thumbKey)) {
+        await env.BUCKET.delete([asset.originalKey, asset.thumbKey]);
+        return;
+    }
+
+    const prefix = `${projectId}/${assetId}/`;
+    const deleted = await deleteObjectsByPrefix(env, prefix);
+    if (!deleted) {
+        console.warn('No objects found for asset prefix', { projectId, assetId });
+    }
+}
+
 // Helper to get project data JSON
 async function getProjectData(env: Env, projectId: string): Promise<ProjectJsonData | null> {
     const project = await env.DB.prepare(
@@ -142,14 +198,25 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     }
 
     // ==================== ADMIN AUTH ====================
-    const adminPassword = env.ADMIN_PASSWORD || 'eirik123';
-    let isAdmin = request.headers.get('x-admin-password') === adminPassword;
+    const adminPassword = env.ADMIN_PASSWORD?.trim();
+    const adminConfigured = Boolean(adminPassword);
+    const isAdminRoute = path.startsWith('/api/admin');
 
-    // Check token if not already auth via password
-    if (!isAdmin) {
-        const token = request.headers.get('x-admin-token');
-        if (token) {
-            isAdmin = await verifyToken(token, adminPassword);
+    if (isAdminRoute && !adminConfigured) {
+        return errorResponse('Admin not configured', 503, origin);
+    }
+
+    let isAdmin = false;
+
+    if (adminConfigured && adminPassword) {
+        isAdmin = request.headers.get('x-admin-password') === adminPassword;
+
+        // Check token if not already auth via password
+        if (!isAdmin) {
+            const token = request.headers.get('x-admin-token');
+            if (token) {
+                isAdmin = await verifyToken(token, adminPassword);
+            }
         }
     }
 
@@ -166,17 +233,26 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
         try {
             const [, projectId, assetId, kind] = uploadMatch;
+            const idError = getInvalidIdError(projectId, 'projectId') || getInvalidIdError(assetId, 'assetId');
+            if (idError) {
+                return errorResponse(idError, 400, origin);
+            }
+
             const contentType = request.headers.get('Content-Type') || 'application/octet-stream';
-            const contentLength = parseInt(request.headers.get('Content-Length') || '0', 10);
+            const lengthHeader = request.headers.get('Content-Length');
+            if (lengthHeader) {
+                const parsedLength = Number(lengthHeader);
+                if (!Number.isFinite(parsedLength) || parsedLength < 0) {
+                    return errorResponse('Invalid Content-Length header', 400, origin);
+                }
+                if (parsedLength > MAX_FILE_SIZE) {
+                    return errorResponse(`File too large. Maximum: ${MAX_FILE_SIZE / 1024 / 1024}MB`, 413, origin);
+                }
+            }
 
             // Validate content type for originals
             if (kind === 'original' && !ALLOWED_TYPES.includes(contentType)) {
                 return errorResponse(`Invalid content type. Allowed: ${ALLOWED_TYPES.join(', ')}`, 400, origin);
-            }
-
-            // Validate size
-            if (contentLength > MAX_FILE_SIZE) {
-                return errorResponse(`File too large. Maximum: ${MAX_FILE_SIZE / 1024 / 1024}MB`, 400, origin);
             }
 
             // Check project exists
@@ -195,21 +271,33 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             }
 
             // Generate R2 key
-            const key = `${projectId}/${assetId}/${kind}`;
+            const keys = buildAssetKeys(projectId, assetId);
+            const key = kind === 'original' ? keys.originalKey : keys.thumbKey;
 
             // Upload to R2
-            const body = await request.arrayBuffer();
-            await env.BUCKET.put(key, body, {
-                httpMetadata: {
-                    contentType: contentType,
-                    cacheControl: 'public, max-age=31536000, immutable',
-                },
-            });
+            if (!request.body) {
+                return errorResponse('Missing request body', 400, origin);
+            }
+
+            const limited = createSizeLimitedStream(request.body, MAX_FILE_SIZE);
+            try {
+                await env.BUCKET.put(key, limited.stream, {
+                    httpMetadata: {
+                        contentType: contentType,
+                        cacheControl: 'public, max-age=31536000, immutable',
+                    },
+                });
+            } catch (error) {
+                if (limited.exceeded()) {
+                    return errorResponse(`File too large. Maximum: ${MAX_FILE_SIZE / 1024 / 1024}MB`, 413, origin);
+                }
+                throw error;
+            }
 
             return jsonResponse({
                 ok: true,
                 key,
-                byteSize: body.byteLength,
+                byteSize: limited.getBytes(),
             }, 200, origin);
         } catch (error) {
             console.error('Upload error:', error);
@@ -224,8 +312,21 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             const projectId = commitMatch[1];
             const body = await request.json() as AssetMetadata;
 
-            if (!body.assetId || !body.originalKey || !body.thumbKey) {
-                return errorResponse('Missing required fields: assetId, originalKey, thumbKey', 400, origin);
+            const idError = getInvalidIdError(projectId, 'projectId') || getInvalidIdError(body.assetId, 'assetId');
+            if (idError) {
+                return errorResponse(idError, 400, origin);
+            }
+
+            if (!body.assetId || !body.contentType || !body.fileName || !body.createdAt) {
+                return errorResponse('Missing required fields: assetId, contentType, fileName, createdAt', 400, origin);
+            }
+
+            const keys = buildAssetKeys(projectId, body.assetId);
+            if (body.originalKey && body.originalKey !== keys.originalKey) {
+                return errorResponse('Invalid originalKey', 400, origin);
+            }
+            if (body.thumbKey && body.thumbKey !== keys.thumbKey) {
+                return errorResponse('Invalid thumbKey', 400, origin);
             }
 
             const projectData = await getProjectData(env, projectId);
@@ -243,8 +344,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
             const assetMeta: AssetMetadata = {
                 assetId: body.assetId,
-                originalKey: body.originalKey,
-                thumbKey: body.thumbKey,
+                originalKey: keys.originalKey,
+                thumbKey: keys.thumbKey,
                 contentType: body.contentType,
                 byteSize: body.byteSize,
                 width: body.width,
@@ -277,7 +378,12 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     if (method === 'GET' && assetMatch) {
         try {
             const [, kind, projectId, assetId] = assetMatch;
-            const key = `${projectId}/${assetId}/${kind}`;
+            const idError = getInvalidIdError(projectId, 'projectId') || getInvalidIdError(assetId, 'assetId');
+            if (idError) {
+                return errorResponse(idError, 400, origin);
+            }
+            const keys = buildAssetKeys(projectId, assetId);
+            const key = kind === 'original' ? keys.originalKey : keys.thumbKey;
 
             const object = await env.BUCKET.get(key);
             if (!object) {
@@ -303,6 +409,10 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     if (method === 'DELETE' && deleteAssetMatch) {
         try {
             const [, projectId, assetId] = deleteAssetMatch;
+            const idError = getInvalidIdError(projectId, 'projectId') || getInvalidIdError(assetId, 'assetId');
+            if (idError) {
+                return errorResponse(idError, 400, origin);
+            }
 
             const projectData = await getProjectData(env, projectId);
             if (!projectData) {
@@ -315,12 +425,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             }
 
             const asset = projectData.assets![assetIndex];
-
-            // Delete from R2
-            await Promise.all([
-                env.BUCKET.delete(asset.originalKey),
-                env.BUCKET.delete(asset.thumbKey),
-            ]);
+            await deleteAssetObjects(env, projectId, assetId, asset);
 
             // Remove from project data
             projectData.assets!.splice(assetIndex, 1);
@@ -365,21 +470,33 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             }
 
             const formData = await request.formData();
-            const file = formData.get('file') as File;
-            const projectId = formData.get('projectId') as string;
-            const title = formData.get('title') as string || 'Untitled Chaos';
+            const file = formData.get('file');
+            const projectId = formData.get('projectId');
+            const titleValue = formData.get('title');
+            const title = typeof titleValue === 'string' && titleValue.trim().length > 0 ? titleValue : 'Untitled Chaos';
 
-            if (!file || !projectId) {
+            if (!file || typeof file === 'string' || typeof projectId !== 'string') {
                 return errorResponse('Missing file or projectId', 400, origin);
+            }
+            const uploadFile = file as File;
+            const idError = getInvalidIdError(projectId, 'projectId');
+            if (idError) {
+                return errorResponse(idError, 400, origin);
+            }
+            if (!ALLOWED_TYPES.includes(uploadFile.type)) {
+                return errorResponse(`Invalid content type. Allowed: ${ALLOWED_TYPES.join(', ')}`, 400, origin);
+            }
+            if (uploadFile.size > MAX_FILE_SIZE) {
+                return errorResponse(`File too large. Maximum: ${MAX_FILE_SIZE / 1024 / 1024}MB`, 413, origin);
             }
 
             const chaosId = crypto.randomUUID();
             const key = `chaos/${projectId}/${chaosId}`;
 
             // Upload to R2
-            await env.BUCKET.put(key, await file.arrayBuffer(), {
+            await env.BUCKET.put(key, await uploadFile.arrayBuffer(), {
                 httpMetadata: {
-                    contentType: file.type,
+                    contentType: uploadFile.type,
                     cacheControl: 'public, max-age=31536000, immutable',
                 },
             });
@@ -388,7 +505,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             const now = new Date().toISOString();
             await env.DB.prepare(
                 'INSERT INTO chaos_items (id, project_id, title, created_at, output_key, output_type, output_size) VALUES (?, ?, ?, ?, ?, ?, ?)'
-            ).bind(chaosId, projectId, title, now, key, file.type, file.size).run();
+            ).bind(chaosId, projectId, title, now, key, uploadFile.type, uploadFile.size).run();
 
             // Return success with public URL (constructed client side or returned here)
             // We'll return the ID and let client construct URL via /api/chaos/:id/content or similar if needed, 
@@ -559,16 +676,18 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     if (method === 'DELETE' && deleteMatch) {
         try {
             const id = deleteMatch[1];
+            const idError = getInvalidIdError(id, 'projectId');
+            if (idError) {
+                return errorResponse(idError, 400, origin);
+            }
 
             // Get project data to find assets
             const projectData = await getProjectData(env, id);
             if (projectData?.assets?.length) {
-                // Delete all assets from R2
-                const deletePromises = projectData.assets.flatMap(asset => [
-                    env.BUCKET.delete(asset.originalKey),
-                    env.BUCKET.delete(asset.thumbKey),
-                ]);
-                await Promise.all(deletePromises);
+                for (const asset of projectData.assets) {
+                    if (!asset.assetId) continue;
+                    await deleteAssetObjects(env, id, asset.assetId, asset);
+                }
             }
 
             // Delete from D1
@@ -657,6 +776,9 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     if (method === 'POST' && path === '/api/admin/login') {
         try {
             const body = await request.json() as { password?: string };
+            if (!adminPassword) {
+                return errorResponse('Admin not configured', 503, origin);
+            }
             if (body.password === adminPassword) {
                 const token = await createAdminToken(adminPassword);
                 return jsonResponse({ ok: true, token }, 200, origin);
@@ -851,13 +973,16 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         if (!isAdmin) return errorResponse('Unauthorized', 401, origin);
         const id = adminDelProjMatch[1];
         try {
+            const idError = getInvalidIdError(id, 'projectId');
+            if (idError) {
+                return errorResponse(idError, 400, origin);
+            }
             const projectData = await getProjectData(env, id);
             if (projectData?.assets?.length) {
-                const deletePromises = projectData.assets.flatMap(asset => [
-                    env.BUCKET.delete(asset.originalKey),
-                    env.BUCKET.delete(asset.thumbKey),
-                ]);
-                await Promise.all(deletePromises);
+                for (const asset of projectData.assets) {
+                    if (!asset.assetId) continue;
+                    await deleteAssetObjects(env, id, asset.assetId, asset);
+                }
             }
             await env.DB.prepare('DELETE FROM projects WHERE id = ?').bind(id).run();
             return jsonResponse({ ok: true }, 200, origin);
@@ -874,11 +999,12 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         const assetId = adminDelAssetMatch[2];
 
         try {
-            // Delete from R2
-            await Promise.all([
-                env.BUCKET.delete(`${projectId}/${assetId}/original`),
-                env.BUCKET.delete(`${projectId}/${assetId}/thumb`)
-            ]);
+            const idError = getInvalidIdError(projectId, 'projectId') || getInvalidIdError(assetId, 'assetId');
+            if (idError) {
+                return errorResponse(idError, 400, origin);
+            }
+            // Delete from R2 by prefix to cover legacy keys
+            await deleteObjectsByPrefix(env, `${projectId}/${assetId}/`);
 
             // Try to clean from D1 if exists
             const project = await env.DB.prepare('SELECT data FROM projects WHERE id = ?').bind(projectId).first<{ data: string }>();
@@ -974,7 +1100,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             features: {
                 d1: true,
                 r2: typeof env.BUCKET !== 'undefined',
-                adminConfigured: !!(env.ADMIN_PASSWORD && env.ADMIN_PASSWORD !== 'eirik123'),
+                adminConfigured,
             }
         }, 200, origin);
     }

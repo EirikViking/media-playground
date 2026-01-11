@@ -9,6 +9,7 @@
  */
 
 const API_BASE = process.env.VERIFY_API_BASE || 'http://127.0.0.1:8787';
+const EXPECT_ADMIN_DISABLED = process.env.VERIFY_EXPECT_ADMIN_DISABLED === '1';
 
 console.log('╔══════════════════════════════════════════════════════════════╗');
 console.log('║       Media Playground Worker Verification Suite             ║');
@@ -83,6 +84,13 @@ async function main() {
         assert(data.features?.r2 === true, 'R2 feature not available');
     });
 
+    if (EXPECT_ADMIN_DISABLED) {
+        await test('Admin endpoints disabled when ADMIN_PASSWORD missing', async () => {
+            const response = await fetch(`${API_BASE}/api/admin/quota`);
+            assert(response.status === 503, `Expected 503, got ${response.status}`);
+        });
+    }
+
     console.log('\n📋 Phase 2: Project Creation\n');
 
     await test('Create test project', async () => {
@@ -152,8 +160,6 @@ async function main() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 assetId,
-                originalKey,
-                thumbKey,
                 contentType: 'image/png',
                 byteSize: 67,
                 width: 1,
@@ -165,6 +171,8 @@ async function main() {
         assert(response.ok, `Commit returned ${response.status}`);
         const data = await response.json();
         assert(data.ok === true, 'Commit did not return ok: true');
+        assert(data.asset?.originalKey === originalKey, `Expected originalKey ${originalKey}, got ${data.asset?.originalKey}`);
+        assert(data.asset?.thumbKey === thumbKey, `Expected thumbKey ${thumbKey}, got ${data.asset?.thumbKey}`);
     });
 
     console.log('\n📋 Phase 4: Asset Retrieval (R2 Streaming)\n');

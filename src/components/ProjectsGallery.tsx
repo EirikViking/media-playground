@@ -12,6 +12,7 @@ interface ProjectsGalleryProps {
 export const ProjectsGallery = ({ onSelect, currentProjectId }: ProjectsGalleryProps) => {
     const [projects, setProjects] = useState<ProjectSummary[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     // Delete state
     const [deleteCandidate, setDeleteCandidate] = useState<ProjectSummary | null>(null);
@@ -22,9 +23,13 @@ export const ProjectsGallery = ({ onSelect, currentProjectId }: ProjectsGalleryP
     }, []);
 
     const loadProjects = async () => {
+        setLoading(true);
+        setError(null);
         const res = await api.listProjects(20);
         if (res.data) {
             setProjects(res.data);
+        } else if (res.error) {
+            setError('Failed to load projects: ' + res.error);
         }
         setLoading(false);
     };
@@ -80,6 +85,10 @@ export const ProjectsGallery = ({ onSelect, currentProjectId }: ProjectsGalleryP
                     Refresh
                 </button>
             </div>
+
+            {error && (
+                <div className="text-xs text-red-500 text-center">{error}</div>
+            )}
 
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 {projects.length === 0 ? (
