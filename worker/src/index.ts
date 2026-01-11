@@ -125,6 +125,44 @@ function createSizeLimitedStream(body: ReadableStream<Uint8Array>, maxBytes: num
     };
 }
 
+function parseRangeHeader(rangeHeader: string, size: number) {
+    if (!rangeHeader.startsWith('bytes=')) {
+        return null;
+    }
+
+    const rawRange = rangeHeader.replace('bytes=', '').split(',')[0]?.trim();
+    if (!rawRange) {
+        return null;
+    }
+
+    const [startStr, endStr] = rawRange.split('-');
+
+    if (startStr === '') {
+        const suffixLength = Number(endStr);
+        if (!Number.isFinite(suffixLength) || suffixLength <= 0) {
+            return null;
+        }
+        const length = Math.min(suffixLength, size);
+        const start = Math.max(0, size - length);
+        const end = size - 1;
+        return { start, end, length };
+    }
+
+    const start = Number(startStr);
+    const end = endStr ? Number(endStr) : size - 1;
+
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end < start) {
+        return null;
+    }
+
+    if (start >= size) {
+        return null;
+    }
+
+    const clampedEnd = Math.min(end, size - 1);
+    return { start, end: clampedEnd, length: clampedEnd - start + 1 };
+}
+
 async function deleteObjectsByPrefix(env: Env, prefix: string): Promise<boolean> {
     let truncated = true;
     let cursor: string | undefined;
@@ -384,6 +422,45 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             }
             const keys = buildAssetKeys(projectId, assetId);
             const key = kind === 'original' ? keys.originalKey : keys.thumbKey;
+            const rangeHeader = request.headers.get('Range');
+            if (rangeHeader) {
+                const head = await env.BUCKET.head(key);
+                if (!head) {
+                    return errorResponse('Asset not found', 404, origin);
+                }
+
+                const range = parseRangeHeader(rangeHeader, head.size);
+                if (!range) {
+                    return new Response(null, {
+                        status: 416,
+                        headers: {
+                            'Content-Range': `bytes */${head.size}`,
+                            'Accept-Ranges': 'bytes',
+                            ...corsHeaders(origin),
+                        }
+                    });
+                }
+
+                const object = await env.BUCKET.get(key, {
+                    range: { offset: range.start, length: range.length }
+                });
+                if (!object) {
+                    return errorResponse('Asset not found', 404, origin);
+                }
+
+                return new Response(object.body, {
+                    status: 206,
+                    headers: {
+                        'Content-Type': head.httpMetadata?.contentType || 'application/octet-stream',
+                        'Cache-Control': 'public, max-age=31536000, immutable',
+                        'ETag': head.etag,
+                        'Accept-Ranges': 'bytes',
+                        'Content-Range': `bytes ${range.start}-${range.end}/${head.size}`,
+                        'Content-Length': range.length.toString(),
+                        ...corsHeaders(origin),
+                    },
+                });
+            }
 
             const object = await env.BUCKET.get(key);
             if (!object) {
@@ -395,6 +472,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
                     'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
                     'Cache-Control': 'public, max-age=31536000, immutable',
                     'ETag': object.etag,
+                    'Accept-Ranges': 'bytes',
                     ...corsHeaders(origin),
                 },
             });
@@ -561,6 +639,42 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
             const item = await env.DB.prepare('SELECT output_key FROM chaos_items WHERE id = ?').bind(id).first<{ output_key: string }>();
             if (!item) return errorResponse('Chaos item not found', 404, origin);
 
+            const rangeHeader = request.headers.get('Range');
+            if (rangeHeader) {
+                const head = await env.BUCKET.head(item.output_key);
+                if (!head) return errorResponse('File not found', 404, origin);
+
+                const range = parseRangeHeader(rangeHeader, head.size);
+                if (!range) {
+                    return new Response(null, {
+                        status: 416,
+                        headers: {
+                            'Content-Range': `bytes */${head.size}`,
+                            'Accept-Ranges': 'bytes',
+                            ...corsHeaders(origin),
+                        }
+                    });
+                }
+
+                const object = await env.BUCKET.get(item.output_key, {
+                    range: { offset: range.start, length: range.length }
+                });
+                if (!object) return errorResponse('File not found', 404, origin);
+
+                return new Response(object.body, {
+                    status: 206,
+                    headers: {
+                        'Content-Type': head.httpMetadata?.contentType || 'application/octet-stream',
+                        'Cache-Control': 'public, max-age=31536000, immutable',
+                        'ETag': head.etag,
+                        'Accept-Ranges': 'bytes',
+                        'Content-Range': `bytes ${range.start}-${range.end}/${head.size}`,
+                        'Content-Length': range.length.toString(),
+                        ...corsHeaders(origin),
+                    }
+                });
+            }
+
             const object = await env.BUCKET.get(item.output_key);
             if (!object) return errorResponse('File not found', 404, origin);
 
@@ -569,6 +683,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
                     'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
                     'Cache-Control': 'public, max-age=31536000, immutable',
                     'ETag': object.etag,
+                    'Accept-Ranges': 'bytes',
                     ...corsHeaders(origin),
                 }
             });
