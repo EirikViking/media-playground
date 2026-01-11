@@ -1,21 +1,21 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-import { execSync } from 'child_process'
-
-const getVersion = () => {
-  try {
-    return process.env.CF_PAGES_COMMIT_SHA?.substring(0, 7) ||
-      process.env.GITHUB_SHA?.substring(0, 7) ||
-      execSync('git rev-parse --short HEAD').toString().trim();
-  } catch {
-    return 'dev';
-  }
+const getBuildTime = () => {
+  const now = new Date();
+  return now.toLocaleString('no-NB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).replace(/\//g, '.');
 };
 
 export default defineConfig({
   plugins: [react()],
   define: {
-    '__APP_VERSION__': JSON.stringify(getVersion()),
+    '__BUILD_TIME__': JSON.stringify(getBuildTime()),
   },
 })

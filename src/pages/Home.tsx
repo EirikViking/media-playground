@@ -193,7 +193,7 @@ export const Home = () => {
       </main>
 
       <footer className="relative z-10 p-8 text-center text-slate-500 dark:text-slate-500 text-sm">
-        <p>© {new Date().getFullYear()} Kurt Edgar & Eirik's Playground. v{__APP_VERSION__}</p>
+        <p>© {new Date().getFullYear()} Kurt Edgar & Eirik's Playground. Build: {__BUILD_TIME__}</p>
       </footer>
 
       <AiHelperModal
