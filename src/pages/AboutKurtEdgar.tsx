@@ -3,6 +3,13 @@ import { motion } from 'framer-motion';
 import { Gamepad2 } from 'lucide-react';
 import { MessengerButtons } from '../components/MessengerButtons';
 import { HoverVideo } from '../components/HoverVideo';
+import { api } from '../utils/api';
+
+const KURT_VIDEO = api.getAssetUrl(
+    'fd4237ba-f675-4905-b8f4-782b79ec63c8',
+    'fb77ab5a-f90f-4831-a41b-ee31d68fb541',
+    'original'
+);
 
 export const AboutKurtEdgar = () => {
     return (
@@ -19,7 +26,7 @@ export const AboutKurtEdgar = () => {
                         <div className="mx-auto max-w-2xl transform hover:scale-[1.02] transition-transform duration-500">
                             <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-slate-800">
                                 <HoverVideo
-                                    src="https://media-playground-api.cromkake.workers.dev/api/assets/original/fd4237ba-f675-4905-b8f4-782b79ec63c8/fb77ab5a-f90f-4831-a41b-ee31d68fb541"
+                                    src={KURT_VIDEO}
                                     className="aspect-[9/16] md:aspect-video w-full object-cover"
                                 />
                             </div>

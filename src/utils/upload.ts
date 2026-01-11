@@ -3,7 +3,7 @@
  * Handles thumbnail generation, upload to Worker, and progress tracking
  */
 
-import { CloudAsset, UPLOAD_LIMITS } from '../types';
+import { AssetCommitPayload, CloudAsset, UPLOAD_LIMITS } from '../types';
 import { api } from './api';
 
 export interface UploadProgress {
@@ -201,7 +201,6 @@ export async function uploadImage(
         // Stage 2: Upload original
         updateProgress('uploading-original', 10);
 
-        const originalKey = `${projectId}/${assetId}/original`;
         const originalResult = await api.uploadFile(projectId, assetId, 'original', file);
 
         if (originalResult.error) {
@@ -288,8 +287,9 @@ export async function uploadImage(
         // Stage 4: Upload thumbnail
         updateProgress('uploading-thumb', 60);
 
-        const thumbKey = `${projectId}/${assetId}/thumb`;
-        const thumbFile = new File([thumbBlob], `${assetId}-thumb.webp`, { type: 'image/webp' });
+        const thumbType = thumbBlob.type || (file.type.startsWith('image/') ? 'image/webp' : 'image/jpeg');
+        const thumbExtension = thumbType === 'image/webp' ? 'webp' : thumbType === 'image/png' ? 'png' : 'jpg';
+        const thumbFile = new File([thumbBlob], `${assetId}-thumb.${thumbExtension}`, { type: thumbType });
         // Only upload thumb if it's an image, otherwise we might skip or upload dummy
         // For simplicity, we upload the dummy so the key exists
         const thumbResult = await api.uploadFile(projectId, assetId, 'thumb', thumbFile);
@@ -304,10 +304,8 @@ export async function uploadImage(
         // Stage 5: Commit asset metadata
         updateProgress('committing', 90);
 
-        const asset: CloudAsset = {
+        const commitPayload: AssetCommitPayload = {
             assetId,
-            originalKey,
-            thumbKey,
             contentType: file.type,
             byteSize: file.size,
             width,
@@ -316,17 +314,17 @@ export async function uploadImage(
             createdAt: new Date().toISOString(),
         };
 
-        const commitResult = await api.commitAsset(projectId, asset);
+        const commitResult = await api.commitAsset(projectId, commitPayload);
 
-        if (commitResult.error) {
+        if (commitResult.error || !commitResult.data?.asset) {
             updateProgress('error', 90, commitResult.error);
-            return { success: false, error: commitResult.error };
+            return { success: false, error: commitResult.error || 'Commit response missing asset metadata' };
         }
 
         // Done!
         updateProgress('done', 100);
 
-        return { success: true, asset };
+        return { success: true, asset: commitResult.data.asset };
     } catch (e) {
         const error = e instanceof Error ? e.message : 'Unknown error';
         updateProgress('error', 0, error);

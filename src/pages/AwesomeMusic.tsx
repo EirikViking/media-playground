@@ -1,15 +1,20 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, SkipBack, SkipForward, Shuffle, Search, Music, Sparkles, Zap, List } from 'lucide-react';
+import { api } from '../utils/api';
 
 // --- Constants & Data ---
 
-const RAW_TRACKS = [
-    { url: "https://media-playground-api.cromkake.workers.dev/api/assets/original/1fc3d85b-9a12-4a51-9d9f-211432738e0d/073fb463-164a-410b-bf52-29c19088d8c5" },
-    { url: "https://media-playground-api.cromkake.workers.dev/api/assets/original/1fc3d85b-9a12-4a51-9d9f-211432738e0d/20adb989-3d55-43d0-a166-1768fd1f7fbd" },
-    { url: "https://media-playground-api.cromkake.workers.dev/api/assets/original/1fc3d85b-9a12-4a51-9d9f-211432738e0d/218e6e5c-bf36-4a7e-8790-d16736beb3cc" },
-    { url: "https://media-playground-api.cromkake.workers.dev/api/assets/original/1fc3d85b-9a12-4a51-9d9f-211432738e0d/3df8601f-f384-460f-bee1-12d4b2a8e06e" }
+const TRACK_IDS = [
+    { projectId: "1fc3d85b-9a12-4a51-9d9f-211432738e0d", assetId: "073fb463-164a-410b-bf52-29c19088d8c5" },
+    { projectId: "1fc3d85b-9a12-4a51-9d9f-211432738e0d", assetId: "20adb989-3d55-43d0-a166-1768fd1f7fbd" },
+    { projectId: "1fc3d85b-9a12-4a51-9d9f-211432738e0d", assetId: "218e6e5c-bf36-4a7e-8790-d16736beb3cc" },
+    { projectId: "1fc3d85b-9a12-4a51-9d9f-211432738e0d", assetId: "3df8601f-f384-460f-bee1-12d4b2a8e06e" }
 ];
+
+const RAW_TRACKS = TRACK_IDS.map((track) => ({
+    url: api.getAssetUrl(track.projectId, track.assetId, 'original')
+}));
 
 const TITLE_TEMPLATES = [
     "The {A} of {B}", "{A} {C}", "{B} and the {A}", "Electric {C}", "{A} in {B}",
@@ -100,7 +105,14 @@ export const AwesomeMusic = () => {
     // Removed unused volume/mute state for now
     const [isShuffle, setIsShuffle] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const [kurtMode, setKurtMode] = useState(() => localStorage.getItem('kurtMode') === 'true');
+    const [kurtMode, setKurtMode] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        try {
+            return window.localStorage.getItem('kurtMode') === 'true';
+        } catch {
+            return false;
+        }
+    });
     const [toast, setToast] = useState<string | null>(null);
     const [sortMode, setSortMode] = useState<'default' | 'unhinged'>('default');
 
@@ -187,7 +199,11 @@ export const AwesomeMusic = () => {
     const toggleKurtMode = () => {
         const newVal = !kurtMode;
         setKurtMode(newVal);
-        localStorage.setItem('kurtMode', String(newVal));
+        try {
+            window.localStorage.setItem('kurtMode', String(newVal));
+        } catch {
+            // ignore storage errors
+        }
         showToast(newVal ? "Kurt Mode Activated 🎸" : "Sanity Restored 🧠");
     };
 
