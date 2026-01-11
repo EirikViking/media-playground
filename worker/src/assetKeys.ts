@@ -22,3 +22,8 @@ export function keysMatch(projectId: string, assetId: string, originalKey: strin
     const expected = buildAssetKeys(projectId, assetId);
     return originalKey === expected.originalKey && thumbKey === expected.thumbKey;
 }
+
+export function isLegacyKeySafe(projectId: string, assetId: string, key: string): boolean {
+    if (!key) return false;
+    return key.includes(projectId) && key.includes(assetId);
+}

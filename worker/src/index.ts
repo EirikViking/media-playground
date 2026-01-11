@@ -1,5 +1,5 @@
 import { getQuotaInfo, getQuotaStatus } from './quota';
-import { buildAssetKeys, getInvalidIdError, keysMatch } from './assetKeys';
+import { buildAssetKeys, getInvalidIdError, isLegacyKeySafe, keysMatch } from './assetKeys';
 
 /**
  * Media Playground API - Cloudflare Worker with D1 + R2
@@ -83,7 +83,8 @@ function corsHeaders(origin: string | null): HeadersInit {
     return {
         'Access-Control-Allow-Origin': allowOrigin,
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, x-admin-password, x-admin-token',
+        'Access-Control-Allow-Headers': 'Content-Type, Range, x-admin-password, x-admin-token',
+        'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges, ETag',
         'Access-Control-Max-Age': '86400',
     };
 }
@@ -165,11 +166,41 @@ async function deleteAssetObjects(env: Env, projectId: string, assetId: string, 
         return;
     }
 
+    const legacyKeys = new Set<string>();
+    if (isLegacyKeySafe(projectId, assetId, asset.originalKey)) {
+        legacyKeys.add(asset.originalKey);
+    }
+    if (isLegacyKeySafe(projectId, assetId, asset.thumbKey)) {
+        legacyKeys.add(asset.thumbKey);
+    }
+    if (legacyKeys.size > 0) {
+        await env.BUCKET.delete([...legacyKeys]);
+    }
+
     const prefix = `${projectId}/${assetId}/`;
     const deleted = await deleteObjectsByPrefix(env, prefix);
-    if (!deleted) {
+    if (!deleted && legacyKeys.size === 0) {
         console.warn('No objects found for asset prefix', { projectId, assetId });
     }
+}
+
+async function getLegacyAssetKey(
+    env: Env,
+    projectId: string,
+    assetId: string,
+    kind: 'original' | 'thumb',
+    expectedKey: string
+): Promise<{ key: string; asset: AssetMetadata } | null> {
+    const projectData = await getProjectData(env, projectId);
+    const assets = projectData?.assets || [];
+    const asset = assets.find(a => a.assetId === assetId);
+    if (!asset) return null;
+
+    const legacyKey = kind === 'original' ? asset.originalKey : asset.thumbKey;
+    if (!legacyKey || legacyKey === expectedKey) return null;
+    if (!isLegacyKeySafe(projectId, assetId, legacyKey)) return null;
+
+    return { key: legacyKey, asset };
 }
 
 // Helper to get project data JSON
@@ -391,10 +422,19 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
                 return errorResponse(idError, 400, origin);
             }
             const keys = buildAssetKeys(projectId, assetId);
-            const key = kind === 'original' ? keys.originalKey : keys.thumbKey;
+            let key = kind === 'original' ? keys.originalKey : keys.thumbKey;
+            let resolvedAsset: AssetMetadata | null = null;
             const rangeHeader = request.headers.get('Range');
             if (rangeHeader) {
-                const head = await env.BUCKET.head(key);
+                let head = await env.BUCKET.head(key);
+                if (!head) {
+                    const legacy = await getLegacyAssetKey(env, projectId, assetId, kind, key);
+                    if (legacy) {
+                        key = legacy.key;
+                        resolvedAsset = legacy.asset;
+                        head = await env.BUCKET.head(key);
+                    }
+                }
                 if (!head) {
                     return errorResponse('Asset not found', 404, origin);
                 }
@@ -417,11 +457,14 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
                 if (!object) {
                     return errorResponse('Asset not found', 404, origin);
                 }
+                const contentType = head.httpMetadata?.contentType
+                    || (resolvedAsset && kind === 'original' ? resolvedAsset.contentType : undefined)
+                    || (kind === 'thumb' ? 'image/jpeg' : 'application/octet-stream');
 
                 return new Response(object.body, {
                     status: 206,
                     headers: {
-                        'Content-Type': head.httpMetadata?.contentType || 'application/octet-stream',
+                        'Content-Type': contentType,
                         'Cache-Control': 'public, max-age=31536000, immutable',
                         'ETag': head.etag,
                         'Accept-Ranges': 'bytes',
@@ -432,14 +475,25 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
                 });
             }
 
-            const object = await env.BUCKET.get(key);
+            let object = await env.BUCKET.get(key);
+            if (!object) {
+                const legacy = await getLegacyAssetKey(env, projectId, assetId, kind, key);
+                if (legacy) {
+                    key = legacy.key;
+                    resolvedAsset = legacy.asset;
+                    object = await env.BUCKET.get(key);
+                }
+            }
             if (!object) {
                 return errorResponse('Asset not found', 404, origin);
             }
+            const contentType = object.httpMetadata?.contentType
+                || (resolvedAsset && kind === 'original' ? resolvedAsset.contentType : undefined)
+                || (kind === 'thumb' ? 'image/jpeg' : 'application/octet-stream');
 
             return new Response(object.body, {
                 headers: {
-                    'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+                    'Content-Type': contentType,
                     'Cache-Control': 'public, max-age=31536000, immutable',
                     'ETag': object.etag,
                     'Accept-Ranges': 'bytes',
