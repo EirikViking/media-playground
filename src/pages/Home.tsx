@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -16,11 +16,15 @@ import {
 } from 'lucide-react';
 import { AiHelperModal } from '../components/AiHelperModal';
 import { generateTileContent } from '../utils/generators';
-import { useMemo } from 'react';
+import { trackTileClick, getLocalState } from '../utils/localState';
 
 export const Home = () => {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [userState] = useState(getLocalState);
   const [aiModalMode, setAiModalMode] = useState<'ai-helper' | 'search-challenge'>('ai-helper');
+
+  const studioClicks = userState.tileClicksCount['/studio'] || 0;
+  const isStudioPowerUser = studioClicks > 3;
 
   const aiHelperContent = useMemo(() => generateTileContent('ai-helper'), []);
   const searchChallenge = useMemo(() => generateTileContent('search-challenge'), []);
@@ -60,136 +64,156 @@ export const Home = () => {
             </p>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16"
-          >
-            {/* 1. About Eirik */}
-            <SectionCard
-              to="/about/eirik"
-              icon={<User className="w-8 h-8 text-blue-500" />}
-              title="About Eirik"
-              description="Meet Eirik, the code wizard behind the magic"
-              gradient="from-blue-500 to-cyan-500"
-              testId="card-about-eirik"
-            />
-
-            {/* 2. About Kurt */}
-            <SectionCard
-              to="/about/kurt-edgar"
-              icon={<Users className="w-8 h-8 text-pink-500" />}
-              title="About Kurt Edgar"
-              description="Discover Kurt Edgar's creative vision"
-              gradient="from-pink-500 to-purple-500"
-              testId="card-about-kurt"
-            />
-
-            {/* 3. Gaming */}
-            <SectionCard
-              to="/games"
-              icon={<Gamepad2 className="w-8 h-8 text-purple-500" />}
-              title="Gaming"
-              description="Play, compete, and have fun in our arcade"
-              gradient="from-purple-500 to-violet-500"
-              testId="card-gaming"
-            />
-
-            {/* 4. The Studio */}
-            <SectionCard
-              to="/studio"
-              icon={<Sparkles className="w-8 h-8 text-yellow-500" />}
-              title="The Studio"
-              description="Create chaotic collages and visual masterpieces"
-              gradient="from-yellow-500 to-orange-500"
-              featured
-              testId="card-studio"
-            />
-
-            {/* 5. Music */}
-            <SectionCard
-              to="/music"
-              icon={<Music className="w-8 h-8 text-green-500" />}
-              title="Awesome Music"
-              description="Vibe to Eirik's curated playlist"
-              gradient="from-green-500 to-emerald-500"
-              testId="card-music"
-            />
-
-            {/* 6. AI Links (Special Custom Card) */}
+          {isStudioPowerUser && (
             <motion.div
-              whileHover={{ y: -8, scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => openAiModal('ai-helper')}
-              className="relative p-6 rounded-3xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col items-start backdrop-blur-md hover:shadow-xl transition-all h-full hover:border-blue-500/50 cursor-pointer"
-              data-testid="tile-ai-links"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex justify-center"
             >
-              <div className="mb-4 inline-flex p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                <Bot className="w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-bold mb-2 font-display text-slate-900 dark:text-white">
-                {aiHelperContent.title}
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm mb-4 flex-1">
-                {aiHelperContent.body}
-              </p>
-              <div className="flex gap-2 mt-auto w-full">
-                <div className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-center rounded-xl font-bold text-sm transition-colors shadow-sm">ChatGPT</div>
-                <div className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-center rounded-xl font-bold text-sm transition-colors shadow-sm">Gemini</div>
-              </div>
+              <Link
+                to="/studio"
+                onClick={() => trackTileClick('/studio')}
+                className="inline-flex items-center gap-3 px-6 py-3 bg-white dark:bg-purple-900/30 border border-purple-200 dark:border-purple-700/50 rounded-full shadow-sm hover:shadow-md transition-all text-slate-700 dark:text-purple-100 group"
+              >
+                <Sparkles className="w-5 h-5 text-yellow-500" />
+                <span className="font-semibold">Jump back to Studio</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </motion.div>
-
-            {/* 7. Roach Kurt - Search */}
-            <motion.div
-              whileHover={{ y: -8, scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => openAiModal('search-challenge')}
-              className="relative p-6 rounded-3xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col items-start backdrop-blur-md hover:shadow-xl transition-all h-full hover:border-red-500/50 cursor-pointer"
-              data-testid="tile-roast-google"
-            >
-              <div className="mb-4 inline-flex p-3 rounded-2xl bg-white dark:bg-slate-800 shadow-sm">
-                <Search className="w-8 h-8 text-red-500" />
-              </div>
-              <h3 className="text-xl font-bold mb-2 font-display text-slate-900 dark:text-white">
-                {searchChallenge.title}
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm mb-4 flex-1">
-                {searchChallenge.body}
-              </p>
-              <div className="flex items-center gap-2 text-sm font-semibold mt-auto">
-                <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
-                  {searchChallenge.actionLabel}
-                </span>
-                <ArrowRight className="w-4 h-4 text-slate-400" />
-              </div>
-            </motion.div>
-
-            {/* 8. Roach Kurt - Manual Labor */}
-            <SectionCard
-              to="/beers"
-              icon={<BrainCircuit className="w-8 h-8 text-indigo-500" />}
-              title="Beer Calculator"
-              description="Test your sobriety. Or lack thereof. Kurt Edgar approved."
-              gradient="from-indigo-500 to-cyan-500"
-              testId="tile-roast-manual"
-            />
-
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-            className="pt-8"
-          >
-            <p className="text-slate-500 dark:text-slate-500 text-sm flex items-center justify-center gap-2">
-              <Palette className="w-4 h-4" />
-              Built with passion by Eirik
-              <Code className="w-4 h-4" />
-            </p>
-          </motion.div>
+          )}
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.8 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16"
+        >
+          {/* 1. About Eirik */}
+          <SectionCard
+            to="/about/eirik"
+            icon={<User className="w-8 h-8 text-blue-500" />}
+            title="About Eirik"
+            description="Meet Eirik, the code wizard behind the magic"
+            gradient="from-blue-500 to-cyan-500"
+            testId="card-about-eirik"
+            onClick={() => trackTileClick('/about/eirik')}
+          />
+
+          {/* 2. About Kurt */}
+          <SectionCard
+            to="/about/kurt-edgar"
+            icon={<Users className="w-8 h-8 text-pink-500" />}
+            title="About Kurt Edgar"
+            description="Discover Kurt Edgar's creative vision"
+            gradient="from-pink-500 to-purple-500"
+            testId="card-about-kurt"
+          />
+
+          {/* 3. Gaming */}
+          <SectionCard
+            to="/games"
+            icon={<Gamepad2 className="w-8 h-8 text-purple-500" />}
+            title="Gaming"
+            description="Play, compete, and have fun in our arcade"
+            gradient="from-purple-500 to-violet-500"
+            testId="card-gaming"
+          />
+
+          {/* 4. The Studio */}
+          <SectionCard
+            to="/studio"
+            icon={<Sparkles className="w-8 h-8 text-yellow-500" />}
+            title="The Studio"
+            description={isStudioPowerUser ? "Ready for another masterpiece? Continue creating." : "Create chaotic collages and visual masterpieces"}
+            gradient="from-yellow-500 to-orange-500"
+            featured
+            testId="card-studio"
+            onClick={() => trackTileClick('/studio')}
+          />
+
+          {/* 5. Music */}
+          <SectionCard
+            to="/music"
+            icon={<Music className="w-8 h-8 text-green-500" />}
+            title="Awesome Music"
+            description="Vibe to Eirik's curated playlist"
+            gradient="from-green-500 to-emerald-500"
+            testId="card-music"
+          />
+
+          {/* 6. AI Links (Special Custom Card) */}
+          <motion.div
+            whileHover={{ y: -8, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => openAiModal('ai-helper')}
+            className="relative p-6 rounded-3xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col items-start backdrop-blur-md hover:shadow-xl transition-all h-full hover:border-blue-500/50 cursor-pointer"
+            data-testid="tile-ai-links"
+          >
+            <div className="mb-4 inline-flex p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+              <Bot className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold mb-2 font-display text-slate-900 dark:text-white">
+              {aiHelperContent.title}
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm mb-4 flex-1">
+              {aiHelperContent.body}
+            </p>
+            <div className="flex gap-2 mt-auto w-full">
+              <div className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-center rounded-xl font-bold text-sm transition-colors shadow-sm">ChatGPT</div>
+              <div className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-center rounded-xl font-bold text-sm transition-colors shadow-sm">Gemini</div>
+            </div>
+          </motion.div>
+
+          {/* 7. Roach Kurt - Search */}
+          <motion.div
+            whileHover={{ y: -8, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => openAiModal('search-challenge')}
+            className="relative p-6 rounded-3xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col items-start backdrop-blur-md hover:shadow-xl transition-all h-full hover:border-red-500/50 cursor-pointer"
+            data-testid="tile-roast-google"
+          >
+            <div className="mb-4 inline-flex p-3 rounded-2xl bg-white dark:bg-slate-800 shadow-sm">
+              <Search className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-bold mb-2 font-display text-slate-900 dark:text-white">
+              {searchChallenge.title}
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm mb-4 flex-1">
+              {searchChallenge.body}
+            </p>
+            <div className="flex items-center gap-2 text-sm font-semibold mt-auto">
+              <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+                {searchChallenge.actionLabel}
+              </span>
+              <ArrowRight className="w-4 h-4 text-slate-400" />
+            </div>
+          </motion.div>
+
+          {/* 8. Roach Kurt - Manual Labor */}
+          <SectionCard
+            to="/beers"
+            icon={<BrainCircuit className="w-8 h-8 text-indigo-500" />}
+            title="Beer Calculator"
+            description="Test your sobriety. Or lack thereof. Kurt Edgar approved."
+            gradient="from-indigo-500 to-cyan-500"
+            testId="tile-roast-manual"
+          />
+
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          className="pt-8"
+        >
+          <p className="text-slate-500 dark:text-slate-500 text-sm flex items-center justify-center gap-2">
+            <Palette className="w-4 h-4" />
+            Built with passion by Eirik
+            <Code className="w-4 h-4" />
+          </p>
+        </motion.div>
       </main>
 
       <footer className="relative z-10 p-8 text-center text-slate-500 dark:text-slate-500 text-sm">
@@ -214,10 +238,11 @@ interface SectionCardProps {
   gradient: string;
   featured?: boolean;
   testId?: string;
+  onClick?: () => void;
 }
 
-const SectionCard = ({ to, icon, title, description, gradient, featured, testId }: SectionCardProps) => (
-  <Link to={to} data-testid={testId} className="h-full block">
+const SectionCard = ({ to, icon, title, description, gradient, featured, testId, onClick }: SectionCardProps) => (
+  <Link to={to} data-testid={testId} className="h-full block" onClick={onClick}>
     <motion.div
       whileHover={{ y: -8, scale: 1.02 }}
       whileTap={{ scale: 0.98 }}

@@ -1,3 +1,5 @@
+import { getQuotaInfo, getQuotaStatus } from './quota';
+
 /**
  * Media Playground API - Cloudflare Worker with D1 + R2
  * 
@@ -19,6 +21,7 @@ export interface Env {
     DB: D1Database;
     BUCKET: R2Bucket;
     ADMIN_PASSWORD?: string;
+    R2_FREE_LIMIT_BYTES?: string;
 }
 
 // Constants
@@ -143,6 +146,12 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     // PUT /api/upload/:projectId/:assetId/:kind - Upload to R2
     const uploadMatch = path.match(/^\/api\/upload\/([^/]+)\/([^/]+)\/(original|thumb)$/);
     if (method === 'PUT' && uploadMatch) {
+        // Check quota first
+        const quota = await getQuotaStatus(env);
+        if (!quota.uploads_allowed) {
+            return errorResponse(quota.reason || 'Uploads temporarily paused due to storage limit', 403, origin);
+        }
+
         try {
             const [, projectId, assetId, kind] = uploadMatch;
             const contentType = request.headers.get('Content-Type') || 'application/octet-stream';
@@ -333,6 +342,11 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     // POST /api/chaos/publish
     if (method === 'POST' && path === '/api/chaos/publish') {
         try {
+            // Check quota first
+            const quota = await getQuotaStatus(env);
+            if (!quota.uploads_allowed) {
+                return errorResponse(quota.reason || 'Uploads temporarily paused', 403, origin);
+            }
             const contentType = request.headers.get('Content-Type') || '';
             if (!contentType.includes('multipart/form-data')) {
                 return errorResponse('Content-Type must be multipart/form-data', 400, origin);
@@ -562,6 +576,28 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     }
 
     // ==================== ADMIN ENDPOINTS ====================
+
+    // GET /api/admin/quota
+    if (method === 'GET' && path === '/api/admin/quota') {
+        if (!isAdmin) return errorResponse('Unauthorized', 401, origin);
+        try {
+            const result = await getQuotaInfo(env);
+            return jsonResponse(result, 200, origin);
+        } catch (error) {
+            console.error('Quota error:', error);
+            return errorResponse('Failed to get quota', 500, origin);
+        }
+    }
+
+    // GET /api/quota-status (Public)
+    if (method === 'GET' && path === '/api/quota-status') {
+        try {
+            const result = await getQuotaStatus(env);
+            return jsonResponse(result, 200, origin);
+        } catch (error) {
+            return errorResponse('Failed to get status', 500, origin);
+        }
+    }
 
     // ==================== ADMIN AUTH & HELPERS ====================
 

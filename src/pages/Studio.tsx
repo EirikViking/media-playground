@@ -17,6 +17,8 @@ import { Trash2, Upload, Layout, Settings, Globe, Info } from 'lucide-react';
 import { fileToDataUrl } from '../utils/storage';
 import { api } from '../utils/api';
 import { uploadImages, UploadProgress, validateFile, getAssetUrl } from '../utils/upload';
+import { updateLocalState } from '../utils/localState';
+import { QuotaStatus } from '../utils/api'; // Ensure QuotaStatus is exported from api or types
 
 export const Studio = () => {
   const { project, addItem, updateItem, removeItem, createNewProject, setProject } = useProject();
@@ -36,6 +38,16 @@ export const Studio = () => {
   const [uploadTotal, setUploadTotal] = useState(0);
   const [uploadCurrent, setUploadCurrent] = useState<UploadProgress | undefined>();
   const [uploadErrors, setUploadErrors] = useState<Array<{ fileName: string; error: string }>>([]);
+
+  const [quotaStatus, setQuotaStatus] = useState<QuotaStatus | null>(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  // Check quota on load
+  useEffect(() => {
+    api.getQuotaStatus().then(res => {
+      if (res.data) setQuotaStatus(res.data);
+    });
+  }, []);
 
 
   // Load shared project from URL on mount
@@ -202,8 +214,16 @@ export const Studio = () => {
       // Update state and save
       setProject(p => ({ ...p, items: updatedItems }));
       setUploadErrors(result.failed);
+      setProject(p => ({ ...p, items: updatedItems }));
+      setUploadErrors(result.failed);
       await handleSaveProject(updatedItems);
       setChaosRefreshTrigger(prev => prev + 1);
+
+      if (result.failed.length === 0) {
+        updateLocalState({ lastUploadAt: new Date().toISOString() });
+        setShowSuccessMessage(true);
+        setTimeout(() => setShowSuccessMessage(false), 5000);
+      }
 
       return { success: result.failed.length === 0, items: updatedItems };
     } catch (e) {
@@ -216,6 +236,12 @@ export const Studio = () => {
 
   const handleUploadImages = async () => {
     if (!currentProjectId) return;
+
+    if (quotaStatus?.uploads_allowed === false) {
+      alert("Opplastning er midlertidig satt på pause.\nLagringen er nær grensen, og nye filer kan ikke lastes opp akkurat nå.");
+      return;
+    }
+
     const filesToUpload = pendingUploads.filter(item => item.file).map(item => ({ id: item.id, file: item.file! }));
     if (filesToUpload.length === 0) return;
 
@@ -395,6 +421,30 @@ export const Studio = () => {
       </header>
 
       <main className="max-w-[1600px] mx-auto px-6 py-8">
+
+        {showSuccessMessage && (
+          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl flex items-center gap-3 text-green-800 dark:text-green-300 animate-fade-in-up">
+            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center">
+              <Upload className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-bold text-sm">Ferdig lastet opp</div>
+              <div className="text-xs opacity-90">Du finner filene dine i oversikten.</div>
+            </div>
+          </div>
+        )}
+
+        {quotaStatus && !quotaStatus.uploads_allowed && (
+          <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center gap-3 text-amber-800 dark:text-amber-300">
+            <Info className="w-5 h-5 flex-shrink-0" />
+            <div>
+              <div className="font-bold text-sm">Opplastning er midlertidig satt på pause</div>
+              <div className="text-xs opacity-90">
+                Lagringen er nær grensen, og nye filer kan ikke lastes opp akkurat nå.
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Explanation Block */}
         <div className="mb-8 p-6 bg-gradient-to-r from-purple-500/5 to-blue-500/5 rounded-3xl border border-purple-100 dark:border-purple-900/30" data-testid="studio-explanation">

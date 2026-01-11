@@ -43,6 +43,20 @@ export interface ApiError {
     error: string;
 }
 
+export interface QuotaInfo {
+    r2_used_bytes: number;
+    r2_limit_bytes: number;
+    r2_remaining_bytes: number;
+    near_limit: boolean;
+    updated_at: string;
+}
+
+export interface QuotaStatus {
+    uploads_allowed: boolean;
+    reason?: string;
+    updated_at: string;
+}
+
 class ApiClient {
     private baseUrl: string;
 
@@ -309,6 +323,16 @@ class ApiClient {
 
     async listAdminMedia(): Promise<{ data?: any[]; error?: string }> {
         return this.request<any[]>('/api/admin/db/media', {
+            headers: getAuthHeaders()
+        });
+    }
+
+    async getQuotaStatus(): Promise<{ data?: QuotaStatus; error?: string }> {
+        return this.request<QuotaStatus>('/api/quota-status');
+    }
+
+    async getAdminQuota(): Promise<{ data?: QuotaInfo; error?: string }> {
+        return this.request<QuotaInfo>('/api/admin/quota', {
             headers: getAuthHeaders()
         });
     }
