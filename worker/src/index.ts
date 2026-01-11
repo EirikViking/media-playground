@@ -141,6 +141,18 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         });
     }
 
+    // ==================== ADMIN AUTH ====================
+    const adminPassword = env.ADMIN_PASSWORD || 'eirik123';
+    let isAdmin = request.headers.get('x-admin-password') === adminPassword;
+
+    // Check token if not already auth via password
+    if (!isAdmin) {
+        const token = request.headers.get('x-admin-token');
+        if (token) {
+            isAdmin = await verifyToken(token, adminPassword);
+        }
+    }
+
     // ==================== ASSET ENDPOINTS ====================
 
     // PUT /api/upload/:projectId/:assetId/:kind - Upload to R2
@@ -639,17 +651,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         }
     }
 
-    // Helper for admin auth
-    const adminPassword = env.ADMIN_PASSWORD || 'eirik123';
-    let isAdmin = request.headers.get('x-admin-password') === adminPassword;
 
-    // Check token if not already auth via password
-    if (!isAdmin) {
-        const token = request.headers.get('x-admin-token');
-        if (token) {
-            isAdmin = await verifyToken(token, adminPassword);
-        }
-    }
 
     // POST /api/admin/login
     if (method === 'POST' && path === '/api/admin/login') {
