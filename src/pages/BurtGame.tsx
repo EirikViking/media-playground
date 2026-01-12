@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Maximize, Minimize, X, ExternalLink, Loader2 } from 'lucide-react';
 import { updateLocalState, getLocalState } from '../utils/localState';
+import { BURT_GAME_URL } from '../constants';
 
-const GAME_URL = 'https://master.burt-game.pages.dev/';
+const GAME_URL = BURT_GAME_URL;
 const LOAD_TIMEOUT = 3000;
 
 export const BurtGame = () => {
