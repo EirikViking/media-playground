@@ -34,3 +34,5 @@ playwright-report
 test-results
 tests/fixtures/test-image.png
 .tmp
+
+.claude/settings.local.json
