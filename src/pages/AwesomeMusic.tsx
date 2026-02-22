@@ -118,6 +118,12 @@ export const AwesomeMusic = () => {
     const [toast, setToast] = useState<string | null>(null);
     const [sortMode, setSortMode] = useState<'default' | 'unhinged'>('default');
     const [activeTab, setActiveTab] = useState<'library' | 'jukebox'>('library');
+    const [showIntro, setShowIntro] = useState(true);
+
+    const enterZone = (tab: 'library' | 'jukebox') => {
+        setActiveTab(tab);
+        setShowIntro(false);
+    };
 
     const tracks = useMemo(() => RAW_TRACKS.map((t, i) => generateTrackData(t.url, i)), []);
 
@@ -227,35 +233,225 @@ export const AwesomeMusic = () => {
 
             <div className="max-w-6xl mx-auto px-6 py-8 relative z-10">
 
-                {/* Tab Switcher */}
-                <div className="flex items-center gap-2 mb-8 p-1 bg-white/60 dark:bg-slate-900/60 backdrop-blur rounded-2xl border border-slate-200 dark:border-slate-800 w-fit" data-testid="music-tab-switcher">
-                    <button
-                        onClick={() => setActiveTab('library')}
-                        data-testid="tab-library"
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'library'
-                            ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
-                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                            }`}
-                    >
-                        <Music className="w-4 h-4" />
-                        Music Library
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('jukebox')}
-                        data-testid="tab-jukebox"
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'jukebox'
-                            ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/30'
-                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                            }`}
-                    >
-                        <Radio className="w-4 h-4" />
-                        Saturday Jukebox
-                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-400 font-bold">LIVE</span>
-                    </button>
-                </div>
+                {/* ── INTRO SPLASH ── */}
+                <AnimatePresence mode="wait">
+                    {showIntro && (
+                        <motion.div
+                            key="intro"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0, scale: 0.95, filter: 'blur(8px)' }}
+                            transition={{ duration: 0.5 }}
+                            className="fixed inset-0 z-40 flex flex-col items-center justify-center overflow-hidden"
+                            style={{ background: 'radial-gradient(ellipse at center, #0f0a1e 0%, #020408 100%)' }}
+                            data-testid="music-intro-splash"
+                        >
+                            {/* Floating background emojis */}
+                            {['🎷', '🥁', '🎹', '🎸', '🤘', '🍺', '🔥', '💀', '🎤', '🌀', '🎵', '⚡'].map((emoji, i) => (
+                                <motion.div
+                                    key={i}
+                                    className="absolute text-4xl select-none pointer-events-none"
+                                    style={{
+                                        left: `${8 + (i * 8) % 90}%`,
+                                        top: `${5 + (i * 13) % 85}%`,
+                                        opacity: 0.12,
+                                    }}
+                                    animate={{
+                                        y: [0, -24, 0],
+                                        rotate: [0, i % 2 === 0 ? 15 : -15, 0],
+                                        opacity: [0.10, 0.22, 0.10],
+                                    }}
+                                    transition={{
+                                        duration: 3 + (i % 4),
+                                        repeat: Infinity,
+                                        delay: i * 0.25,
+                                        ease: 'easeInOut',
+                                    }}
+                                >
+                                    {emoji}
+                                </motion.div>
+                            ))}
+
+                            {/* Heading */}
+                            <motion.div
+                                initial={{ y: -40, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
+                                className="text-center mb-2 px-4"
+                            >
+                                <p className="text-fuchsia-400 font-mono text-sm tracking-[0.3em] uppercase mb-3 opacity-80">⚡ Saturday Protocol Engaged ⚡</p>
+                                <h1 className="font-display font-bold text-white leading-none mb-4" style={{ fontSize: 'clamp(2.8rem, 8vw, 5.5rem)' }}>
+                                    CHOOSE YOUR
+                                    <motion.span
+                                        className="block bg-gradient-to-r from-fuchsia-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent"
+                                        animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+                                        transition={{ duration: 4, repeat: Infinity }}
+                                    >
+                                        DESTINY
+                                    </motion.span>
+                                </h1>
+                                <p className="text-slate-400 text-base max-w-md mx-auto">
+                                    Two zones. Zero mercy. One Isbjørn beer recommended before proceeding.
+                                </p>
+                            </motion.div>
+
+                            {/* Cards */}
+                            <motion.div
+                                initial={{ y: 60, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.25, type: 'spring', stiffness: 140, damping: 18 }}
+                                className="flex flex-col md:flex-row gap-5 px-4 mt-8 w-full max-w-3xl"
+                            >
+                                {/* Card 1: Library */}
+                                <motion.button
+                                    onClick={() => enterZone('library')}
+                                    whileHover={{ scale: 1.04, y: -6 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    data-testid="intro-pick-library"
+                                    className="flex-1 relative p-7 rounded-3xl text-left overflow-hidden border-2 border-purple-500/30 hover:border-purple-400/80 transition-colors group"
+                                    style={{ background: 'linear-gradient(135deg, rgba(88,28,135,0.4) 0%, rgba(30,27,75,0.6) 100%)' }}
+                                >
+                                    {/* Glow */}
+                                    <motion.div
+                                        className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity"
+                                        style={{ background: 'radial-gradient(ellipse at 30% 30%, rgba(168,85,247,0.25), transparent 70%)' }}
+                                    />
+                                    <div className="relative z-10">
+                                        <motion.div
+                                            className="text-6xl mb-4 inline-block"
+                                            animate={{ rotate: [0, -5, 5, 0] }}
+                                            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                                        >🎵</motion.div>
+                                        <h2 className="text-2xl font-display font-bold text-white mb-2">Music Library</h2>
+                                        <div className="space-y-2 text-sm text-slate-300">
+                                            <p>✅ A curated playlist</p>
+                                            <p>✅ <strong>4 tracks.</strong> Yes, four. Eirik is "working on it".</p>
+                                            <p>✅ Kurt Edgar has memorized all of them and hums them involuntarily</p>
+                                            <p>✅ Shuffle mode, so it feels like more than 4</p>
+                                            <p>✅ Kurt Mode — makes it worse in the best way</p>
+                                            <p className="text-purple-300 font-semibold mt-3 italic">"Like Spotify, but with significantly less content and significantly more soul."</p>
+                                        </div>
+                                        <div className="mt-5 flex items-center gap-2 text-purple-300 font-bold group-hover:translate-x-1 transition-transform">
+                                            <span>Enter the library</span>
+                                            <span>→</span>
+                                        </div>
+                                    </div>
+                                </motion.button>
+
+                                {/* VS divider */}
+                                <div className="flex md:flex-col items-center justify-center">
+                                    <motion.div
+                                        className="text-2xl font-display font-black text-slate-500 px-3"
+                                        animate={{ scale: [1, 1.2, 1], color: ['#64748b', '#a855f7', '#64748b'] }}
+                                        transition={{ duration: 2, repeat: Infinity }}
+                                    >
+                                        VS
+                                    </motion.div>
+                                </div>
+
+                                {/* Card 2: Jukebox */}
+                                <motion.button
+                                    onClick={() => enterZone('jukebox')}
+                                    whileHover={{ scale: 1.04, y: -6 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    data-testid="intro-pick-jukebox"
+                                    className="flex-1 relative p-7 rounded-3xl text-left overflow-hidden border-2 border-fuchsia-500/30 hover:border-fuchsia-400/80 transition-colors group"
+                                    style={{ background: 'linear-gradient(135deg, rgba(112,26,117,0.45) 0%, rgba(30,10,60,0.65) 100%)' }}
+                                >
+                                    {/* Glow */}
+                                    <motion.div
+                                        className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity"
+                                        style={{ background: 'radial-gradient(ellipse at 70% 30%, rgba(236,72,153,0.3), transparent 70%)' }}
+                                    />
+                                    {/* LIVE badge */}
+                                    <motion.div
+                                        className="absolute top-4 right-4 z-20 bg-red-500 text-white text-xs font-black px-2.5 py-1 rounded-full tracking-widest"
+                                        animate={{ opacity: [1, 0.4, 1] }}
+                                        transition={{ duration: 1.2, repeat: Infinity }}
+                                    >● LIVE</motion.div>
+                                    <div className="relative z-10">
+                                        <motion.div
+                                            className="text-6xl mb-4 inline-block"
+                                            animate={{
+                                                rotate: [0, 10, -10, 8, -8, 0],
+                                                scale: [1, 1.1, 1],
+                                            }}
+                                            transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                                        >📻</motion.div>
+                                        <h2 className="text-2xl font-display font-bold text-white mb-2">Saturday Jukebox</h2>
+                                        <div className="space-y-2 text-sm text-slate-300">
+                                            <p>🔥 Slick beats &amp; animated chaos</p>
+                                            <p>🤖 AI booth banter (it WILL roast Kurt Edgar)</p>
+                                            <p>🌀 Visualizers that will break your monitor</p>
+                                            <p>🏆 Gamification &amp; leaderboard — Kurt is losing</p>
+                                            <p>📖 AI-generated micro-stories for each track</p>
+                                            <p className="text-fuchsia-300 font-semibold mt-3 italic">"This is what happens when Eirik is left alone with a Cloudflare worker for too long."</p>
+                                        </div>
+                                        <div className="mt-5 flex items-center gap-2 text-fuchsia-300 font-bold group-hover:translate-x-1 transition-transform">
+                                            <span>Launch the chaos</span>
+                                            <span>→</span>
+                                        </div>
+                                    </div>
+                                </motion.button>
+                            </motion.div>
+
+                            {/* Footer note */}
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.8 }}
+                                className="mt-8 text-slate-600 text-xs text-center px-4"
+                            >
+                                🍺 Isbjørn beer not included. Kurt Edgar consumed the last one. He is not sorry.
+                            </motion.p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* ── Tab Switcher (only visible when not on intro) ── */}
+                {!showIntro && (
+                    <div className="flex items-center gap-3 mb-8" data-testid="music-tab-switcher">
+                        <button
+                            onClick={() => setShowIntro(true)}
+                            className="text-slate-400 hover:text-slate-200 text-xs flex items-center gap-1 transition-colors"
+                            title="Back to zone select"
+                        >
+                            ← back
+                        </button>
+                        <div className="flex items-center gap-2 p-1 bg-white/60 dark:bg-slate-900/60 backdrop-blur rounded-2xl border border-slate-200 dark:border-slate-800">
+                            <button
+                                onClick={() => setActiveTab('library')}
+                                data-testid="tab-library"
+                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'library'
+                                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                    }`}
+                            >
+                                <Music className="w-4 h-4" />
+                                Music Library
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('jukebox')}
+                                data-testid="tab-jukebox"
+                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'jukebox'
+                                    ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/30'
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                    }`}
+                            >
+                                <Radio className="w-4 h-4" />
+                                Saturday Jukebox
+                                <motion.span
+                                    animate={{ opacity: [1, 0.4, 1] }}
+                                    transition={{ duration: 1.4, repeat: Infinity }}
+                                    className="text-xs px-1.5 py-0.5 rounded-full bg-red-500/80 text-white font-bold"
+                                >● LIVE</motion.span>
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* ── Jukebox Tab ── */}
-                {activeTab === 'jukebox' && (
+                {!showIntro && activeTab === 'jukebox' && (
                     <motion.div
                         key="jukebox-tab"
                         initial={{ opacity: 0, y: 16 }}
@@ -293,7 +489,7 @@ export const AwesomeMusic = () => {
                 )}
 
                 {/* ── Library Tab ── */}
-                {activeTab === 'library' && <>
+                {!showIntro && activeTab === 'library' && <>
 
                     {/* Hero Section */}
                     <div className="flex flex-col md:flex-row items-center gap-8 mb-12">
