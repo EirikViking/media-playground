@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, SkipBack, SkipForward, Shuffle, Search, Music, Sparkles, Zap, List } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Shuffle, Search, Music, Sparkles, Zap, List, Radio, ExternalLink } from 'lucide-react';
+
+const JUKEBOX_URL = 'https://super-saturday-jukebox.cromkake.workers.dev/';
 import { api } from '../utils/api';
 
 // --- Constants & Data ---
@@ -115,6 +117,7 @@ export const AwesomeMusic = () => {
     });
     const [toast, setToast] = useState<string | null>(null);
     const [sortMode, setSortMode] = useState<'default' | 'unhinged'>('default');
+    const [activeTab, setActiveTab] = useState<'library' | 'jukebox'>('library');
 
     const tracks = useMemo(() => RAW_TRACKS.map((t, i) => generateTrackData(t.url, i)), []);
 
@@ -224,152 +227,221 @@ export const AwesomeMusic = () => {
 
             <div className="max-w-6xl mx-auto px-6 py-8 relative z-10">
 
-                {/* Hero Section */}
-                <div className="flex flex-col md:flex-row items-center gap-8 mb-12">
-                    <div className="flex-1 space-y-4 text-center md:text-left">
-                        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-                            <h1 className="text-4xl md:text-6xl font-display font-bold text-slate-900 dark:text-white leading-tight">
-                                Awesome Music <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
-                                    by Eirik
-                                </span>
-                            </h1>
-                            <p className="text-lg text-slate-600 dark:text-slate-400 mt-4 max-w-lg">
-                                {kurtMode ?
-                                    "Kurt Edgar has unfortunately approved this playlist, claiming it speaks to his 'inner chaos'." :
-                                    "Hand-picked tracks that Kurt Edgar pretends to hate but secretly vibes to."}
+                {/* Tab Switcher */}
+                <div className="flex items-center gap-2 mb-8 p-1 bg-white/60 dark:bg-slate-900/60 backdrop-blur rounded-2xl border border-slate-200 dark:border-slate-800 w-fit" data-testid="music-tab-switcher">
+                    <button
+                        onClick={() => setActiveTab('library')}
+                        data-testid="tab-library"
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'library'
+                            ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
+                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                            }`}
+                    >
+                        <Music className="w-4 h-4" />
+                        Music Library
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('jukebox')}
+                        data-testid="tab-jukebox"
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'jukebox'
+                            ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/30'
+                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                            }`}
+                    >
+                        <Radio className="w-4 h-4" />
+                        Saturday Jukebox
+                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-400 font-bold">LIVE</span>
+                    </button>
+                </div>
+
+                {/* ── Jukebox Tab ── */}
+                {activeTab === 'jukebox' && (
+                    <motion.div
+                        key="jukebox-tab"
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
+                        className="flex flex-col gap-4"
+                    >
+                        <div className="flex items-center justify-between">
+                            <p className="text-slate-500 dark:text-slate-400 text-sm">
+                                Slick beats, animated chaos &amp; AI booth banter — the full Saturday experience.
                             </p>
-                        </motion.div>
-
-                        <div className="flex items-center justify-center md:justify-start gap-4 mt-6">
-                            <button
-                                onClick={() => { setIsPlaying(true); audioRef.current?.play(); }}
-                                className="px-8 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-xl"
-                                data-testid="hero-play-btn"
+                            <a
+                                href={JUKEBOX_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-purple-500 transition-colors"
                             >
-                                <Play className="fill-current w-5 h-5" /> Start Listening
-                            </button>
-                            <button
-                                onClick={toggleKurtMode}
-                                className={`px-4 py-3 rounded-full font-medium border flex items-center gap-2 transition-colors ${kurtMode ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-white/50 border-slate-200 text-slate-600 hover:bg-white'}`}
-                                data-testid="kurt-mode-toggle"
-                            >
-                                {kurtMode ? <Zap className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-                                {kurtMode ? "Kurt Mode ON" : "Kurt Mode"}
-                            </button>
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                Open standalone
+                            </a>
                         </div>
-                    </div>
+                        <div
+                            className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl"
+                            style={{ height: 'calc(100vh - 260px)', minHeight: '500px' }}
+                        >
+                            <iframe
+                                src={JUKEBOX_URL}
+                                title="Super Saturday Jukebox"
+                                className="w-full h-full border-0"
+                                allow="autoplay"
+                                data-testid="jukebox-iframe"
+                            />
+                        </div>
+                    </motion.div>
+                )}
 
-                    {/* Playing Visualization / Card */}
-                    <div className="relative w-full max-w-xs aspect-square bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl shadow-2xl flex items-center justify-center overflow-hidden border-4 border-white/10">
-                        {isPlaying ? (
-                            <motion.div
-                                animate={{ scale: [1, 1.05, 1], rotate: [0, 2, -2, 0] }}
-                                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                            >
-                                <div className="text-9xl filter drop-shadow-lg">{currentTrack.emoji}</div>
+                {/* ── Library Tab ── */}
+                {activeTab === 'library' && <>
+
+                    {/* Hero Section */}
+                    <div className="flex flex-col md:flex-row items-center gap-8 mb-12">
+                        <div className="flex-1 space-y-4 text-center md:text-left">
+                            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+                                <h1 className="text-4xl md:text-6xl font-display font-bold text-slate-900 dark:text-white leading-tight">
+                                    Awesome Music <br />
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+                                        by Eirik
+                                    </span>
+                                </h1>
+                                <p className="text-lg text-slate-600 dark:text-slate-400 mt-4 max-w-lg">
+                                    {kurtMode ?
+                                        "Kurt Edgar has unfortunately approved this playlist, claiming it speaks to his 'inner chaos'." :
+                                        "Hand-picked tracks that Kurt Edgar pretends to hate but secretly vibes to."}
+                                </p>
                             </motion.div>
-                        ) : (
-                            <Music className="w-32 h-32 text-white/50" />
-                        )}
 
-                        <div className="absolute bottom-4 left-4 right-4 bg-black/40 backdrop-blur-md p-3 rounded-xl border border-white/10">
-                            <div className="text-white font-bold truncate">{currentTrack.title}</div>
-                            <div className="text-white/60 text-xs">Now Playing</div>
+                            <div className="flex items-center justify-center md:justify-start gap-4 mt-6">
+                                <button
+                                    onClick={() => { setIsPlaying(true); audioRef.current?.play(); }}
+                                    className="px-8 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-xl"
+                                    data-testid="hero-play-btn"
+                                >
+                                    <Play className="fill-current w-5 h-5" /> Start Listening
+                                </button>
+                                <button
+                                    onClick={toggleKurtMode}
+                                    className={`px-4 py-3 rounded-full font-medium border flex items-center gap-2 transition-colors ${kurtMode ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-white/50 border-slate-200 text-slate-600 hover:bg-white'}`}
+                                    data-testid="kurt-mode-toggle"
+                                >
+                                    {kurtMode ? <Zap className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                                    {kurtMode ? "Kurt Mode ON" : "Kurt Mode"}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Playing Visualization / Card */}
+                        <div className="relative w-full max-w-xs aspect-square bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl shadow-2xl flex items-center justify-center overflow-hidden border-4 border-white/10">
+                            {isPlaying ? (
+                                <motion.div
+                                    animate={{ scale: [1, 1.05, 1], rotate: [0, 2, -2, 0] }}
+                                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                                >
+                                    <div className="text-9xl filter drop-shadow-lg">{currentTrack.emoji}</div>
+                                </motion.div>
+                            ) : (
+                                <Music className="w-32 h-32 text-white/50" />
+                            )}
+
+                            <div className="absolute bottom-4 left-4 right-4 bg-black/40 backdrop-blur-md p-3 rounded-xl border border-white/10">
+                                <div className="text-white font-bold truncate">{currentTrack.title}</div>
+                                <div className="text-white/60 text-xs">Now Playing</div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Toolbar */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 sticky top-20 z-20 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-                    <div className="relative w-full md:w-auto">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="Search tracks..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 pr-4 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            data-testid="search-input"
-                        />
+                    {/* Toolbar */}
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 sticky top-20 z-20 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <div className="relative w-full md:w-auto">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Search tracks..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-9 pr-4 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                data-testid="search-input"
+                            />
+                        </div>
+
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setSortMode('default')}
+                                className={`p-2 rounded-lg ${sortMode === 'default' ? 'bg-purple-100 text-purple-700' : 'text-slate-500 hover:bg-slate-100'}`}
+                                title="Default Order"
+                            >
+                                <List className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={() => setSortMode('unhinged')}
+                                className={`p-2 rounded-lg ${sortMode === 'unhinged' ? 'bg-orange-100 text-orange-700' : 'text-slate-500 hover:bg-slate-100'}`}
+                                title="Sorted by Unhinged Score"
+                            >
+                                <Zap className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setSortMode('default')}
-                            className={`p-2 rounded-lg ${sortMode === 'default' ? 'bg-purple-100 text-purple-700' : 'text-slate-500 hover:bg-slate-100'}`}
-                            title="Default Order"
-                        >
-                            <List className="w-5 h-5" />
-                        </button>
-                        <button
-                            onClick={() => setSortMode('unhinged')}
-                            className={`p-2 rounded-lg ${sortMode === 'unhinged' ? 'bg-orange-100 text-orange-700' : 'text-slate-500 hover:bg-slate-100'}`}
-                            title="Sorted by Unhinged Score"
-                        >
-                            <Zap className="w-5 h-5" />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Track List */}
-                <div className="grid grid-cols-1 gap-4" data-testid="playlist-list">
-                    <AnimatePresence>
-                        {displayedTracks.map((track) => (
-                            <motion.div
-                                key={track.id}
-                                layout
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0 }}
-                                className={`
+                    {/* Track List */}
+                    <div className="grid grid-cols-1 gap-4" data-testid="playlist-list">
+                        <AnimatePresence>
+                            {displayedTracks.map((track) => (
+                                <motion.div
+                                    key={track.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0 }}
+                                    className={`
                                     group flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer
                                     ${currentTrack.url === track.url ?
-                                        'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 ring-1 ring-purple-300 dark:ring-purple-700' :
-                                        'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md'
-                                    }
+                                            'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 ring-1 ring-purple-300 dark:ring-purple-700' :
+                                            'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md'
+                                        }
                                 `}
-                                onClick={() => {
-                                    const idx = tracks.findIndex(t => t.id === track.id);
-                                    if (idx !== -1) {
-                                        setCurrentTrackIndex(idx);
-                                        setIsPlaying(true);
-                                    }
-                                }}
-                                data-testid="playlist-item"
-                            >
-                                <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl shadow-inner">
-                                    {track.emoji}
-                                </div>
-
-                                <div className="flex-1 min-w-0">
-                                    <h3 className={`font-bold truncate ${currentTrack.url === track.url ? 'text-purple-700 dark:text-purple-300' : 'text-slate-900 dark:text-white'}`}>
-                                        {track.title}
-                                    </h3>
-                                    <p className="text-sm text-slate-500 italic truncate">
-                                        "{track.lore}"
-                                    </p>
-                                </div>
-
-                                {kurtMode && (
-                                    <div className="text-xs font-mono text-orange-500 hidden md:block border border-orange-200 px-2 py-1 rounded">
-                                        Unhinged: {track.unhingedScore}%
+                                    onClick={() => {
+                                        const idx = tracks.findIndex(t => t.id === track.id);
+                                        if (idx !== -1) {
+                                            setCurrentTrackIndex(idx);
+                                            setIsPlaying(true);
+                                        }
+                                    }}
+                                    data-testid="playlist-item"
+                                >
+                                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl shadow-inner">
+                                        {track.emoji}
                                     </div>
-                                )}
 
-                                <button className={`
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className={`font-bold truncate ${currentTrack.url === track.url ? 'text-purple-700 dark:text-purple-300' : 'text-slate-900 dark:text-white'}`}>
+                                            {track.title}
+                                        </h3>
+                                        <p className="text-sm text-slate-500 italic truncate">
+                                            "{track.lore}"
+                                        </p>
+                                    </div>
+
+                                    {kurtMode && (
+                                        <div className="text-xs font-mono text-orange-500 hidden md:block border border-orange-200 px-2 py-1 rounded">
+                                            Unhinged: {track.unhingedScore}%
+                                        </div>
+                                    )}
+
+                                    <button className={`
                                     w-10 h-10 rounded-full flex items-center justify-center transition-all
                                     ${currentTrack.url === track.url && isPlaying ? 'bg-purple-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/40 group-hover:text-purple-600'}
                                 `}>
-                                    {currentTrack.url === track.url && isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-                                </button>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                    {displayedTracks.length === 0 && (
-                        <div className="text-center py-12 text-slate-500">No tracks found for "{searchQuery}"</div>
-                    )}
-                </div>
+                                        {currentTrack.url === track.url && isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                                    </button>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                        {displayedTracks.length === 0 && (
+                            <div className="text-center py-12 text-slate-500">No tracks found for "{searchQuery}"</div>
+                        )}
+                    </div>
+                </>}
             </div>
 
             {/* Sticky Mini Player */}
