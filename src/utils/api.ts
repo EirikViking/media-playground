@@ -16,16 +16,9 @@ const runtimeBase = typeof window !== 'undefined'
     ? (window as unknown as { __API_BASE__?: string }).__API_BASE__
     : undefined;
 
-const isLocalhost = typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
-let defaultBase = FALLBACK_WORKER_BASE;
-
-if (import.meta.env.DEV || isLocalhost) {
-    defaultBase = 'http://127.0.0.1:8787';
-}
-
-const API_BASE = VITE_API_BASE || runtimeBase || defaultBase;
+// Default to production worker unless VITE_API_BASE is provided
+// This ensures "Studio" projects are visible even when no local worker is running
+const API_BASE = VITE_API_BASE || runtimeBase || FALLBACK_WORKER_BASE;
 
 console.log('[API] Environment:', import.meta.env.DEV ? 'development' : 'production');
 console.log('[API] VITE_API_BASE:', VITE_API_BASE);

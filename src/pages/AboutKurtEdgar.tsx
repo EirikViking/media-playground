@@ -5,9 +5,9 @@ import { MessengerButtons } from '../components/MessengerButtons';
 import { HoverVideo } from '../components/HoverVideo';
 import { api } from '../utils/api';
 
-const KURT_VIDEO = api.getAssetUrl(
-    'fd4237ba-f675-4905-b8f4-782b79ec63c8',
-    'fb77ab5a-f90f-4831-a41b-ee31d68fb541',
+const KURT_IMAGE = api.getAssetUrl(
+    '60c00b71-a7b7-4f2c-8fe0-eb9a33c64b48',
+    '37b3ed57-beed-4401-adf0-b71ef62c899d',
     'original'
 );
 
@@ -22,12 +22,17 @@ export const AboutKurtEdgar = () => {
                     className="space-y-8"
                 >
                     <div className="text-center space-y-8">
-                        {/* Kurt Video - Moved to Top */}
+                        {/* Kurt Profile Image - Replaced missing video */}
                         <div className="mx-auto max-w-2xl transform hover:scale-[1.02] transition-transform duration-500">
-                            <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-slate-800">
-                                <HoverVideo
-                                    src={KURT_VIDEO}
-                                    className="aspect-[9/16] md:aspect-video w-full object-cover"
+                            <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-slate-800 bg-slate-200 dark:bg-slate-900 aspect-video">
+                                <img
+                                    src={KURT_IMAGE}
+                                    alt="Kurt Edgar"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        // Fallback to a placeholder or local asset if database asset fails
+                                        (e.target as HTMLImageElement).src = '/beervan.png';
+                                    }}
                                 />
                             </div>
                         </div>
