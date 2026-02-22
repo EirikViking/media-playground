@@ -640,52 +640,7 @@ export const AwesomeMusic = () => {
                 </>}
             </div>
 
-            {/* Sticky Mini Player */}
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 p-2 md:p-4 pb-safe shadow-2xl" data-testid="mini-player">
-                <div className="max-w-4xl mx-auto flex items-center gap-4">
-                    <img
-                        src={`https://api.dicebear.com/7.x/shapes/svg?seed=${currentTrack.title}`}
-                        alt="Art"
-                        className="w-12 h-12 rounded-lg bg-slate-200 hidden md:block"
-                    />
 
-                    <div className="flex-1 min-w-0">
-                        <div className="font-bold text-slate-900 dark:text-white truncate text-sm md:text-base">
-                            {currentTrack.title}
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <span>{formatTime(progress)}</span>
-                            <input
-                                type="range"
-                                min={0}
-                                max={duration || 100}
-                                value={progress}
-                                onChange={handleSeek}
-                                className="flex-1 h-1 bg-slate-200 rounded-full accent-purple-600"
-                            />
-                            <span>{formatTime(duration)}</span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 md:gap-4">
-                        <button onClick={handlePrev} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full hidden md:block">
-                            <SkipBack className="w-5 h-5" />
-                        </button>
-                        <button
-                            onClick={handlePlayPause}
-                            className="w-10 h-10 md:w-12 md:h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-full flex items-center justify-center shadow-lg"
-                        >
-                            {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-1" />}
-                        </button>
-                        <button onClick={handleNext} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full">
-                            <SkipForward className="w-5 h-5" />
-                        </button>
-                        <button onClick={toggleShuffle} className={`p-2 rounded-full hidden md:block ${isShuffle ? 'text-purple-600 bg-purple-100' : 'text-slate-400'}`}>
-                            <Shuffle className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            </div>
 
             {/* Audio Element */}
             <audio
@@ -718,9 +673,4 @@ export const AwesomeMusic = () => {
     );
 };
 
-const formatTime = (seconds: number) => {
-    if (!seconds) return "0:00";
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-};
+
