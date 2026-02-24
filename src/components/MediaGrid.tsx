@@ -9,6 +9,7 @@ interface MediaGridProps {
 }
 
 export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) => {
+  const fallbackImage = '/beervan.png';
   if (items.length === 0) {
     return (
       <motion.div
@@ -69,27 +70,37 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
             data-testid="asset-card"
           >
             {item.type === 'video' ? (
-              <video
-                data-testid="video-asset"
-                src={item.url}
-                poster={item.thumbUrl || undefined}
-                className="w-full h-full object-cover"
-                muted
-                loop
-                playsInline
-                onMouseEnter={(e) => {
-                  // Autoplay on hover (desktop only)
-                  if (window.matchMedia('(hover: hover)').matches) {
-                    e.currentTarget.play().catch(() => {
-                      // Ignore autoplay errors
-                    });
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.pause();
-                  e.currentTarget.currentTime = 0;
-                }}
-              />
+              item.url ? (
+                <video
+                  data-testid="video-asset"
+                  src={item.url}
+                  poster={item.thumbUrl || fallbackImage}
+                  className="w-full h-full object-cover"
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  onError={(e) => {
+                    e.currentTarget.poster = fallbackImage;
+                  }}
+                  onMouseEnter={(e) => {
+                    // Autoplay on hover (desktop only)
+                    if (window.matchMedia('(hover: hover)').matches) {
+                      e.currentTarget.play().catch(() => {
+                        // Ignore autoplay errors
+                      });
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.pause();
+                    e.currentTarget.currentTime = 0;
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-slate-900 text-white">
+                  <span className="text-sm font-semibold">Missing video</span>
+                </div>
+              )
             ) : item.type === 'audio' ? (
               <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-pink-500 to-purple-600 text-white p-4">
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm mb-3 animate-pulse">
@@ -99,13 +110,22 @@ export const MediaGrid = ({ items, onItemClick, onItemRemove }: MediaGridProps) 
                 <audio src={item.url} controls className="w-full mt-2 h-6" />
               </div>
             ) : item.type === 'image' ? (
-              <img
-                data-testid="asset-thumb"
-                src={item.thumbUrl || item.url}
-                alt={item.title}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                loading="lazy"
-              />
+              item.url || item.thumbUrl ? (
+                <img
+                  data-testid="asset-thumb"
+                  src={item.thumbUrl || item.url || fallbackImage}
+                  alt={item.title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.src = fallbackImage;
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-slate-900 text-white">
+                  <span className="text-sm font-semibold">Missing image</span>
+                </div>
+              )
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white">
                 <span className="text-4xl">❓</span>
