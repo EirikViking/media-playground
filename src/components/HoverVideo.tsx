@@ -5,13 +5,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface HoverVideoProps {
     src: string;
     className?: string;
+    posterSrc?: string;
+    fallbackImageSrc?: string;
 }
 
-export const HoverVideo = ({ src, className = '' }: HoverVideoProps) => {
+export const HoverVideo = ({ src, className = '', posterSrc, fallbackImageSrc }: HoverVideoProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isMuted, setIsMuted] = useState(true);
     const [showHint, setShowHint] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [hasError, setHasError] = useState(false);
     // Persist audio preference per session
     const [soundEnabled, setSoundEnabled] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -96,14 +99,24 @@ export const HoverVideo = ({ src, className = '' }: HoverVideoProps) => {
             onMouseLeave={handleMouseLeave}
             onClick={handleClick}
         >
-            <video
-                ref={videoRef}
-                src={src}
-                className="w-full h-full object-cover"
-                playsInline
-                muted={isMuted}
-                loop
-            />
+            {hasError && fallbackImageSrc ? (
+                <img
+                    src={fallbackImageSrc}
+                    alt="Video preview"
+                    className="w-full h-full object-cover"
+                />
+            ) : (
+                <video
+                    ref={videoRef}
+                    src={src}
+                    className="w-full h-full object-cover"
+                    playsInline
+                    muted={isMuted}
+                    loop
+                    poster={posterSrc}
+                    onError={() => setHasError(true)}
+                />
+            )}
 
             {/* Hint Overlay */}
             <AnimatePresence>

@@ -5,11 +5,12 @@ import { MessengerButtons } from '../components/MessengerButtons';
 import { HoverVideo } from '../components/HoverVideo';
 import { api } from '../utils/api';
 
-const KURT_IMAGE = api.getAssetUrl(
-    '60c00b71-a7b7-4f2c-8fe0-eb9a33c64b48',
-    '37b3ed57-beed-4401-adf0-b71ef62c899d',
+const KURT_VIDEO = api.getAssetUrl(
+    'cf1f3fb1-b95a-4e9f-9f8b-bb58483d0c72',
+    'b6c97765-2a59-407c-800b-78968cfef07b',
     'original'
 );
+const KURT_FALLBACK_IMAGE = '/beervan.png';
 
 export const AboutKurtEdgar = () => {
     return (
@@ -22,19 +23,14 @@ export const AboutKurtEdgar = () => {
                     className="space-y-8"
                 >
                     <div className="text-center space-y-8">
-                        {/* Kurt Profile Image - Replaced missing video */}
+                        {/* Kurt Profile Video */}
                         <div className="mx-auto max-w-2xl transform hover:scale-[1.02] transition-transform duration-500">
-                            <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-slate-800 bg-slate-200 dark:bg-slate-900 aspect-video">
-                                <img
-                                    src={KURT_IMAGE}
-                                    alt="Kurt Edgar"
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        // Fallback to a placeholder or local asset if database asset fails
-                                        (e.target as HTMLImageElement).src = '/beervan.png';
-                                    }}
-                                />
-                            </div>
+                            <HoverVideo
+                                src={KURT_VIDEO}
+                                posterSrc={KURT_FALLBACK_IMAGE}
+                                fallbackImageSrc={KURT_FALLBACK_IMAGE}
+                                className="aspect-video border-4 border-white dark:border-slate-800 bg-slate-200 dark:bg-slate-900"
+                            />
                         </div>
 
                         <h1 className="text-5xl md:text-6xl font-bold font-display bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">

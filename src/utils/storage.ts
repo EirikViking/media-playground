@@ -29,15 +29,26 @@ export const loadProject = (): Project | null => {
 
     const parsed = JSON.parse(data);
 
-    // Restore url from dataUrl for each item
-    if (parsed.items) {
-      parsed.items = parsed.items.map((item: Partial<MediaItem>) => ({
-        ...item,
-        url: item.dataUrl || '', // Use dataUrl as url if available
-      }));
-    }
+    const itemsRaw = Array.isArray(parsed.items) ? parsed.items : [];
+    const items = itemsRaw.map((item: Partial<MediaItem>) => ({
+      id: typeof item.id === 'string' ? item.id : crypto.randomUUID(),
+      type: item.type === 'video' || item.type === 'audio' ? item.type : 'image',
+      title: typeof item.title === 'string' ? item.title : 'Untitled',
+      tags: Array.isArray(item.tags) ? item.tags : [],
+      notes: typeof item.notes === 'string' ? item.notes : '',
+      createdAt: typeof item.createdAt === 'number' ? item.createdAt : Date.now(),
+      dataUrl: typeof item.dataUrl === 'string' ? item.dataUrl : undefined,
+      thumbDataUrl: typeof item.thumbDataUrl === 'string' ? item.thumbDataUrl : undefined,
+      url: typeof item.dataUrl === 'string' ? item.dataUrl : '',
+    }));
 
-    return parsed;
+    return {
+      id: typeof parsed.id === 'string' ? parsed.id : crypto.randomUUID(),
+      name: typeof parsed.name === 'string' ? parsed.name : 'Untitled Project',
+      items,
+      createdAt: typeof parsed.createdAt === 'number' ? parsed.createdAt : Date.now(),
+      updatedAt: typeof parsed.updatedAt === 'number' ? parsed.updatedAt : Date.now(),
+    };
   } catch (error) {
     console.error('Failed to load project:', error);
     return null;

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, SkipBack, SkipForward, Shuffle, Search, Music, Sparkles, Zap, List, Radio, ExternalLink } from 'lucide-react';
+import { Play, Pause, Search, Music, Sparkles, Zap, List, Radio, ExternalLink } from 'lucide-react';
 
 const JUKEBOX_URL = 'https://super-saturday-jukebox.cromkake.workers.dev/';
 import { api } from '../utils/api';
@@ -102,9 +102,6 @@ export const AwesomeMusic = () => {
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-    const [progress, setProgress] = useState(0);
-    const [duration, setDuration] = useState(0);
-    // Removed unused volume/mute state for now
     const [isShuffle, setIsShuffle] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [kurtMode, setKurtMode] = useState(() => {
@@ -195,14 +192,6 @@ export const AwesomeMusic = () => {
     const toggleShuffle = () => {
         setIsShuffle(!isShuffle);
         showToast(!isShuffle ? "Shuffle On 🔀" : "Shuffle Off ➡️");
-    };
-
-    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const time = Number(e.target.value);
-        if (audioRef.current) {
-            audioRef.current.currentTime = time;
-            setProgress(time);
-        }
     };
 
     const toggleKurtMode = () => {
@@ -646,12 +635,6 @@ export const AwesomeMusic = () => {
             <audio
                 ref={audioRef}
                 src={currentTrack.url}
-                onTimeUpdate={() => {
-                    if (audioRef.current) {
-                        setProgress(audioRef.current.currentTime);
-                        setDuration(audioRef.current.duration || 0);
-                    }
-                }}
                 onEnded={handleNext}
                 onError={(e) => console.error("Audio error", e)}
             />
