@@ -52,7 +52,7 @@ export const AboutEirik = () => {
 
                             <div className="text-xl leading-relaxed text-slate-700 dark:text-slate-300 font-light relative z-10 space-y-6">
                                 <p>
-                                    <span className="font-semibold text-slate-900 dark:text-white">Eirik</span> is a financially independent technologist, investor, and creative builder. He lives off long-term investments in stocks, funds, and crypto, giving him the ultimate cheat code: <span className="italic text-purple-600 dark:text-purple-400">Freedom.</span>
+                                    <span className="font-semibold text-slate-900 dark:text-white">Eirik</span> is a technologist, investor, and creative builder. He keeps a few long-term investments on autopilot, which mostly buys him time to chase ideas and occasionally touch grass.
                                 </p>
                                 <p>
                                     This freedom allows him to focus entirely on what he does best: inventing, exploring, and building digital things that feel genuinely fun and useful. Known for his ability as a highly intuitive and fast-moving <span className="font-semibold text-blue-500">vibe coder</span>, Eirik excels at turning loose ideas into working systems with efficiency and personality.
