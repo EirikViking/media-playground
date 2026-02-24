@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, RotateCcw, Plus, Minus, Settings, Lightbulb, Brain, Radio, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RotateCcw, Plus, Minus, Settings, Lightbulb, Brain, Radio, RefreshCw, Sparkles, Flame, Beer } from 'lucide-react';
 import { Button } from '../components/Button';
 import { BeerRiskMeter } from '../components/BeerRiskMeter';
 import { playBeerTone, speakMessage } from '../utils/audioSystem';
@@ -21,13 +21,13 @@ const MESSAGES: Record<number, Message> = {
     5: { headline: "Level 5: Tipsy", serious: "Balance slips. Reasoning gets fuzzy.", suggestion: "Put the phone away. Don't text exes." },
     6: { headline: "Level 6: Slippery Slope", serious: "Slurring speech. Hydration is critical.", suggestion: "Switch to water immediately." },
     7: { headline: "Level 7: The Edge", serious: "Hangover loading... Sleep quality will suffer.", suggestion: "Stop now or take a very long break." },
-    8: { headline: "RED ZONE 🚨", serious: "Significant impairment. Nausea likely.", suggestion: "Stop drinking. Hydrate. Get home safe." },
-    9: { headline: "RED ZONE 🚨", serious: "Blackout risk. Motor control failing.", suggestion: "Find a safe place. Stay there." },
-    10: { headline: "RED ZONE ⚠️", serious: "Severe intoxication. Vomiting risk.", suggestion: "Do not be alone. Stop." }
+    8: { headline: "RED ZONE ??", serious: "Significant impairment. Nausea likely.", suggestion: "Stop drinking. Hydrate. Get home safe." },
+    9: { headline: "RED ZONE ??", serious: "Blackout risk. Motor control failing.", suggestion: "Find a safe place. Stay there." },
+    10: { headline: "RED ZONE ??", serious: "Severe intoxication. Vomiting risk.", suggestion: "Do not be alone. Stop." }
 };
 
 const EMERGENCY_MESSAGE = {
-    headline: "EMERGENCY ZONE 🚑",
+    headline: "EMERGENCY ZONE ??",
     serious: "Risk of alcohol poisoning. Unconscious risk.",
     suggestion: "Seek help if unresponsive. Stop immediately."
 };
@@ -43,6 +43,24 @@ const BEER_FACTS = [
     "George Washington dispensed beer to his troops.",
     "The first professional brewers were women (Brewsters).",
     "Thailand has a temple made of 1 million beer bottles."
+];
+
+const PARTY_MOODS = [
+    "Sober Scholar",
+    "Casual Adventurer",
+    "Cozy Chaos",
+    "Confident Karaoke",
+    "Gravity Negotiator",
+    "Mythical Party Goblin",
+];
+
+const KURT_BADGES = [
+    "Certified Foam Architect",
+    "Karaoke Liability",
+    "Forklift Dance Instructor",
+    "The Human Metronome (maybe)",
+    "Honorary Viking",
+    "Chief Hydration Officer",
 ];
 
 const getVoiceLine = (count: number) => {
@@ -105,7 +123,7 @@ export const BeerCalculator = () => {
     const handleIncrement = () => {
         const next = count + 1;
         setCount(next);
-        setShakeKey(k => k + 1);
+        setShakeKey((k) => k + 1);
         generateNewWisdom();
 
         if (next >= 15 && !hasTriggeredEasterEgg) {
@@ -116,7 +134,7 @@ export const BeerCalculator = () => {
     };
 
     const handleDecrement = () => {
-        if (count > 0) setCount(c => c - 1);
+        if (count > 0) setCount((c) => c - 1);
     };
 
     const handleReset = () => {
@@ -129,9 +147,21 @@ export const BeerCalculator = () => {
     const tiltAngle = Math.min(count * 2, 20);
     const beerFact = BEER_FACTS[count % BEER_FACTS.length];
     const radarValue = Math.min(100, Math.max(0, (count * 15) - 10));
+    const moodIndex = Math.min(PARTY_MOODS.length - 1, Math.floor(count / 2));
+    const partyMood = PARTY_MOODS[moodIndex];
+    const kurtBadge = KURT_BADGES[count % KURT_BADGES.length];
+    const glowLevel = Math.min(1, count / 10);
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col relative overflow-hidden">
+            {/* Ambient background */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute -top-24 -left-24 w-[420px] h-[420px] bg-orange-400/20 rounded-full blur-[90px]" />
+                <div className="absolute top-1/3 -right-32 w-[520px] h-[520px] bg-purple-500/15 rounded-full blur-[110px]" />
+                <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-yellow-300/10 rounded-full blur-[120px]" />
+                <div className="absolute inset-0 opacity-[0.15] bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.08)_1px,transparent_0)] [background-size:18px_18px]" />
+            </div>
+
             {/* Settings Panel */}
             <AnimatePresence>
                 {settingsOpen && (
@@ -187,9 +217,40 @@ export const BeerCalculator = () => {
                 )}
             </AnimatePresence>
 
-            <main className="flex-1 flex flex-col items-center justify-start pt-8 px-6 pb-12 w-full max-w-6xl mx-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 w-full max-w-5xl">
+            <main className="flex-1 flex flex-col items-center justify-start pt-10 px-6 pb-16 w-full max-w-6xl mx-auto relative z-10">
+                {/* Hero */}
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-5xl mb-8"
+                >
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                        <div className="space-y-3">
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                <Sparkles className="w-4 h-4 text-amber-500" />
+                                Kurt-Approved Beverage Telemetry
+                            </div>
+                            <h1 className="text-4xl md:text-6xl font-display font-black text-slate-900 dark:text-white leading-tight">
+                                Beer Calculator <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500">2.0</span>
+                            </h1>
+                            <p className="text-slate-600 dark:text-slate-400 max-w-xl">
+                                Track the chaos, earn unofficial titles, and avoid texting your ex. Science-ish. Fun assured.
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="px-4 py-3 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <div className="text-xs uppercase tracking-wider text-slate-500">Current Mood</div>
+                                <div className="text-lg font-bold text-slate-900 dark:text-white">{partyMood}</div>
+                            </div>
+                            <div className="px-4 py-3 rounded-2xl bg-gradient-to-br from-amber-500/15 to-pink-500/15 border border-amber-200/50 dark:border-amber-800/40">
+                                <div className="text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300">Badge</div>
+                                <div className="text-lg font-bold text-amber-700 dark:text-amber-300">{kurtBadge}</div>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
 
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 w-full max-w-5xl">
                     {/* LEFT COLUMN: Main Calculator */}
                     <div className="flex flex-col items-center space-y-8">
                         <motion.div
@@ -198,7 +259,8 @@ export const BeerCalculator = () => {
                             className="w-full space-y-8"
                         >
                             {/* Main Card */}
-                            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-xl border border-slate-200 dark:border-slate-800 space-y-6 relative overflow-hidden">
+                            <div className="bg-white/90 dark:bg-slate-900/90 rounded-[32px] p-8 shadow-2xl border border-slate-200/70 dark:border-slate-800/70 space-y-8 relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-purple-500/5 pointer-events-none" />
 
                                 <button
                                     onClick={() => setSettingsOpen(!settingsOpen)}
@@ -208,8 +270,8 @@ export const BeerCalculator = () => {
                                     <Settings className="w-5 h-5" />
                                 </button>
 
-                                {/* Beer Can Display */}
-                                <div className="flex justify-center mb-2 h-[180px] items-end relative z-10">
+                                {/* Reactor + Can */}
+                                <div className="flex justify-center mb-2 h-[200px] items-end relative z-10">
                                     {/* Wrapper for shake animation */}
                                     <div
                                         key={shakeKey}
@@ -217,6 +279,21 @@ export const BeerCalculator = () => {
                                     >
                                         {/* Frosted Glass Shimmer Effect (CSS) */}
                                         <div className="relative group">
+                                            {/* Reactor rings */}
+                                            <div className="absolute -inset-10 flex items-center justify-center pointer-events-none">
+                                                {[0, 1, 2].map((i) => (
+                                                    <motion.div
+                                                        key={i}
+                                                        className="absolute rounded-full border border-amber-300/30"
+                                                        style={{ width: 140 + i * 40, height: 140 + i * 40 }}
+                                                        animate={{
+                                                            opacity: [0.15, 0.4, 0.15],
+                                                            scale: [1, 1.05 + glowLevel * 0.1, 1],
+                                                        }}
+                                                        transition={{ duration: 2 + i, repeat: Infinity, ease: 'easeInOut', delay: i * 0.2 }}
+                                                    />
+                                                ))}
+                                            </div>
                                             {/* Bubbles if count > 0 */}
                                             {count > 0 && !isTest && (
                                                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-full h-8 flex justify-center gap-2 pointer-events-none opacity-50">
@@ -234,8 +311,8 @@ export const BeerCalculator = () => {
 
                                             <img
                                                 src="/beervan.png"
-                                                alt="Isbjørn Lite beer can"
-                                                className="w-[110px] md:w-[150px] drop-shadow-2xl transition-transform duration-500 ease-out object-contain origin-bottom"
+                                                alt="Isbj�rn Lite beer can"
+                                                className="w-[120px] md:w-[160px] drop-shadow-2xl transition-transform duration-500 ease-out object-contain origin-bottom"
                                                 style={{
                                                     transform: `rotate(${isTest ? 0 : tiltAngle}deg)`
                                                 }}
@@ -259,6 +336,10 @@ export const BeerCalculator = () => {
                                     >
                                         {count}
                                     </motion.span>
+                                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                                        <Flame className="w-4 h-4 text-amber-500" />
+                                        Party Heat: {Math.min(100, count * 12)}%
+                                    </div>
                                 </div>
 
                                 {/* Controls */}
@@ -327,10 +408,26 @@ export const BeerCalculator = () => {
                                                 {currentMessage.serious}
                                             </p>
                                             <p className="text-slate-500 dark:text-slate-400 text-sm italic pt-1">
-                                                💡 {currentMessage.suggestion}
+                                                ?? {currentMessage.suggestion}
                                             </p>
                                         </motion.div>
                                     </AnimatePresence>
+                                </div>
+
+                                {/* Mini stats */}
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 p-3 text-center">
+                                        <div className="text-xs text-slate-500">Status</div>
+                                        <div className="text-sm font-bold text-slate-900 dark:text-white">{partyMood}</div>
+                                    </div>
+                                    <div className="rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 p-3 text-center">
+                                        <div className="text-xs text-slate-500">Radar</div>
+                                        <div className="text-sm font-bold text-slate-900 dark:text-white">{radarValue}%</div>
+                                    </div>
+                                    <div className="rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 p-3 text-center">
+                                        <div className="text-xs text-slate-500">Badge</div>
+                                        <div className="text-sm font-bold text-slate-900 dark:text-white">#{(count % 9) + 1}</div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -355,7 +452,7 @@ export const BeerCalculator = () => {
                             </AnimatePresence>
 
                             <p className="text-center text-xs text-slate-400 dark:text-slate-600 max-w-xs mx-auto">
-                                Educational only. Not medical advice. Please drink responsibly.
+                                Entertainment only. Hydrate, be kind, and keep your shoes on the floor.
                             </p>
                         </motion.div>
                     </div>
@@ -364,7 +461,7 @@ export const BeerCalculator = () => {
                     <div className="space-y-6">
 
                         {/* 1. Kurt Edgar Advice Panel */}
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm" data-testid="kurt-advice-panel">
+                        <div className="bg-white/90 dark:bg-slate-900/90 rounded-2xl p-6 border border-slate-200/70 dark:border-slate-800/70 shadow-lg" data-testid="kurt-advice-panel">
                             <div className="flex items-center justify-between mb-3">
                                 <h3 className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
                                     <Brain className="w-5 h-5 text-purple-500" />
@@ -378,16 +475,21 @@ export const BeerCalculator = () => {
                                     <RefreshCw className="w-4 h-4" />
                                 </button>
                             </div>
-                            <div className="p-4 bg-purple-50 dark:bg-slate-800 rounded-xl relative">
+                            <div className="p-4 bg-purple-50 dark:bg-slate-800 rounded-xl relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent" />
                                 <div className="text-3xl absolute -top-2 -left-1 text-purple-200 dark:text-slate-700">"</div>
                                 <p className="text-slate-700 dark:text-slate-300 italic relative z-10 text-sm leading-relaxed" data-testid="kurt-advice-text">
                                     {kurtAdvice}
                                 </p>
                             </div>
+                            <div className="mt-3 text-xs text-slate-500 flex items-center gap-2">
+                                <Beer className="w-4 h-4 text-amber-500" />
+                                Kurt recommends: water every 2 beers (he will not do this himself).
+                            </div>
                         </div>
 
                         {/* 2. Beer Facts */}
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm" data-testid="beer-facts">
+                        <div className="bg-white/90 dark:bg-slate-900/90 rounded-2xl p-6 border border-slate-200/70 dark:border-slate-800/70 shadow-lg" data-testid="beer-facts">
                             <h3 className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200 mb-3">
                                 <Lightbulb className="w-5 h-5 text-yellow-500" />
                                 Useless Fact
@@ -398,7 +500,7 @@ export const BeerCalculator = () => {
                         </div>
 
                         {/* 3. Stokmarknes Party Radar */}
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm" data-testid="party-radar">
+                        <div className="bg-white/90 dark:bg-slate-900/90 rounded-2xl p-6 border border-slate-200/70 dark:border-slate-800/70 shadow-lg" data-testid="party-radar">
                             <h3 className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200 mb-3">
                                 <Radio className="w-5 h-5 text-pink-500" />
                                 Party Radar
@@ -415,6 +517,19 @@ export const BeerCalculator = () => {
                                 <span>Dead</span>
                                 <span>Legendary</span>
                             </div>
+                        </div>
+
+                        {/* 4. Party Perks */}
+                        <div className="bg-white/90 dark:bg-slate-900/90 rounded-2xl p-6 border border-slate-200/70 dark:border-slate-800/70 shadow-lg">
+                            <h3 className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200 mb-3">
+                                <Sparkles className="w-5 h-5 text-amber-500" />
+                                Unofficial Perks
+                            </h3>
+                            <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                                <li>+{Math.min(99, count * 7)}% confidence in dancing</li>
+                                <li>{count >= 4 ? 'Auto-compliment mode: ON' : 'Auto-compliment mode: warming up'}</li>
+                                <li>{count >= 6 ? 'DJ opinions: dangerously loud' : 'DJ opinions: politely whispered'}</li>
+                            </ul>
                         </div>
 
                     </div>
@@ -471,7 +586,7 @@ export const BeerCalculator = () => {
                                         transition={{ duration: 2 + Math.random() * 3, repeat: Infinity, ease: "linear", delay: Math.random() * 2 }}
                                         className="absolute text-4xl"
                                     >
-                                        {['🍺', '🕺', '🚑', '🌮', '🥴'][Math.floor(Math.random() * 5)]}
+                                        {['??', '??', '??', '??', '??'][Math.floor(Math.random() * 5)]}
                                     </motion.div>
                                 ))}
                             </div>
@@ -482,4 +597,3 @@ export const BeerCalculator = () => {
         </div >
     );
 };
-

@@ -80,5 +80,18 @@
     .animate-shake-strong {
       animation: shake-strong 0.5s ease-in-out;
     }
+
+    @keyframes shimmer-slide {
+      0% {
+        transform: translateX(-150%) skewX(12deg);
+      }
+      100% {
+        transform: translateX(150%) skewX(12deg);
+      }
+    }
+
+    .animate-shimmer {
+      animation: shimmer-slide 2.6s ease-in-out infinite;
+    }
   }
 }
