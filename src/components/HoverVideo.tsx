@@ -7,9 +7,10 @@ interface HoverVideoProps {
     className?: string;
     posterSrc?: string;
     fallbackImageSrc?: string;
+    autoPlay?: boolean;
 }
 
-export const HoverVideo = ({ src, className = '', posterSrc, fallbackImageSrc }: HoverVideoProps) => {
+export const HoverVideo = ({ src, className = '', posterSrc, fallbackImageSrc, autoPlay = false }: HoverVideoProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isMuted, setIsMuted] = useState(true);
     const [showHint, setShowHint] = useState(false);
@@ -33,6 +34,29 @@ export const HoverVideo = ({ src, className = '', posterSrc, fallbackImageSrc }:
             setIsMuted(false);
         }
     }, [soundEnabled]);
+
+    useEffect(() => {
+        if (!autoPlay) return;
+        const video = videoRef.current;
+        if (!video) return;
+
+        const tryPlay = async () => {
+            try {
+                video.muted = true;
+                await video.play();
+                setIsPlaying(true);
+                setIsMuted(true);
+            } catch (err) {
+                console.warn('Autoplay blocked, awaiting interaction', err);
+            }
+        };
+
+        if (video.readyState >= 2) {
+            tryPlay();
+        } else {
+            video.addEventListener('loadeddata', tryPlay, { once: true });
+        }
+    }, [autoPlay]);
 
     const handleMouseEnter = async () => {
         const video = videoRef.current;
@@ -114,6 +138,7 @@ export const HoverVideo = ({ src, className = '', posterSrc, fallbackImageSrc }:
                     muted={isMuted}
                     loop
                     poster={posterSrc}
+                    autoPlay={autoPlay}
                     onError={() => setHasError(true)}
                 />
             )}

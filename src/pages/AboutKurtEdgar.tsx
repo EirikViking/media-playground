@@ -29,6 +29,7 @@ export const AboutKurtEdgar = () => {
                                 src={KURT_VIDEO}
                                 posterSrc={KURT_FALLBACK_IMAGE}
                                 fallbackImageSrc={KURT_FALLBACK_IMAGE}
+                                autoPlay
                                 className="aspect-video border-4 border-white dark:border-slate-800 bg-slate-200 dark:bg-slate-900"
                             />
                         </div>
