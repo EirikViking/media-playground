@@ -12,7 +12,9 @@ import {
   Music,
   Search,
   BrainCircuit,
-  Bot
+  Bot,
+  Newspaper,
+  ExternalLink
 } from 'lucide-react';
 import { AiHelperModal } from '../components/AiHelperModal';
 import { generateTileContent } from '../utils/generators';
@@ -204,6 +206,45 @@ export const Home = () => {
           />
 
         </motion.div>
+
+        <motion.a
+          href="https://news-for-eirik.pages.dev/"
+          target="_blank"
+          rel="noopener noreferrer"
+          whileHover={{ y: -8, scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+          className="group relative mt-8 w-full max-w-6xl rounded-3xl border border-orange-400/30 bg-gradient-to-br from-orange-500/20 via-rose-500/20 to-sky-500/20 p-[1px] shadow-2xl shadow-orange-500/10"
+          data-testid="tile-eirik-news"
+        >
+          <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/75 px-6 py-6 backdrop-blur-xl dark:bg-slate-900/80 md:px-8 md:py-7">
+            <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+              <div className="animate-shimmer absolute -left-1/3 top-0 h-full w-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+            </div>
+            <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-orange-400/30 blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-10 -left-8 h-24 w-24 rounded-full bg-cyan-400/25 blur-2xl" />
+
+            <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:gap-8">
+              <div className="flex items-center gap-3">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-rose-500 text-white shadow-lg shadow-orange-500/30">
+                  <Newspaper className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Fresh Dispatch</p>
+                  <h3 className="font-display text-2xl text-slate-900 dark:text-white md:text-3xl">News For Eirik</h3>
+                </div>
+              </div>
+
+              <p className="flex-1 text-left text-sm leading-relaxed text-slate-600 dark:text-slate-300 md:text-base">
+                Enter the live news portal for updates, stories, and internet finds curated for Eirik.
+              </p>
+
+              <span className="inline-flex items-center gap-2 self-start rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-transform group-hover:translate-x-1 dark:bg-white dark:text-slate-900 md:self-auto">
+                Open Portal
+                <ExternalLink className="h-4 w-4" />
+              </span>
+            </div>
+          </div>
+        </motion.a>
 
         <motion.div
           initial={{ opacity: 0 }}

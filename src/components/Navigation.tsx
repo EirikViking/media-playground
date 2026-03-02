@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { ExternalLink, Menu, X } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 
 export const Navigation = () => {
@@ -24,6 +24,18 @@ export const Navigation = () => {
                     <NavLink to="/games" testId="nav-gaming">Gaming</NavLink>
                     <NavLink to="/studio" testId="nav-studio">The Studio</NavLink>
                     <NavLink to="/music" testId="nav-music">Music Library</NavLink>
+                    <a
+                        href="https://news-for-eirik.pages.dev/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group inline-flex items-center gap-1 text-sm font-semibold text-orange-600 transition-colors hover:text-rose-600 dark:text-orange-300 dark:hover:text-rose-300"
+                        data-testid="nav-news-eirik"
+                    >
+                        <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
+                            Eirik News
+                        </span>
+                        <ExternalLink className="h-3.5 w-3.5 opacity-80 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </a>
                 </nav>
             </div>
 
@@ -74,6 +86,16 @@ export const Navigation = () => {
                             <MobileNavLink to="/games" onClick={() => setMobileMenuOpen(false)}>Gaming</MobileNavLink>
                             <MobileNavLink to="/studio" onClick={() => setMobileMenuOpen(false)}>The Studio</MobileNavLink>
                             <MobileNavLink to="/music" onClick={() => setMobileMenuOpen(false)}>Music Library</MobileNavLink>
+                            <a
+                                href="https://news-for-eirik.pages.dev/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 text-orange-600 hover:text-rose-600 dark:text-orange-300 dark:hover:text-rose-300"
+                                onClick={() => setMobileMenuOpen(false)}
+                            >
+                                Eirik News
+                                <ExternalLink className="h-4 w-4" />
+                            </a>
                             <MobileNavLink to="/admin" onClick={() => setMobileMenuOpen(false)}>Admin</MobileNavLink>
                         </nav>
                     </motion.div>
