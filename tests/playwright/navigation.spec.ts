@@ -37,13 +37,12 @@ test.describe('Navigation and Hub', () => {
         await expect(page.getByTestId('card-studio')).toBeVisible();
 
         // Check new tiles (Requirement B)
-        await expect(page.getByTestId('tile-ai-links')).toBeVisible();
+        await expect(page.getByTestId('tile-eirik-news')).toBeVisible();
         await expect(page.getByTestId('tile-roast-google')).toBeVisible();
         await expect(page.getByTestId('tile-roast-manual')).toBeVisible();
 
-        // Check AI links exist
-        await expect(page.getByText('ChatGPT')).toBeVisible();
-        await expect(page.getByText('Gemini')).toBeVisible();
+        // Check news tile content exists
+        await expect(page.getByText('News For Eirik')).toBeVisible();
     });
 
 

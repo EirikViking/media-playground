@@ -12,7 +12,6 @@ import {
   Music,
   Search,
   BrainCircuit,
-  Bot,
   Newspaper,
   ExternalLink
 } from 'lucide-react';
@@ -23,16 +22,15 @@ import { trackTileClick, getLocalState } from '../utils/localState';
 export const Home = () => {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [userState] = useState(getLocalState);
-  const [aiModalMode, setAiModalMode] = useState<'ai-helper' | 'search-challenge'>('ai-helper');
+  const [aiModalMode, setAiModalMode] = useState<'ai-helper' | 'search-challenge'>('search-challenge');
 
   const studioClicks = userState.tileClicksCount['/studio'] || 0;
   const isStudioPowerUser = studioClicks > 3;
 
-  const aiHelperContent = useMemo(() => generateTileContent('ai-helper'), []);
   const searchChallenge = useMemo(() => generateTileContent('search-challenge'), []);
 
-  const openAiModal = (mode: 'ai-helper' | 'search-challenge') => {
-    setAiModalMode(mode);
+  const openSearchChallengeModal = () => {
+    setAiModalMode('search-challenge');
     setIsAiModalOpen(true);
   };
 
@@ -147,34 +145,38 @@ export const Home = () => {
             testId="card-music"
           />
 
-          {/* 6. AI Links (Special Custom Card) */}
-          <motion.div
+          {/* 6. News For Eirik */}
+          <motion.a
+            href="https://news-for-eirik.pages.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
             whileHover={{ y: -8, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => openAiModal('ai-helper')}
-            className="relative p-6 rounded-3xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col items-start backdrop-blur-md hover:shadow-xl transition-all h-full hover:border-blue-500/50 cursor-pointer"
-            data-testid="tile-ai-links"
+            className="group relative p-6 rounded-3xl bg-gradient-to-br from-orange-500/15 via-rose-500/10 to-sky-500/15 border border-orange-400/30 dark:border-orange-300/20 flex flex-col items-start backdrop-blur-md hover:shadow-xl transition-all h-full hover:border-rose-500/50"
+            data-testid="tile-eirik-news"
           >
-            <div className="mb-4 inline-flex p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-              <Bot className="w-8 h-8" />
+            <div className="mb-4 inline-flex p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-rose-500 text-white shadow-lg shadow-orange-500/30">
+              <Newspaper className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-bold mb-2 font-display text-slate-900 dark:text-white">
-              {aiHelperContent.title}
+              News For Eirik
             </h3>
-            <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm mb-4 flex-1">
-              {aiHelperContent.body}
+            <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-sm mb-4 flex-1">
+              Live updates, headlines, and curated internet finds in one fresh portal.
             </p>
-            <div className="flex gap-2 mt-auto w-full">
-              <div className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-center rounded-xl font-bold text-sm transition-colors shadow-sm">ChatGPT</div>
-              <div className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-center rounded-xl font-bold text-sm transition-colors shadow-sm">Gemini</div>
+            <div className="flex items-center gap-2 text-sm font-semibold mt-auto">
+              <span className="bg-gradient-to-r from-orange-500 via-rose-500 to-sky-500 bg-clip-text text-transparent">
+                Open News Portal
+              </span>
+              <ExternalLink className="w-4 h-4 text-slate-400 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
             </div>
-          </motion.div>
+          </motion.a>
 
           {/* 7. Roach Kurt - Search */}
           <motion.div
             whileHover={{ y: -8, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => openAiModal('search-challenge')}
+            onClick={openSearchChallengeModal}
             className="relative p-6 rounded-3xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col items-start backdrop-blur-md hover:shadow-xl transition-all h-full hover:border-red-500/50 cursor-pointer"
             data-testid="tile-roast-google"
           >
@@ -206,45 +208,6 @@ export const Home = () => {
           />
 
         </motion.div>
-
-        <motion.a
-          href="https://news-for-eirik.pages.dev/"
-          target="_blank"
-          rel="noopener noreferrer"
-          whileHover={{ y: -8, scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
-          className="group relative mt-8 w-full max-w-6xl rounded-3xl border border-orange-400/30 bg-gradient-to-br from-orange-500/20 via-rose-500/20 to-sky-500/20 p-[1px] shadow-2xl shadow-orange-500/10"
-          data-testid="tile-eirik-news"
-        >
-          <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/75 px-6 py-6 backdrop-blur-xl dark:bg-slate-900/80 md:px-8 md:py-7">
-            <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-              <div className="animate-shimmer absolute -left-1/3 top-0 h-full w-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-            </div>
-            <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-orange-400/30 blur-2xl" />
-            <div className="pointer-events-none absolute -bottom-10 -left-8 h-24 w-24 rounded-full bg-cyan-400/25 blur-2xl" />
-
-            <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:gap-8">
-              <div className="flex items-center gap-3">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-rose-500 text-white shadow-lg shadow-orange-500/30">
-                  <Newspaper className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Fresh Dispatch</p>
-                  <h3 className="font-display text-2xl text-slate-900 dark:text-white md:text-3xl">News For Eirik</h3>
-                </div>
-              </div>
-
-              <p className="flex-1 text-left text-sm leading-relaxed text-slate-600 dark:text-slate-300 md:text-base">
-                Enter the live news portal for updates, stories, and internet finds curated for Eirik.
-              </p>
-
-              <span className="inline-flex items-center gap-2 self-start rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-transform group-hover:translate-x-1 dark:bg-white dark:text-slate-900 md:self-auto">
-                Open Portal
-                <ExternalLink className="h-4 w-4" />
-              </span>
-            </div>
-          </div>
-        </motion.a>
 
         <motion.div
           initial={{ opacity: 0 }}
